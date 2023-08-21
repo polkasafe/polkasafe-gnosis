@@ -113,6 +113,7 @@
     "eslint-plugin-simple-import-sort": "^8.0.0",
     "eslint-plugin-standard": "^5.0.0",
     "postcss": "^8.4.19",
+    "serve": "^14.2.0",
     "tailwindcss": "^3.2.4"
   }
 }
