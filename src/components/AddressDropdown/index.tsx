@@ -1,13 +1,12 @@
 // Copyright 2022-2023 @Polkasafe/polkaSafe-ui authors & contributors
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
-
-import Identicon from '@polkadot/react-identicon';
 import { Button } from 'antd';
 import classNames from 'classnames';
 import React, { useRef, useState } from 'react';
+import { MetaMaskAvatar } from 'react-metamask-avatar';
 import { Link, useNavigate } from 'react-router-dom';
-import { useGlobalWeb3Context } from 'src/context';
+// import { useGlobalWeb3Context } from 'src/context';
 import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { DEFAULT_ADDRESS_NAME } from 'src/global/default';
@@ -25,7 +24,7 @@ interface IAddress {
 const AddressDropdown = () => {
 	const { address, addressBook, loggedInWallet, setUserDetailsContextState } = useGlobalUserDetailsContext();
 	const { network } = useGlobalApiContext();
-	const { logout } = useGlobalWeb3Context();
+	// const { logout } = useGlobalWeb3Context();
 	const navigate = useNavigate();
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -33,11 +32,9 @@ const AddressDropdown = () => {
 	const isMouseEnter = useRef(false);
 
 	const handleDisconnect = async () => {
-		localStorage.removeItem('signature');
-		localStorage.removeItem('address');
+		localStorage.clear();
 
-		await logout();
-
+		// await logout();
 		setUserDetailsContextState((prevState: any) => {
 			return {
 				...prevState,
@@ -73,7 +70,7 @@ const AddressDropdown = () => {
 			<button onClick={() => isVisible ? toggleVisibility(false) : toggleVisibility(true)} className='flex items-center justify-center gap-x-2 outline-none border-none text-white bg-highlight rounded-lg p-2.5 shadow-none text-xs'>
 				<p className='flex items-center gap-x-2'>
 					{<span className='bg-primary flex items-center justify-center rounded-full'>
-						<Identicon size={15} value={address} theme='polkadot' />
+						<MetaMaskAvatar address={address} size={15} />
 					</span>}
 					<span title={address} className='hidden md:inline-flex w-20 overflow-hidden truncate'>
 						{addressBook?.find((item: any) => item.address === address)?.name || DEFAULT_ADDRESS_NAME}
@@ -102,11 +99,8 @@ const AddressDropdown = () => {
 			>
 				<div className='flex items-center justify-center flex-col gap-y-5'>
 					<div className='flex items-center justify-center flex-col gap-y-2'>
-						<Identicon
-							className='border-2 rounded-full bg-transparent border-primary p-1'
-							value={address}
+						<MetaMaskAvatar address={address}
 							size={50}
-							theme='polkadot'
 						/>
 						<p className='text-white font-normal text-sm'>
 							{addressBook?.find((item: any) => item.address === address)?.name}

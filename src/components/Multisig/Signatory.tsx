@@ -10,8 +10,6 @@ import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { chainProperties } from 'src/global/networkConstants';
 import { IAddressBookItem } from 'src/types';
 import { WarningCircleIcon } from 'src/ui-components/CustomIcons';
-import getEncodedAddress from 'src/utils/getEncodedAddress';
-import getSubstrateAddress from 'src/utils/getSubstrateAddress';
 import { inputToBn } from 'src/utils/inputToBn';
 
 import NewUserModal from '../Home/ConnectWallet/NewUserModal';
@@ -171,7 +169,7 @@ const Signatory = ({ filterAddress, setSignatories, signatories, homepage }: ISi
 						{addresses.length > 0 ? addresses.map((address) => {
 							const lowBalance = address.balance && (Number(address.balance) < Number(inputToBn(`${chainProperties[network].decimals}`, network)[0]) || Number(address.balance) === 0);
 							return (
-								<p onClick={signatories.includes(address.address) ? clickDropReturn : clickDrop} title={getEncodedAddress(address.address, network) || ''} id={`${address.key}-${address.address}`} key={`${address.key}-${address.address}`} className='bg-bg-main p-2 m-1 rounded-md text-white flex items-center gap-x-2' draggable onDragStart={dragStart}>
+								<p onClick={signatories.includes(address.address) ? clickDropReturn : clickDrop} title={address.address || ''} id={`${address.key}-${address.address}`} key={`${address.key}-${address.address}`} className='bg-bg-main p-2 m-1 rounded-md text-white flex items-center gap-x-2' draggable onDragStart={dragStart}>
 									{address.name}
 									{lowBalance && signatories.includes(address.address) &&
 										<Tooltip title={
@@ -195,8 +193,8 @@ const Signatory = ({ filterAddress, setSignatories, signatories, homepage }: ISi
 							// </Tooltip>
 							<>
 								<div className='text-sm text-text_secondary'>Addresses imported directly from your Polkadot.js wallet</div>
-								{[].filter((item: any) => item.address !== getEncodedAddress(address, network)).map((account: any, i: any) => (
-									<p onClick={signatories.includes(getSubstrateAddress(account.address) || account.address) ? clickDropReturn : clickDrop} title={getEncodedAddress(account.address, network) || ''} id={`${i + 1}-${account.address}`} key={`${i + 1}-${account.address}`} className='bg-bg-main p-2 m-1 rounded-md text-white' draggable onDragStart={dragStart}>{account.name}</p>
+								{[].filter((item: any) => item.address !== address).map((account: any, i: any) => (
+									<p onClick={signatories.includes(account|| account.address) ? clickDropReturn : clickDrop} title={account.address || ''} id={`${i + 1}-${account.address}`} key={`${i + 1}-${account.address}`} className='bg-bg-main p-2 m-1 rounded-md text-white' draggable onDragStart={dragStart}>{account.name}</p>
 								))}
 							</>
 						}
@@ -206,7 +204,7 @@ const Signatory = ({ filterAddress, setSignatories, signatories, homepage }: ISi
 				<div id='div2' className="flex flex-col my-2 pd-2 w-1/2 ml-2">
 					<h1 className='text-primary mt-3 mb-2'>Selected Signatory</h1>
 					<div id={`drop2${homepage && '-home'}`} className='flex flex-col bg-bg-secondary p-2 rounded-lg my-1 h-[30vh] overflow-auto cursor-grab' onDrop={drop} onDragOver={dragOver}>
-						<p title={getEncodedAddress(address, network) || ''} id={`0-${signatories[0]}`} key={`0-${signatories[0]}`} className='bg-bg-main p-2 m-1 rounded-md text-white cursor-default flex items-center gap-x-2'>{addressBook[0]?.name} <Tooltip title={<span className='text-sm text-text_secondary'>Your Wallet Address</span>}><Badge status='success' /></Tooltip></p>
+						<p title={address || ''} id={`0-${signatories[0]}`} key={`0-${signatories[0]}`} className='bg-bg-main p-2 m-1 rounded-md text-white cursor-default flex items-center gap-x-2'>{addressBook[0]?.name} <Tooltip title={<span className='text-sm text-text_secondary'>Your Wallet Address</span>}><Badge status='success' /></Tooltip></p>
 					</div>
 				</div>
 			</div>

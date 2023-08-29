@@ -2,14 +2,13 @@
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
 
-import Identicon from '@polkadot/react-identicon';
 import React from 'react';
+import { MetaMaskAvatar } from 'react-metamask-avatar';
 import { useGlobalApiContext } from 'src/context/ApiContext';
 import { DEFAULT_ADDRESS_NAME } from 'src/global/default';
 import { IMultisigAddress } from 'src/types';
 import { CheckOutlined, CopyIcon, ExternalLinkIcon } from 'src/ui-components/CustomIcons';
 import copyText from 'src/utils/copyText';
-import getEncodedAddress from 'src/utils/getEncodedAddress';
 import shortenAddress from 'src/utils/shortenAddress';
 
 import Loader from '../../UserFlow/Loader';
@@ -67,12 +66,8 @@ const Review = ({ multisigData, signatories, multisigName }: Props) => {
 							<div className="flex items-center justify-between mx-5 mb-5">
 								<p className='text-text_secondary'>Safe Address:</p>
 								<div className='flex items-center'>
-									<Identicon
-										className='image identicon'
-										value={multisigData?.address}
-										size={30}
-										theme={'polkadot'}
-									/>
+									<MetaMaskAvatar address={multisigData?.address|| ''}
+										size={30} />
 									<p className='mx-2'>{shortenAddress(multisigData?.address || '')}</p>
 									<button onClick={() => copyText(multisigData?.address || '')}><CopyIcon className='mr-2 text-text_secondary hover:text-primary' /></button>
 									<a href={`https://${network}.subscan.io/account/${multisigData?.address}`} target='_blank' rel="noreferrer" >
@@ -92,15 +87,12 @@ const Review = ({ multisigData, signatories, multisigName }: Props) => {
 							<div className='flex flex-1 flex-col items-center justify-start overflow-auto'>
 								{signatories.map((item, i: number) => (
 									<div className='flex items-center mx-5 mt-5' key={i}>
-										<Identicon
-											className='image identicon mx-2'
-											value={item.address}
+										<MetaMaskAvatar address={item.address}
 											size={30}
-											theme={'polkadot'}
 										/>
 										<div className='flex flex-col'>
 											<p className='text-sm'>{item.name || DEFAULT_ADDRESS_NAME}</p>
-											<div className='flex'><p className='text-sm text-text_secondary'>{shortenAddress(getEncodedAddress(item.address, network) || item.address)}</p>
+											<div className='flex'><p className='text-sm text-text_secondary'>{shortenAddress(item.address)}</p>
 												<button className='mx-1' onClick={() => navigator.clipboard.writeText(item.address)}>
 													<CopyIcon className='text-text_secondary cursor-pointer hover:text-primary' />
 												</button>

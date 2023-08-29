@@ -7,12 +7,11 @@ import { Web3Auth } from '@web3auth/modal';
 import { getWalletConnectV2Settings, WalletConnectV2Adapter } from '@web3auth/wallet-connect-v2-adapter';
 import { ethers } from 'ethers';
 import React, { useContext, useEffect, useState } from 'react';
+import { metamaskAdapter, openloginAdapter, torusPlugin, torusWalletAdapter, webAuth } from 'src/global';
 import { firebaseFunctionsHeader } from 'src/global/firebaseFunctionsHeader';
 import { FIREBASE_FUNCTIONS_URL } from 'src/global/firebaseFunctionsUrl';
 import { chainProperties, NETWORK } from 'src/global/networkConstants';
 import Web3 from 'web3';
-
-import { metamaskAdapter, openloginAdapter, torusPlugin, torusWalletAdapter, webAuth } from '../global';
 
 export interface Web3AuthContextType {
 	web3Auth: Web3Auth | null,
@@ -53,8 +52,9 @@ export function Web3AuthProvider({ children }: React.PropsWithChildren<{}>): Rea
 	const [web3Provider, setWeb3Provider] = useState<Web3 | null>(null);
 
 	useEffect(() => {
-		if (!web3Auth?.connectedAdapterName) init();
-	}, [web3Auth?.connectedAdapterName]);
+		if (!web3Auth) init();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [web3Auth]);
 
 	const init = async () => {
 		try {
@@ -66,7 +66,7 @@ export function Web3AuthProvider({ children }: React.PropsWithChildren<{}>): Rea
 				adapterSettings: { ...defaultWcSettings.adapterSettings },
 				loginSettings: { ...defaultWcSettings.loginSettings }
 			});
-
+			console.log(metamaskAdapter);
 			webAuth.configureAdapter(metamaskAdapter as any);
 			webAuth.configureAdapter(torusWalletAdapter as any);
 			webAuth.configureAdapter(walletConnectV2Adapter as any);
@@ -77,7 +77,31 @@ export function Web3AuthProvider({ children }: React.PropsWithChildren<{}>): Rea
 
 			setWeb3Auth(webAuth);
 
-			await webAuth.initModal();
+			await webAuth.initModal({
+				modalConfig: {
+					openlogin: {
+						label: 'openlogin',
+						loginMethods: {
+							email_passwordless: {
+								name: 'email_passwordless',
+								showOnModal: false
+							},
+							facebook: {
+								name: 'facebook',
+								showOnModal: false
+							},
+							reddit: {
+								name: 'reddit',
+								showOnModal: false
+							},
+							sms_passwordless: {
+								name: 'sms_passwordless',
+								showOnModal: false
+							}
+						}
+					}
+				}
+			});
 		} catch (err) {
 			console.log(`Error from web3Auth init func - ${err}`);
 		}
@@ -141,7 +165,9 @@ export function Web3AuthProvider({ children }: React.PropsWithChildren<{}>): Rea
 		try {
 			const web3authProvider = await web3Auth.connect();
 			setProvider(web3authProvider);
-			return await getUserInfo(web3authProvider!);
+			const data = await getUserInfo(web3authProvider!);
+			console.log(data);
+			return data;
 		} catch (err) {
 			console.log(`Error from login: ${err}`);
 			return null;
@@ -154,7 +180,6 @@ export function Web3AuthProvider({ children }: React.PropsWithChildren<{}>): Rea
 			return;
 		}
 		await web3Auth.logout();
-		setProvider(null);
 	};
 
 	const authenticateUser = async (): Promise<any | undefined> => { //@TODO
@@ -172,20 +197,16 @@ export function Web3AuthProvider({ children }: React.PropsWithChildren<{}>): Rea
 			return null;
 		}
 		const user = await web3Auth.getUserInfo();
-
 		try {
 			const ethersProvider = new ethers.providers.Web3Provider(givenProvider!);
 			setEthProvider(ethersProvider);
-
 			const signer = ethersProvider.getSigner();
 			const address = await signer.getAddress();
-
 			setWeb3AuthUser({
 				accounts: [address],
 				email: user.email || '',
 				name: user.name || ''
 			});
-
 			return ethersProvider;
 		} catch (err) {
 			console.log(err, 'err from getUserInfo');

@@ -3,20 +3,18 @@
 // of the Apache-2.0 license. See the LICENSE file for details.
 
 import { PlusCircleOutlined } from '@ant-design/icons';
-import Identicon from '@polkadot/react-identicon';
 import { Modal } from 'antd';
 import { Spin } from 'antd';
 import { ethers } from 'ethers';
 import React, { FC, useState } from 'react';
+import { MetaMaskAvatar } from 'react-metamask-avatar';
 import ethLogo from 'src/assets/eth.png';
-import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useModalContext } from 'src/context/ModalContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import AddressQr from 'src/ui-components/AddressQr';
 import { CopyIcon, OutlineCloseIcon, QRIcon, WalletIcon } from 'src/ui-components/CustomIcons';
 import PrimaryButton from 'src/ui-components/PrimaryButton';
 import copyText from 'src/utils/copyText';
-import getEncodedAddress from 'src/utils/getEncodedAddress';
 import shortenAddress from 'src/utils/shortenAddress';
 import styled from 'styled-components';
 
@@ -35,12 +33,10 @@ interface IDashboardCard {
 
 const DashboardCard = ({ className, setNewTxn, transactionLoading, openTransactionModal, setOpenTransactionModal }: IDashboardCard) => {
 	const { activeMultisig, multisigAddresses, activeMultisigData } = useGlobalUserDetailsContext();
-	const { network } = useGlobalApiContext();
 	const { openModal } = useModalContext();
 
 	const [openFundMultisigModal, setOpenFundMultisigModal] = useState(false);
 	const currentMultisig = multisigAddresses?.find((item: any) => item.address === activeMultisig || item.proxy === activeMultisig);
-
 	const TransactionModal: FC = () => {
 		return (
 			<>
@@ -110,12 +106,7 @@ const DashboardCard = ({ className, setNewTxn, transactionLoading, openTransacti
 				<div className='w-full'>
 					<div className='flex gap-x-3 items-center'>
 						<div className='relative'>
-							<Identicon
-								className={'border-2 rounded-full bg-transparent border-primary p-1.5'}
-								value={activeMultisig}
-								size={50}
-								theme='polkadot'
-							/>
+							<MetaMaskAvatar address={currentMultisig?.address || ''} size={50} />
 							<div className={' bg-primary text-white text-sm rounded-lg absolute -bottom-0 left-[16px] px-2'}>
 								{currentMultisig?.threshold}/{currentMultisig?.signatories.length}
 							</div>
@@ -125,11 +116,13 @@ const DashboardCard = ({ className, setNewTxn, transactionLoading, openTransacti
 								{currentMultisig?.name}
 							</div>
 							<div className="flex text-xs">
-								<div title={activeMultisig && getEncodedAddress(activeMultisig, network) || ''} className=' font-normal text-text_secondary'>{activeMultisig && shortenAddress(getEncodedAddress(activeMultisig, network) || '')}</div>
+								<div title={activeMultisig && activeMultisig || ''} className=' font-normal text-text_secondary'>{activeMultisig && shortenAddress(activeMultisig || '')}</div>
 								<button className='ml-2 mr-1' onClick={() => copyText(activeMultisig)}><CopyIcon className='text-primary' /></button>
-								<button onClick={() => openModal('Address QR', <AddressQr address={activeMultisig} />)}>
+								{currentMultisig?.address &&
+								<button onClick={() => openModal('Address QR', <AddressQr address={currentMultisig.address} />)}>
 									<QRIcon className='text-primary' />
 								</button>
+								}
 							</div>
 						</div>
 					</div>

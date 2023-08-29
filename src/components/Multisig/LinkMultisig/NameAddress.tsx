@@ -36,6 +36,7 @@ const NameAddress = ({ multisigAddress, setMultisigAddress, multisigName, setMul
 
 	useEffect(() => {
 		const getAllSafes = async () => {
+			console.log(ethProvider);
 			const signer = ethProvider.getSigner();
 			const adapter = new EthersAdapter({
 				ethers: ethProvider,

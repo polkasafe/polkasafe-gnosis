@@ -11,7 +11,6 @@ import queueNotification from 'src/ui-components/QueueNotification';
 
 import { addNewTransaction } from './addNewTransaction';
 import { calcWeight } from './calcWeight';
-import getEncodedAddress from './getEncodedAddress';
 import { IMultiTransferResponse } from './initMultisigTransfer';
 import sendNotificationToAddresses from './sendNotificationToAddresses';
 
@@ -35,7 +34,7 @@ export async function removeOldMultiFromProxy({ multisigAddress, recepientAddres
 	});
 
 	const encodedSignatories = newSignatories.sort().map((signatory) => {
-		const encodedSignatory = getEncodedAddress(signatory, network);
+		const encodedSignatory = signatory;
 		if (!encodedSignatory) throw new Error('Invalid signatory address');
 		return encodedSignatory;
 	});

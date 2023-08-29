@@ -4,11 +4,10 @@
 // Copyright 2022-2023 @Polkasafe/polkaSafe-ui authors & contributors
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
-
-import Identicon from '@polkadot/react-identicon';
 import { Badge, Modal } from 'antd';
 import classNames from 'classnames';
-import React, { FC, useState } from 'react';
+import React, { FC, useEffect, useState } from 'react';
+import { MetaMaskAvatar } from 'react-metamask-avatar';
 import { Link, useLocation } from 'react-router-dom';
 import polkasafeLogo from 'src/assets/icons/polkasafe.svg';
 import AddMultisig from 'src/components/Multisig/AddMultisig';
@@ -20,10 +19,16 @@ interface Props {
 }
 
 const Menu: FC<Props> = ({ className }) => {
-	const { multisigAddresses, setUserDetailsContextState } = useGlobalUserDetailsContext();
-	const [selectedMultisigAddress, setSelectedMultisigAddress] = useState(localStorage.getItem('active_multisig') || '');
+	const { multisigAddresses, setUserDetailsContextState, activeMultisig } = useGlobalUserDetailsContext();
+	const [selectedMultisigAddress, setSelectedMultisigAddress] = useState(activeMultisig ||localStorage.getItem('active_multisig') || '');
 	const location = useLocation();
 	const userAddress = localStorage.getItem('address');
+
+	useEffect(() => {
+		if(activeMultisig){
+			setSelectedMultisigAddress(activeMultisig);
+		}
+	}, [activeMultisig]);
 
 	const [openAddMultisig, setOpenAddMultisig] = useState(false);
 
@@ -144,13 +149,9 @@ const Menu: FC<Props> = ({ className }) => {
 											isProxy: multisig.proxy ? true : false
 										};
 									});
-									setSelectedMultisigAddress(multisig.address);
 								}}>
-									<Identicon
-										className='image identicon mx-2'
-										value={multisig.address}
+									<MetaMaskAvatar address={multisig.address}
 										size={23}
-										theme={'polkadot'}
 									/>
 									<span className='truncate'>{multisig.name}</span>
 								</button>

@@ -9,7 +9,6 @@ import { IMultisigAddress } from 'src/types';
 import { NotificationStatus } from 'src/types';
 import queueNotification from 'src/ui-components/QueueNotification';
 
-import getEncodedAddress from './getEncodedAddress';
 import sendNotificationToAddresses from './sendNotificationToAddresses';
 
 interface Props {
@@ -30,7 +29,7 @@ export async function cancelProxy({ api, approvingAddress, callHash, multisig, n
 
 	// remove approving address address from signatories
 	const encodedSignatories = multisig.signatories.sort().map((signatory) => {
-		const encodedSignatory = getEncodedAddress(signatory, network);
+		const encodedSignatory = signatory;
 		if (!encodedSignatory) throw new Error('Invalid signatory address');
 		return encodedSignatory;
 	});

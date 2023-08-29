@@ -12,7 +12,6 @@ import queueNotification from 'src/ui-components/QueueNotification';
 
 import { addNewTransaction } from './addNewTransaction';
 import { calcWeight } from './calcWeight';
-import getEncodedAddress from './getEncodedAddress';
 import { notify } from './notify';
 import sendNotificationToAddresses from './sendNotificationToAddresses';
 
@@ -47,7 +46,7 @@ export default async function initMultisigTransfer({
 	transferKeepAlive,
 	setLoadingMessages
 }: Args) {
-	const encodedInitiatorAddress = getEncodedAddress(initiatorAddress, network);
+	const encodedInitiatorAddress =initiatorAddress;
 	if (!encodedInitiatorAddress) throw new Error('Invalid initiator address');
 
 	//promise to be resolved when transaction is finalized
@@ -64,7 +63,7 @@ export default async function initMultisigTransfer({
 	const displayAmount = formatBalance(AMOUNT_TO_SEND);
 
 	const encodedSignatories = multisig.signatories.sort().map((signatory) => {
-		const encodedSignatory = getEncodedAddress(signatory, network);
+		const encodedSignatory = signatory;
 		if (!encodedSignatory) throw new Error('Invalid signatory address');
 		return encodedSignatory;
 	});

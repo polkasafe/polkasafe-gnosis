@@ -3,10 +3,10 @@
 // of the Apache-2.0 license. See the LICENSE file for details.
 /* eslint-disable sort-keys */
 
-import Identicon from '@polkadot/react-identicon';
 import { Spin } from 'antd';
 import dayjs from 'dayjs';
 import React, { useState } from 'react';
+import { MetaMaskAvatar } from 'react-metamask-avatar';
 import FailedTransactionLottie from 'src/assets/lottie-graphics/FailedTransaction';
 import LoadingLottie from 'src/assets/lottie-graphics/Loading';
 import CancelBtn from 'src/components/Multisig/CancelBtn';
@@ -119,11 +119,8 @@ const AddProxy: React.FC<IMultisigProps> = ({ onCancel, homepage, setProxyInProc
 						<div className='text-primary mb-2'>Signed As</div>
 						<div className='mb-4 p-[10px] border-2 border-dashed border-bg-secondary rounded-lg flex items-center gap-x-4'>
 							<div className='flex items-center justify-center w-10 h-10'>
-								<Identicon
-									className='image identicon mx-2'
-									value={userAddress}
+								<MetaMaskAvatar address={userAddress}
 									size={30}
-									theme={'polkadot'}
 								/>
 							</div>
 							<div className='flex flex-col gap-y-[6px]'>

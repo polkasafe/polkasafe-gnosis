@@ -20,11 +20,13 @@ const ConnectWallet = () => {
 			setLoading(true);
 			const ethProvider = await login();
 			const userData = await handleWeb3AuthConnection(ethProvider);
-			console.log('userData', userData);
+			if(userData?.multisigAddresses?.[0]?.address){
+				localStorage.setItem('active_multisig', userData.multisigAddresses[0].address);
+			}
 			setUserDetailsContextState((prevState: any) => {
 				return {
 					...prevState,
-					activeMultisig: userData?.multisigAddresses[0].data,
+					activeMultisig: userData?.multisigAddresses?.[0]?.address || '',
 					address: userData?.address,
 					addressBook: userData?.addressBook || [],
 					createdAt: userData?.created_at,
@@ -32,10 +34,10 @@ const ConnectWallet = () => {
 					multisigAddresses: userData?.multisigAddresses
 				};
 			});
-			setLoading(false);
 		} catch (err) {
 			console.log(err);
 		}
+		setLoading(false);
 	};
 
 	return (

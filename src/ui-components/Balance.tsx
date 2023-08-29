@@ -20,10 +20,14 @@ const Balance = ({ address, className }: Props) => {
 
 	const fetchEthBalance = async (address: string) => {
 		try {
-			const balance = ethers.utils.formatEther(
-				await ethProvider.getBalance(address)
+			if(!ethProvider){
+				return;
+			}
+			const balance = ethers?.utils?.formatEther(
+				await ethProvider?.getBalance(address)
 			);
-			setBalance(balance);
+			if(balance)
+				setBalance(balance);
 		} catch (err) {
 			console.log('Err from fetchEthBalance', err);
 		}

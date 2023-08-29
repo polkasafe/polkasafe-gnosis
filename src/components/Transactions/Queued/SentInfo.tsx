@@ -1,10 +1,10 @@
 // Copyright 2022-2023 @Polkasafe/polkaSafe-ui authors & contributors
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
-import Identicon from '@polkadot/react-identicon';
 import { Button, Collapse, Divider, Modal, Timeline } from 'antd';
 import classNames from 'classnames';
 import React, { FC, useState } from 'react';
+import { MetaMaskAvatar } from 'react-metamask-avatar';
 import CancelBtn from 'src/components/Multisig/CancelBtn';
 import RemoveBtn from 'src/components/Settings/RemoveBtn';
 import { useGlobalApiContext } from 'src/context/ApiContext';
@@ -15,7 +15,6 @@ import { ITxNotification } from 'src/types';
 import AddressComponent from 'src/ui-components/AddressComponent';
 import { ArrowRightIcon, CircleCheckIcon, CirclePlusIcon, CircleWatchIcon, CopyIcon, ExternalLinkIcon, OutlineCloseIcon } from 'src/ui-components/CustomIcons';
 import copyText from 'src/utils/copyText';
-import getEncodedAddress from 'src/utils/getEncodedAddress';
 import parseDecodedValue from 'src/utils/parseDecodedValue';
 import shortenAddress from 'src/utils/shortenAddress';
 import styled from 'styled-components';
@@ -120,7 +119,7 @@ const SentInfo: FC<ISentInfoProps> = ({ handleExecuteTransaction, delegate_id, i
 						<div
 							className='mt-3 flex items-center gap-x-4'
 						>
-							{recipientAddress && <Identicon size={30} theme='polkadot' value={recipientAddress} />}
+							{recipientAddress && <MetaMaskAvatar address={recipientAddress} size={30}/>}
 							<div
 								className='flex flex-col gap-y-[6px]'
 							>
@@ -134,13 +133,13 @@ const SentInfo: FC<ISentInfoProps> = ({ handleExecuteTransaction, delegate_id, i
 										className='flex items-center gap-x-3 font-normal text-xs leading-[13px] text-text_secondary'
 									>
 										<span>
-											{getEncodedAddress(recipientAddress, network)}
+											{recipientAddress}
 										</span>
 										<span
 											className='flex items-center gap-x-2 text-sm'
 										>
 											<button onClick={() => copyText(recipientAddress)}><CopyIcon className='hover:text-primary' /></button>
-											<a href={`https://${network}.subscan.io/account/${getEncodedAddress(recipientAddress, network)}`} target='_blank' rel="noreferrer" >
+											<a href={`https://${network}.subscan.io/account/${recipientAddress}`} target='_blank' rel="noreferrer" >
 												<ExternalLinkIcon />
 											</a>
 										</span>
@@ -211,7 +210,7 @@ const SentInfo: FC<ISentInfoProps> = ({ handleExecuteTransaction, delegate_id, i
 									{isProxyAddApproval ? 'Multisig to Add' : isProxyRemovalApproval ? 'Multisig to Remove' : ''}:
 								</span>
 								<p className='flex items-center gap-x-3 font-normal text-xs leading-[13px] text-text_secondary'>
-									<Identicon value={delegate_id} size={20} theme='polkadot' />
+									<MetaMaskAvatar address={delegate_id} size={20} />
 									<span className='text-white font-normal text-sm leading-[15px]'> {shortenAddress(delegate_id, 10)}</span>
 									<span className='flex items-center gap-x-2 text-sm'>
 										<button onClick={() => copyText(delegate_id)}><CopyIcon className='hover:text-primary' /></button>

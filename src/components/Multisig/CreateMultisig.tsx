@@ -101,6 +101,7 @@ const CreateMultisig: React.FC<IMultisigProps> = ({ onCancel, homepage = false }
 				const adapter = createAdapter('eth', ethProvider);
 				const txUrl = returnTxUrl(network);
 				const gnosisService = new GnosisSafeService(adapter, signer, txUrl);
+				console.log(gnosisService);
 				const safeAddress = await gnosisService.createSafe(
 					signatories as [string],
 					threshold!);

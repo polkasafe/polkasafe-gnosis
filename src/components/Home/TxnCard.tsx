@@ -2,15 +2,20 @@
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
 
-import { ArrowRightOutlined, ReloadOutlined } from '@ant-design/icons';
+import { ArrowRightOutlined } from '@ant-design/icons';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import noTransactionsHistory from 'src/assets/icons/no-transaction.svg';
 import noTransactionsQueued from 'src/assets/icons/no-transactions-queued.svg';
+import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { ArrowUpRightIcon, RightArrowOutlined } from 'src/ui-components/CustomIcons';
 import Loader from 'src/ui-components/Loader';
+import formatBnBalance from 'src/utils/formatBnBalance';
 import shortenAddress from 'src/utils/shortenAddress';
+
+import BottomLeftArrow from '../../assets/icons/bottom-left-arrow.svg';
+import TopRightArrow from '../../assets/icons/top-right-arrow.svg';
 
 const TxnCard = () => {
 
@@ -18,12 +23,15 @@ const TxnCard = () => {
 
 	const [queuedTransactions, setQueuedTransactions] = useState<any>([]);
 	const [completedTransactions, setCompletedTransactions] = useState<any>([]);
+	const { network } = useGlobalApiContext();
+	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
 		const queued = activeMultisigTxs?.filter((item: any) => item.executed !== true && item.type !== 'fund') || [];
 		setQueuedTransactions(queued);
 		const complete = activeMultisigTxs?.filter((item: any) => item.executed === true) || [];
 		setCompletedTransactions(complete);
+		setLoading(false);
 	}, [activeMultisig, activeMultisigTxs]);
 
 	return (
@@ -41,9 +49,10 @@ const TxnCard = () => {
 
 					<div className="flex flex-col bg-bg-main px-5 py-3 shadow-lg rounded-lg h-60 overflow-auto scale-90 w-[111%] origin-top-left">
 						<h1 className="text-primary text-sm mb-4">Pending Transactions</h1>
-						{queuedTransactions ? queuedTransactions.length > 0 ?
+						{loading ? <Loader size='large'/>: queuedTransactions ? queuedTransactions.length > 0 ?
 							queuedTransactions.filter((_: any, i: number) => i < 10).map((transaction: any, i: any) => {
 								const tx = transaction as any;
+								console.log(transaction);
 								return (
 									<Link to={`/transactions?tab=Queue#${transaction.txHash}`} key={i} className="flex items-center pb-2 mb-2">
 										<div className="flex flex-1 items-center">
@@ -51,21 +60,19 @@ const TxnCard = () => {
 											<div className='bg-[#FF79F2] text-[#FF79F2] bg-opacity-10 rounded-lg h-[38px] w-[38px] flex items-center justify-center'>
 												<ArrowUpRightIcon />
 											</div>
-											:
-											<div className='bg-waiting text-waiting bg-opacity-10 rounded-lg h-[38px] w-[38px] flex items-center justify-center'>
+											{/* <div className='bg-waiting text-waiting bg-opacity-10 rounded-lg h-[38px] w-[38px] flex items-center justify-center'>
 												<ReloadOutlined />
-											</div>
+											</div> */}
 											<div className='ml-3'>
 												<h1 className='text-md text-white'>
-													<span title={tx.to}>To: {tx.to}</span> : <span>Txn: {shortenAddress(tx.txHash)}</span>
+													<span>Txn: {shortenAddress(tx.txHash)}</span>
 												</h1>
-												{/* <p className='text-text_secondary text-xs'>{isProxyApproval ? 'Proxy Creation request in Process...' : 'In Process...'}</p> */}
+												<p className='text-text_secondary text-xs'>In Process...</p>
 											</div>
 										</div>
 
 										<div>
-											{/* <h1 className='text-md text-white'>- {decodedCallData && (decodedCallData?.args?.value || decodedCallData?.args?.call?.args?.value) ? parseDecodedValue({ network, value: String(decodedCallData?.args?.value || decodedCallData?.args?.call?.args?.value), withUnit: true }) : `? ${chainProperties[network].tokenSymbol}`}</h1> */}
-											{/* {!isNaN(Number(amountUSD)) && (decodedCallData?.args?.value || decodedCallData?.args?.call?.args?.value) && <p className='text-white text-right text-xs'>{(Number(amountUSD) * Number(parseDecodedValue({ network, value: String(decodedCallData?.args?.value || decodedCallData?.args?.call?.args?.value), withUnit: false }))).toFixed(2)} USD</p>} */}
+											<h1 className='text-md text-white'>{formatBnBalance(tx.amount_token, { numberAfterComma: 3, withThousandDelimitor: false }, network)}</h1>
 										</div>
 
 										<div className='flex justify-center items-center h-full px-2 text-text_secondary'>
@@ -96,22 +103,33 @@ const TxnCard = () => {
 					<div className="flex flex-col bg-bg-main px-5 py-3 shadow-lg rounded-lg h-60 scale-90 w-[111%] origin-top-left overflow-auto">
 						<h1 className="text-primary text-sm mb-4">Completed Transactions</h1>
 
-						{completedTransactions ? completedTransactions.length > 0 ?
-							completedTransactions.filter((_: any, i: number) => i < 10).map((transaction: { callHash: any; to: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | React.ReactFragment | React.ReactPortal | null | undefined; value: any; }, i: React.Key | null | undefined) => {
+						{loading ? <Loader size='large'/>: completedTransactions ? completedTransactions.length > 0 ?
+							completedTransactions.filter((_: any, i: number) => i < 10).map((transaction: any, i: React.Key | null | undefined) => {
+								const from = transaction?.receipt?.options?.from;
+								const sent = transaction.type=== 'sent';
 
 								return (
 									<Link to={`/transactions?tab=History#${transaction.callHash}`} key={i} className="flex items-center justify-between pb-2 mb-2">
 										<div className="flex items-center justify-between">
-											{/* <div className={`${sent ? 'bg-failure' : 'bg-success'} bg-opacity-10 rounded-lg p-2 mr-3 h-[38px] w-[38px] flex items-center justify-center`}><img src={sent ? TopRightArrow : BottomLeftArrow} alt="send"/></div> */}
+											<div className={`${sent ? 'bg-failure' : 'bg-success'} bg-opacity-10 rounded-lg p-2 mr-3 h-[38px] w-[38px] flex items-center justify-center`}><img src={sent ? TopRightArrow : BottomLeftArrow} alt="send"/></div>
 											<div>
-
-												<h1 className='text-md text-white'>To: {transaction.to}</h1>
+												{sent ?
+													<>
+														<h1 className='text-md text-white'>From: {shortenAddress(String(from))}</h1>
+														<h1 className='text-md text-white'>To: {shortenAddress(String(transaction.to) || '')}</h1>
+													</>
+													:
+													<>
+														<h1 className='text-md text-white'>To: {shortenAddress(String(transaction.to) || '')}</h1>
+													</>
+												}
 
 												{/* <p className='text-text_secondary text-xs'>{dayjs(transaction.created_at).format('D-MM-YY [at] HH:mm')}</p> */}
 											</div>
 										</div>
 										<div>
-											{/* {<h1 className='text-md text-failure'> {ethers.utils.parseUnits(transaction.value, 'ether').toString()} ETH</h1>} */}
+											{sent ? <h1 className='text-md text-failure'>-{formatBnBalance(transaction.amount_token, { numberAfterComma: 3, withThousandDelimitor: false }, network)}</h1>
+												: <h1 className='text-md text-success'>+{formatBnBalance(transaction.amount_token, { numberAfterComma: 3, withThousandDelimitor: false }, network)}</h1>}
 										</div>
 									</Link>
 								);
