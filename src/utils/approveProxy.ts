@@ -15,7 +15,6 @@ import { IMultisigAddress, UserDetailsContextType } from 'src/types';
 import queueNotification from 'src/ui-components/QueueNotification';
 
 import { calcWeight } from './calcWeight';
-import getEncodedAddress from './getEncodedAddress';
 import { getMultisigInfo } from './getMultisigInfo';
 import { notify } from './notify';
 import sendNotificationToAddresses from './sendNotificationToAddresses';
@@ -47,7 +46,7 @@ export async function approveProxy({ api, navigate, approvingAddress, callDataHe
 
 	// remove approving address address from signatories
 	const encodedSignatories = multisig.signatories.sort().map((signatory) => {
-		const encodedSignatory = getEncodedAddress(signatory, network);
+		const encodedSignatory = signatory;
 		if (!encodedSignatory) throw new Error('Invalid signatory address');
 		return encodedSignatory;
 	});
@@ -164,7 +163,7 @@ export async function approveProxy({ api, navigate, approvingAddress, callDataHe
 		}
 		else {
 			const params = JSON.parse(responseJSON.data?.events[0]?.params);
-			const proxyAddress = getEncodedAddress(params[0].value, network);
+			const proxyAddress = params[0].value;
 			await handleMultisigCreate(proxyAddress || '');
 		}
 	};

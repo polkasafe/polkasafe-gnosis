@@ -6,10 +6,8 @@ import { Signer } from '@polkadot/api/types';
 import { isWeb3Injected, web3Enable } from '@polkadot/extension-dapp';
 import { Injected, InjectedAccount, InjectedWindow } from '@polkadot/extension-inject/types';
 import { useEffect, useState } from 'react';
-import { useGlobalApiContext } from 'src/context/ApiContext';
 import { APP_NAME } from 'src/global/appName';
 import { Wallet } from 'src/types';
-import getEncodedAddress from 'src/utils/getEncodedAddress';
 
 type Response = {
 	noExtension: boolean;
@@ -28,7 +26,6 @@ const initResponse: Response = {
 };
 
 const useGetAllAccounts = () => {
-	const { network } = useGlobalApiContext();
 
 	const [response, setResponse] = useState<Response>(initResponse);
 
@@ -69,10 +66,6 @@ const useGetAllAccounts = () => {
 		const accounts = await injected.accounts.get();
 
 		if (accounts.length === 0) return;
-
-		accounts.forEach((account) => {
-			account.address = getEncodedAddress(account.address, network) || account.address;
-		});
 
 		return accounts;
 	};

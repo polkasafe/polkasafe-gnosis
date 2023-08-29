@@ -2,9 +2,9 @@
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
 
-import Identicon from '@polkadot/react-identicon';
 import classNames from 'classnames';
 import React, { FC } from 'react';
+import { MetaMaskAvatar } from 'react-metamask-avatar';
 import shortenAddress from 'src/utils/shortenAddress';
 import styled from 'styled-components';
 
@@ -33,11 +33,8 @@ const Address: FC<IAddressProps> = (props) => {
 		)}>
 			{
 				!disableIdenticon ?
-					<Identicon
-						className='image identicon'
-						value={address}
+					<MetaMaskAvatar address={address}
 						size={identiconSize ? identiconSize : 30}
-						theme={'polkadot'}
 					/>
 					: null
 			}

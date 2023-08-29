@@ -2,9 +2,9 @@
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
 
-import Identicon from '@polkadot/react-identicon';
 import { Badge, Divider, Modal, Tooltip } from 'antd';
 import React, { FC, useState } from 'react';
+import { MetaMaskAvatar } from 'react-metamask-avatar';
 import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useModalContext } from 'src/context/ModalContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
@@ -81,11 +81,8 @@ const AddAddress: FC<IAddressProps> = ({ address, className }) => {
 									{name} {index === 0 && <Tooltip title={<span className='text-sm text-text_secondary'>Your Wallet Address</span>}><Badge className='ml-2' status='success' /></Tooltip>}
 								</p>
 								<div className='col-span-2 flex items-center'>
-									<Identicon
-										className='image identicon mx-2'
-										value={address}
+									<MetaMaskAvatar address={address}
 										size={30}
-										theme={'polkadot'}
 									/>
 									<span title={address} className='hidden sm:block ml-[6px] max-w-md text-ellipsis overflow-hidden'>{address}</span>
 									<div className='ml-[14px] text-text_secondary text-base flex items-center gap-x-[6px]'>

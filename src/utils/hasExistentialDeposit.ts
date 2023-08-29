@@ -6,12 +6,11 @@ import { ApiPromise } from '@polkadot/api';
 import { chainProperties } from 'src/global/networkConstants';
 
 import formatBnBalance from './formatBnBalance';
-import getEncodedAddress from './getEncodedAddress';
 
 export default async function hasExistentialDeposit(api: ApiPromise, address: string, network: string): Promise<boolean> {
 	if (!api || !address || !network) return false;
 
-	const encodedAddress = getEncodedAddress(address, network);
+	const encodedAddress =address;
 	if (!encodedAddress) return false;
 
 	try {

@@ -10,7 +10,7 @@ export const returnTxUrl = (network?: NETWORK): string => {
 	} else if (network === NETWORK.POLYGON) {
 		return 'https://safe-transaction-polygon.safe.global';
 	} else if (network === NETWORK.ASTAR) {
-		return 'http://143.110.188.163:8000/txs';
+		return 'https://143.110.188.163:8000/txs';
 	} else {
 		return '';
 	}

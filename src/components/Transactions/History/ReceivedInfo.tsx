@@ -1,16 +1,15 @@
 // Copyright 2022-2023 @Polkasafe/polkaSafe-ui authors & contributors
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
-import Identicon from '@polkadot/react-identicon';
 import { Divider, Spin } from 'antd';
 import { ethers } from 'ethers';
 import React, { FC } from 'react';
+import { MetaMaskAvatar } from 'react-metamask-avatar';
 import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import AddressComponent from 'src/ui-components/AddressComponent';
 import { CopyIcon, ExternalLinkIcon } from 'src/ui-components/CustomIcons';
 import copyText from 'src/utils/copyText';
-import getEncodedAddress from 'src/utils/getEncodedAddress';
 import shortenAddress from 'src/utils/shortenAddress';
 
 interface IReceivedInfoProps {
@@ -53,7 +52,7 @@ const ReceivedInfo: FC<IReceivedInfoProps> = ({ amount, to, date, from, callHash
 			<div
 				className='mt-3 flex items-center gap-x-4'
 			>
-				<Identicon size={30} value={from} theme='polkadot' />
+				<MetaMaskAvatar address={from }size={30} />
 				<div
 					className='flex flex-col gap-y-[6px]'
 				>
@@ -72,7 +71,7 @@ const ReceivedInfo: FC<IReceivedInfoProps> = ({ amount, to, date, from, callHash
 							className='flex items-center gap-x-2 text-sm'
 						>
 							<button onClick={() => copyText(from)}><CopyIcon className='hover:text-primary' /></button>
-							<a href={`https://${network}.subscan.io/account/${getEncodedAddress(from, network)}`} target='_blank' rel="noreferrer" >
+							<a href={`https://${network}.subscan.io/account/${from}`} target='_blank' rel="noreferrer" >
 								<ExternalLinkIcon />
 							</a>
 						</span>

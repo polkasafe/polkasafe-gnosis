@@ -19,19 +19,20 @@ import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { returnTxUrl } from 'src/global/gnosisService';
 import { GnosisSafeService } from 'src/services';
+import Spinner from 'src/ui-components/Loader';
 import styled from 'styled-components';
 
 const Home = () => {
 	const { address, multisigAddresses, createdAt, addressBook, activeMultisig } = useGlobalUserDetailsContext();
 	const [openNewUserModal, setOpenNewUserModal] = useState(false);
 	const [hasProxy] = useState<boolean>(true);
-
 	const { web3AuthUser, ethProvider } = useGlobalWeb3Context();
 	const { network } = useGlobalApiContext();
 
 	const [transactionLoading] = useState(false);
 	const [isOnchain, setIsOnchain] = useState(true);
 	const [openTransactionModal, setOpenTransactionModal] = useState(false);
+	const [loading, setLoading] = useState<boolean>(true);
 
 	useEffect(() => {
 		if ((dayjs(createdAt) > dayjs().subtract(15, 'seconds')) && addressBook?.length === 1) {
@@ -41,6 +42,7 @@ const Home = () => {
 	}, [createdAt]);
 
 	useEffect(() => {
+		setLoading(true);
 		const handleNewTransaction = async () => {
 			if (!activeMultisig) return;
 
@@ -61,6 +63,7 @@ const Home = () => {
 					setIsOnchain(false);
 				}
 			}
+			setLoading(false);
 		};
 		handleNewTransaction();
 
@@ -73,9 +76,7 @@ const Home = () => {
 				address ?
 					<>
 						<NewUserModal open={openNewUserModal} onCancel={() => setOpenNewUserModal(false)} />
-						{multisigAddresses.length > 0
-							//&& multisigAddresses.filter((multisig) => multisig.network === network &&
-							//!multisigSettings?.[multisig.address]?.deleted && !multisig.disabled).length > 0
+						{ loading ? <Spinner size='large' /> :multisigAddresses.length > 0
 							?
 							<section>
 								<div className="mb-0 grid grid-cols-16 gap-4 grid-row-2 lg:grid-row-1 h-auto">

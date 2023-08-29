@@ -14,7 +14,6 @@ import { NotificationStatus } from 'src/types';
 import queueNotification from 'src/ui-components/QueueNotification';
 
 import { calcWeight } from './calcWeight';
-import getEncodedAddress from './getEncodedAddress';
 import { getMultisigInfo } from './getMultisigInfo';
 import getSubstrateAddress from './getSubstrateAddress';
 import { inputToBn } from './inputToBn';
@@ -50,7 +49,7 @@ export async function approveAddProxy({ api, approvingAddress, callDataHex, call
 
 	// remove approving address address from signatories
 	const encodedSignatories = multisig.signatories.sort().map((signatory) => {
-		const encodedSignatory = getEncodedAddress(signatory, network);
+		const encodedSignatory = signatory;
 		if (!encodedSignatory) throw new Error('Invalid signatory address');
 		return encodedSignatory;
 	});

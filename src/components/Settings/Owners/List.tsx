@@ -1,9 +1,9 @@
 // Copyright 2022-2023 @Polkasafe/polkaSafe-ui authors & contributors
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
-import Identicon from '@polkadot/react-identicon';
 import { Button, Divider, Modal } from 'antd';
 import React, { useState } from 'react';
+import { MetaMaskAvatar } from 'react-metamask-avatar';
 import EditAddress from 'src/components/AddressBook/Edit';
 import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useModalContext } from 'src/context/ModalContext';
@@ -11,7 +11,6 @@ import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { DEFAULT_ADDRESS_NAME } from 'src/global/default';
 import { CopyIcon, DeleteIcon, EditIcon, ExternalLinkIcon, OutlineCloseIcon } from 'src/ui-components/CustomIcons';
 import copyText from 'src/utils/copyText';
-import getEncodedAddress from 'src/utils/getEncodedAddress';
 import shortenAddress from 'src/utils/shortenAddress';
 import styled from 'styled-components';
 
@@ -72,11 +71,8 @@ const ListOwners = ({ className, disabled }: { className?: string, disabled?: bo
 						{addressBook.find((item: any) => item.address === userAddress)?.name || DEFAULT_ADDRESS_NAME}
 					</p>
 					<div className='col-span-2 flex items-center'>
-						<Identicon
-							className='image identicon mx-2'
-							value={userAddress}
+						<MetaMaskAvatar address={userAddress}
 							size={30}
-							theme={'polkadot'}
 						/>
 						<span title={userAddress} className='hidden sm:block ml-[6px] max-w-md text-ellipsis overflow-hidden'>{userAddress}</span>
 						<div className='ml-[14px] text-text_secondary text-base flex items-center gap-x-[6px]'>
@@ -99,7 +95,7 @@ const ListOwners = ({ className, disabled }: { className?: string, disabled?: bo
 			{
 				signatories?.filter((item: any) => item !== userAddress).map((address: any, index: any) => {
 					const name = addressBook.find((item: any) => item.address === address)?.name || DEFAULT_ADDRESS_NAME;
-					const encodedAddress = getEncodedAddress(address, network);
+					const encodedAddress = address;
 					return (
 						<article key={index}>
 							<div className='grid grid-cols-4 gap-x-5 py-6 px-4 text-white'>
@@ -107,11 +103,8 @@ const ListOwners = ({ className, disabled }: { className?: string, disabled?: bo
 									{name}
 								</p>
 								<div className='col-span-2 flex items-center'>
-									<Identicon
-										className='image identicon mx-2'
-										value={encodedAddress}
+									<MetaMaskAvatar address={encodedAddress}
 										size={30}
-										theme={'polkadot'}
 									/>
 									<span title={encodedAddress || address} className='hidden sm:block ml-[6px] max-w-md text-ellipsis overflow-hidden'>{shortenAddress(encodedAddress || address, 10)}</span>
 									<div className='ml-[14px] text-text_secondary text-base flex items-center gap-x-[6px]'>

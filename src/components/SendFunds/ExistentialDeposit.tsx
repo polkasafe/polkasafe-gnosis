@@ -19,7 +19,6 @@ import Balance from 'src/ui-components/Balance';
 import BalanceInput from 'src/ui-components/BalanceInput';
 import { CopyIcon, QRIcon, WarningCircleIcon } from 'src/ui-components/CustomIcons';
 import copyText from 'src/utils/copyText';
-import getEncodedAddress from 'src/utils/getEncodedAddress';
 import getSubstrateAddress from 'src/utils/getSubstrateAddress';
 import styled from 'styled-components';
 
@@ -31,7 +30,7 @@ const ExistentialDeposit = ({ className, onCancel, setNewTxn }: { className?: st
 	const { activeMultisig, multisigAddresses, addressBook } = useGlobalUserDetailsContext();
 	const { web3AuthUser } = useGlobalWeb3Context();
 
-	const [selectedSender, setSelectedSender] = useState(getEncodedAddress(addressBook[0].address, network) || '');
+	const [selectedSender, setSelectedSender] = useState(addressBook[0].address || '');
 	const [amount, setAmount] = useState(new BN(0));
 	const [loading] = useState(false);
 	const [showQrModal, setShowQrModal] = useState(false);
@@ -141,7 +140,7 @@ const ExistentialDeposit = ({ className, onCancel, setNewTxn }: { className?: st
 														id='sender'
 														placeholder="Send from Address.."
 														onChange={(value) => setSelectedSender(value)}
-														defaultValue={getEncodedAddress(addressBook[0]?.address, network) || ''}
+														defaultValue={addressBook[0]?.address || ''}
 													/>
 													<div className='absolute right-2'>
 														<button onClick={() => copyText(selectedSender)}>

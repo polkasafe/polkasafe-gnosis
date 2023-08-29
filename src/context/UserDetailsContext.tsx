@@ -50,7 +50,7 @@ export const UserDetailsProvider = ({ children }: React.PropsWithChildren<{}>) =
 			method: 'POST'
 		}).then(res => res.json());
 
-		if (data?.multisigAddresses.length > 0) localStorage.setItem('activeMultisig', data?.multisigAddresses[0].address);
+		if (data?.multisigAddresses.length > 0) localStorage.setItem('active_multisig', data?.multisigAddresses[0].address);
 
 		setUserDetailsContextState((prevState) => {
 			return {

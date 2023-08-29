@@ -3,11 +3,9 @@
 // of the Apache-2.0 license. See the LICENSE file for details.
 import { Injected, InjectedAccount, InjectedWindow } from '@polkadot/extension-inject/types';
 import React, { useEffect } from 'react';
-import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { APP_NAME } from 'src/global/appName';
 import { Wallet } from 'src/types';
-import getEncodedAddress from 'src/utils/getEncodedAddress';
 
 interface IWalletButtons {
 	setAccounts: React.Dispatch<React.SetStateAction<InjectedAccount[]>>
@@ -18,7 +16,6 @@ interface IWalletButtons {
 }
 
 const WalletButtons = ({ setAccounts, className, setNoAccounts, setNoExtenstion }: IWalletButtons) => {
-	const { network } = useGlobalApiContext();
 	const { loggedInWallet } = useGlobalUserDetailsContext();
 
 	const getAccounts = async (chosenWallet: Wallet): Promise<undefined> => {
@@ -56,10 +53,6 @@ const WalletButtons = ({ setAccounts, className, setNoAccounts, setNoExtenstion 
 			setNoAccounts?.(true);
 			return;
 		}
-
-		accounts.forEach((account) => {
-			account.address = getEncodedAddress(account.address, network) || account.address;
-		});
 
 		setAccounts(accounts);
 

@@ -3,16 +3,13 @@
 // of the Apache-2.0 license. See the LICENSE file for details.
 import { QrDisplayAddress } from '@polkadot/react-qr';
 import React, { useState } from 'react';
-import { useGlobalApiContext } from 'src/context/ApiContext';
-import getEncodedAddress from 'src/utils/getEncodedAddress';
 
 const AddressQr = ({ address }: { address: string }) => {
-	const { network } = useGlobalApiContext();
 	const [genesisHash] = useState('');
 
 	return (
 		<div className='flex flex-col items-center'>
-			<QrDisplayAddress size={150} address={getEncodedAddress(address, network) || address} genesisHash={genesisHash} />
+			<QrDisplayAddress size={150} address={address} genesisHash={genesisHash} />
 		</div>
 	);
 };

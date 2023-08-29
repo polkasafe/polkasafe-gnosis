@@ -124,12 +124,6 @@ const AppLayout = ({ className }: {className?: string}) => {
 					{iframeVisibility && isAppsPage ? (
 						<div className='w-full rounded-lg'>
 							{!!loading && <Loader size='large' />}
-							{/* <iframe
-								id='Dapp'
-								onLoad={handleIframeLoad}
-								src={IframeUrl}
-								className={`w-full h-[calc(100%)] ${loading ? 'hidden':'block'}`}
-							></iframe> */}
 							{ !hideSlider &&  <img
 								src={longIframe}
 								alt=''

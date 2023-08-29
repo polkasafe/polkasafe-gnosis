@@ -96,8 +96,14 @@ export class GnosisSafeService {
 
 			const safeTxHash = await safeSdk.getTransactionHash(safeTransaction);
 			let signature = await safeSdk.signTransaction(safeTransaction) as any;
-			signature = Object.fromEntries(signature.signatures.entries());
 
+			signature = Object.fromEntries(signature.signatures.entries());
+			console.log(multisigAddress,
+				safeTransaction.data,
+				safeTxHash,
+				senderAddress,
+				signature[signer.toLowerCase()].data
+			);
 			await this.safeService.proposeTransaction({
 				safeAddress: multisigAddress,
 				safeTransactionData: safeTransaction.data,
@@ -108,7 +114,8 @@ export class GnosisSafeService {
 
 			return safeTxHash;
 		} catch (err) {
-			console.log('error from createSafeTx', err);
+			console.log(err);
+			// console.log('error from createSafeTx', err);
 			return null;
 		}
 	};

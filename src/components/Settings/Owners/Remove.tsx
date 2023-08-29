@@ -1,10 +1,9 @@
 // Copyright 2022-2023 @Polkasafe/polkaSafe-ui authors & contributors
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
-
-import Identicon from '@polkadot/react-identicon';
 import { Button, Form, Spin, Tooltip } from 'antd';
 import React, { useState } from 'react';
+import { MetaMaskAvatar } from 'react-metamask-avatar';
 import AddMultisigSVG from 'src/assets/add-multisig.svg';
 import FailedTransactionLottie from 'src/assets/lottie-graphics/FailedTransaction';
 import LoadingLottie from 'src/assets/lottie-graphics/Loading';
@@ -153,7 +152,7 @@ const RemoveOwner = ({ addressToRemove, oldThreshold, oldSignatoriesLength, onCa
 								</section>
 								<div className='text-primary text-sm mb-2'>Remove Signatory*</div>
 								<div className='flex items-center p-3 mb-4 text-text_secondary border-dashed border-2 border-bg-secondary rounded-lg gap-x-5'>
-									<Identicon size={20} theme='polkadot' value={addressToRemove} />
+									<MetaMaskAvatar address={addressToRemove }size={20} />
 									{addressToRemove}
 								</div>
 								<div className='text-primary text-sm mb-2'>New Threshold</div>

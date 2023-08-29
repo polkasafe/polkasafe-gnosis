@@ -10,7 +10,6 @@ import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { CopyIcon, ExternalLinkIcon } from 'src/ui-components/CustomIcons';
 import copyText from 'src/utils/copyText';
-import getEncodedAddress from 'src/utils/getEncodedAddress';
 import shortenAddress from 'src/utils/shortenAddress';
 
 const ManageMultisig = () => {
@@ -36,7 +35,7 @@ const ManageMultisig = () => {
 										<div className='flex items-center text-text_secondary'>
 											{shortenAddress(multisig?.address || '', 10)}
 											<button className='ml-2 mr-1' onClick={() => copyText(multisig?.address)}><CopyIcon /></button>
-											<a href={`https://${network}.subscan.io/account/${getEncodedAddress(multisig?.address || '', network)}`} target='_blank' rel="noreferrer" >
+											<a href={`https://${network}.subscan.io/account/${multisig?.address}`} target='_blank' rel="noreferrer" >
 												<ExternalLinkIcon />
 											</a>
 										</div>
@@ -47,7 +46,7 @@ const ManageMultisig = () => {
 										<div className='flex items-center text-text_secondary'>
 											{shortenAddress(multisig?.proxy || '', 10)}
 											<button className='ml-2 mr-1' onClick={() => copyText(multisig?.proxy!)}><CopyIcon /></button>
-											<a href={`https://${network}.subscan.io/account/${getEncodedAddress(multisig?.proxy || '', network)}`} target='_blank' rel="noreferrer" >
+											<a href={`https://${network}.subscan.io/account/${multisig?.proxy}`} target='_blank' rel="noreferrer" >
 												<ExternalLinkIcon />
 											</a>
 										</div>

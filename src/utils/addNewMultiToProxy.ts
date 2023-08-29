@@ -12,7 +12,6 @@ import queueNotification from 'src/ui-components/QueueNotification';
 import _createMultisig from './_createMultisig';
 import { addNewTransaction } from './addNewTransaction';
 import { calcWeight } from './calcWeight';
-import getEncodedAddress from './getEncodedAddress';
 import { IMultiTransferResponse } from './initMultisigTransfer';
 import { notify } from './notify';
 import sendNotificationToAddresses from './sendNotificationToAddresses';
@@ -40,14 +39,14 @@ export async function addNewMultiToProxy({ proxyAddress, oldMultisigAddress, set
 	});
 
 	const encodedSignatories = oldSignatories.sort().map((signatory) => {
-		const encodedSignatory = getEncodedAddress(signatory, network);
+		const encodedSignatory = signatory;
 		if (!encodedSignatory) throw new Error('Invalid signatory address');
 		return encodedSignatory;
 	});
 
 	const otherSignatories = encodedSignatories.filter((sig) => sig !== senderAddress);
 	const multisigResponse = _createMultisig(newSignatories, newThreshold, chainProperties[network].decimals);
-	const newMultisigAddress = getEncodedAddress(multisigResponse?.multisigAddress || '', network);
+	const newMultisigAddress = multisigResponse?.multisigAddress || '';
 	const addProxyTx = api.tx.proxy.addProxy(newMultisigAddress || '', 'Any', 0);
 	const proxyTx = api.tx.proxy.proxy(proxyAddress, null, addProxyTx);
 

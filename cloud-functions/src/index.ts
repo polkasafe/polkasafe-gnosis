@@ -2,7 +2,7 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import { v4 as uuidv4 } from 'uuid';
 import cors = require('cors');
-import { cryptoWaitReady, decodeAddress, encodeAddress, signatureVerify } from '@polkadot/util-crypto';
+import { addressEq, cryptoWaitReady, decodeAddress, encodeAddress, signatureVerify } from '@polkadot/util-crypto';
 import { u8aToHex } from '@polkadot/util';
 import {
 	IAddressBookItem,
@@ -497,6 +497,7 @@ export const connectAddressEth = functions.https.onRequest(async (req, res) => {
 		const address: string = substrateAddress !== '' ? substrateAddress : req.get('x-address') || '';
 
 		const multisigAddresses = await getMultisigAddressesByAddress(address);
+		console.log(multisigAddresses);
 
 		const addressRef = firestoreDB.collection('addresses').doc(address);
 		const doc = await addressRef.get();
@@ -1423,8 +1424,8 @@ export const getNotifications = functions.https.onRequest(async (req, res) => {
 		const address = req.get('x-address');
 		const network = String(req.get('x-network'));
 
-		const { isValid, error } = await isValidRequest(address, signature, network);
-		if (!isValid) return res.status(400).json({ error });
+		// const { isValid, error } = await isValidRequest(address, signature, network);
+		// if (!isValid) return res.status(400).json({ error });
 
 		try {
 			const substrateAddress = getSubstrateAddress(String(address));

@@ -26,7 +26,6 @@ import BalanceInput from 'src/ui-components/BalanceInput';
 import { LineIcon, OutlineCloseIcon, SquareDownArrowIcon } from 'src/ui-components/CustomIcons';
 import queueNotification from 'src/ui-components/QueueNotification';
 import { addToAddressBook } from 'src/utils/addToAddressBook';
-import getEncodedAddress from 'src/utils/getEncodedAddress';
 import getSubstrateAddress from 'src/utils/getSubstrateAddress';
 import styled from 'styled-components';
 
@@ -49,7 +48,7 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 	const [note, setNote] = useState<string>('');
 	const [loading, setLoading] = useState(false);
 	const [amount, setAmount] = useState('0');
-	const [recipientAddress, setRecipientAddress] = useState(defaultSelectedAddress ? getEncodedAddress(defaultSelectedAddress, network) || '' : address || '');
+	const [recipientAddress, setRecipientAddress] = useState(defaultSelectedAddress ? defaultSelectedAddress || '' : address || '');
 	const [autocompleteAddresses, setAutoCompleteAddresses] = useState<DefaultOptionType[]>(
 		addressBook?.map((account: any) => ({
 			label: <AddressComponent address={account.address} />,
@@ -105,8 +104,10 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 						'x-source': 'polkasafe'
 					},
 					method: 'POST'
-				}).then(res => res.json());
-
+				}).then(res => res.json()).finally(() => {
+					onCancel?.();
+					setLoading(false);
+				});
 				if (multisigError) {
 					queueNotification({
 						header: 'Error.',
@@ -114,26 +115,27 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 						status: NotificationStatus.ERROR
 					});
 				}
-				setSuccess(true);
-				await fetchMultisigData();
 				queueNotification({
 					header: 'Success',
 					message: 'New Transaction Created.',
 					status: NotificationStatus.SUCCESS
 				});
+				setSuccess(true);
+				await fetchMultisigData();
+
 			}
 		} catch (err) {
 			console.log(err);
 			setNewTxn?.(prev => !prev);
 			onCancel?.();
 			setFailure(true);
+			setLoading(false);
 			queueNotification({
 				header: 'Error.',
 				message: 'Please try again.',
 				status: NotificationStatus.ERROR
 			});
 		}
-		setLoading(false);
 	};
 
 	const AddAddressModal: FC = () => {
