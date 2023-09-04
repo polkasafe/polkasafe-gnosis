@@ -48,9 +48,9 @@ const RemoveSignatoryModal = ({ address, className, signatoriesLength, threshold
 const ListOwners = ({ className, disabled }: { className?: string, disabled?: boolean }) => {
 	const { network } = useGlobalApiContext();
 	const { openModal } = useModalContext();
-	const { multisigAddresses, activeMultisig, addressBook, address: userAddress } = useGlobalUserDetailsContext();
-	const multisig = multisigAddresses?.find((item: any) => item.address === activeMultisig || item.proxy === activeMultisig);
-	const signatories = multisig?.signatories;
+	const { multisigAddresses, activeMultisig, addressBook, address: userAddress, activeMultisigData } = useGlobalUserDetailsContext();
+	const multisig = multisigAddresses?.find((item: any) => item.address === activeMultisig);
+	const signatories = activeMultisigData?.signatories || multisig?.signatories;
 
 	return (
 		<div className='text-sm font-medium leading-[15px] '>

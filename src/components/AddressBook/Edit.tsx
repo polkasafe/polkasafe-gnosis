@@ -18,7 +18,7 @@ import queueNotification from 'src/ui-components/QueueNotification';
 const EditAddress = ({ addressToEdit, nameToEdit }: { addressToEdit: string, nameToEdit?: string }) => {
 	const { toggleVisibility } = useModalContext();
 	const [loading, setLoading] = useState<boolean>(false);
-	const { setUserDetailsContextState } = useGlobalUserDetailsContext();
+	const { setUserDetailsContextState, addressBook } = useGlobalUserDetailsContext();
 	const [newName, setNewName] = useState<string>(nameToEdit || '');
 	const { network } = useGlobalApiContext();
 
@@ -34,8 +34,7 @@ const EditAddress = ({ addressToEdit, nameToEdit }: { addressToEdit: string, nam
 				return;
 			}
 			else {
-
-				const addAddressRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/addToAddressBook`, {
+				const addAddressRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/addToAddressBookEth`, {
 					body: JSON.stringify({
 						address: addressToEdit,
 						name: newName
@@ -57,6 +56,8 @@ const EditAddress = ({ addressToEdit, nameToEdit }: { addressToEdit: string, nam
 					return;
 				}
 
+				console.log(addAddressData);
+
 				if (addAddressData) {
 					setUserDetailsContextState((prevState: any) => {
 						return {
@@ -72,16 +73,14 @@ const EditAddress = ({ addressToEdit, nameToEdit }: { addressToEdit: string, nam
 					});
 					setLoading(false);
 					toggleVisibility();
-
 				}
-
 			}
 		} catch (error) {
 			console.log('ERROR', error);
 			setLoading(false);
 		}
 	};
-
+	console.log(addressBook);
 	return (
 		<Form
 			className='my-0 w-[560px]'

@@ -53,14 +53,16 @@ export interface UserDetailsContextType {
 	address: string;
 	createdAt: Date;
 	fetchUserData?: any;
-	fetchMultisigData?: any;
+	fetchMultisigTransactionData?: any;
 	multisigAddresses: IMultisigAddress[];
 	addressBook: IAddressBookItem[];
 	setUserDetailsContextState: Dispatch<SetStateAction<UserDetailsContextType>>;
 	activeMultisigData?: any;
 	activeMultisigTxs?: any[]
 	setLoading?: any
-	loading?: boolean
+	loading?: boolean,
+	setActiveMultisigData: any
+	updateCurrentMultisigData:any
 }
 
 export enum Wallet {
@@ -186,7 +188,9 @@ export interface ITransaction {
 			lastNotified: Date;
 		}
 	},
-	type?: string
+	type?: string;
+	txHash?:string;
+	executor?:string
 }
 
 export interface INotification {

@@ -1,16 +1,12 @@
 // Copyright 2022-2023 @Polkasafe/polkaSafe-ui authors & contributors
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
-import { EthersAdapter } from '@safe-global/protocol-kit';
 import { Form, Input } from 'antd';
 import classNames from 'classnames';
 import React, { useEffect, useRef, useState } from 'react';
 import NetworkCard from 'src/components/NetworksDropdown/NetworkCard';
 import { useGlobalWeb3Context } from 'src/context';
-import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
-import { returnTxUrl } from 'src/global/gnosisService';
-import { GnosisSafeService } from 'src/services';
 import { CheckOutlined, CircleArrowDownIcon } from 'src/ui-components/CustomIcons';
 
 import Loader from '../../UserFlow/Loader';
@@ -24,8 +20,7 @@ interface Props {
 
 const NameAddress = ({ multisigAddress, setMultisigAddress, multisigName, setMultisigName }: Props) => {
 	const { address } = useGlobalUserDetailsContext();
-	const { ethProvider } = useGlobalWeb3Context();
-	const { network } = useGlobalApiContext();
+	const { safeService } = useGlobalWeb3Context();
 	const { multisigAddresses } = useGlobalUserDetailsContext();
 	const [isVisible, toggleVisibility] = useState(false);
 	const isMouseEnter = useRef(false);
@@ -35,25 +30,18 @@ const NameAddress = ({ multisigAddress, setMultisigAddress, multisigName, setMul
 	console.log('multisigAddress', multisigAddress);
 
 	useEffect(() => {
+		if(!safeService){
+			return;
+		}
 		const getAllSafes = async () => {
-			console.log(ethProvider);
-			const signer = ethProvider.getSigner();
-			const adapter = new EthersAdapter({
-				ethers: ethProvider,
-				signerOrProvider: signer
-			});
-			const txUrl = returnTxUrl(network);
-			const gnosisService = new GnosisSafeService(adapter, signer, txUrl);
-
-			const safes = await gnosisService.getAllSafesByOwner(address);
+			const safes = await safeService.getAllSafesByOwner(address);
 			const multiSigs = multisigAddresses.map(item => item.address);
-			const filteredSafes = safes?.safes.filter(item => !multiSigs.includes(item)) || [];
+			const filteredSafes = safes?.safes.filter((item:any) => !multiSigs.includes(item)) || [];
 			setMultisigAddress(filteredSafes[0]);
 			setAllSafes(filteredSafes!);
 		};
 		getAllSafes();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+	}, [address, multisigAddresses, safeService, setMultisigAddress]);
 
 	return (
 		<div>

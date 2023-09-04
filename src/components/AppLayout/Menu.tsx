@@ -145,10 +145,10 @@ const Menu: FC<Props> = ({ className }) => {
 									setUserDetailsContextState((prevState: any) => {
 										return {
 											...prevState,
-											activeMultisig: multisig.proxy ? multisig.proxy : multisig.address,
-											isProxy: multisig.proxy ? true : false
+											activeMultisig: multisig.address
 										};
 									});
+									localStorage.setItem('active_multisig', multisig.address);
 								}}>
 									<MetaMaskAvatar address={multisig.address}
 										size={23}

@@ -22,17 +22,15 @@ import SentInfo from './SentInfo';
 const LocalizedFormat = require('dayjs/plugin/localizedFormat');
 dayjs.extend(LocalizedFormat);
 
-const Transaction: FC<ITransaction> = ({ amount_token, token, created_at, to, from, callHash, amount_usd, type }) => {
+const Transaction: FC<ITransaction> = ({ amount_token, token, created_at, to, from, txHash, amount_usd, type, executor }) => {
 	const { network } = useGlobalApiContext();
-
 	const [transactionInfoVisible, toggleTransactionVisible] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [note, setNote] = useState<string>('');
-
 	const location = useLocation();
 	const hash = location.hash.slice(1);
-
-	console.log('multisig?.type, to', type);
+	const isSentType =  type === 'Sent' || type === 'MULTISIG_TRANSACTION';
+	const isFundType = type === 'ETHEREUM_TRANSACTION';
 
 	const handleGetHistoryNote = async () => {
 		try {
@@ -47,7 +45,7 @@ const Transaction: FC<ITransaction> = ({ amount_token, token, created_at, to, fr
 				setLoading(true);
 				const noteRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/getTransactionNote`, {
 					body: JSON.stringify({
-						callHash
+						txHash
 					}),
 					headers: firebaseFunctionsHeader(network),
 					method: 'POST'
@@ -78,7 +76,7 @@ const Transaction: FC<ITransaction> = ({ amount_token, token, created_at, to, fr
 				bordered={false}
 				defaultActiveKey={[`${hash}`]}
 			>
-				<Collapse.Panel showArrow={false} key={`${callHash}`} header={
+				<Collapse.Panel showArrow={false} key={`${txHash}`} header={
 					<div
 						onClick={() => {
 							if (!transactionInfoVisible) {
@@ -92,7 +90,7 @@ const Transaction: FC<ITransaction> = ({ amount_token, token, created_at, to, fr
 					>
 						<p className='col-span-3 flex items-center gap-x-3'>
 							{
-								type === 'sent' ?
+								type === 'Sent' ||  type === 'removeOwner' ||  type === 'MULTISIG_TRANSACTION'?
 									<span
 										className='flex items-center justify-center w-9 h-9 bg-success bg-opacity-10 p-[10px] rounded-lg text-red-500'
 									>
@@ -106,25 +104,32 @@ const Transaction: FC<ITransaction> = ({ amount_token, token, created_at, to, fr
 									</span>
 							}
 							<span>
-								{type}
+								{type === 'ETHEREUM_TRANSACTION'
+									? 'Fund'
+									: type === 'Sent'
+									|| type === 'MULTISIG_TRANSACTION'
+										? 'Sent'
+										: type === 'removeOwner'
+											? 'Removed Owner'
+											: type === 'addOwnerWithThreshold'
+												? 'Added Owner'
+												: type}
 							</span>
 						</p>
-						<p className='col-span-2 flex items-center gap-x-[6px]'>
+						{(isFundType || isSentType) && <p className='col-span-2 flex items-center gap-x-[6px]'>
 							<ParachainIcon src={chainProperties[network].logo} />
 							<span
 								className={classNames(
 									'font-normal text-xs leading-[13px] text-failure',
 									{
-										'text-success': type === 'fund'
+										'text-success': isFundType
 									}
 								)}
 							>
-								{type === 'sent' ? '-' : '+'}{ethers.utils.formatEther(amount_token.toString()).toString()} {token}
+								{isSentType ? '-' : '+'} {ethers?.utils?.formatEther(amount_token?.toString())?.toString()} {token}
 							</span>
-						</p>
-						<p className='col-span-2'>
-							{dayjs(created_at._seconds * 1000).format('lll')}
-						</p>
+						</p>}
+						{created_at && <p className='col-span-2'>{new Date(created_at).toLocaleString()}</p>}
 						<p className='col-span-2 flex items-center justify-end gap-x-4'>
 							<span className='text-success'>
 								Success
@@ -143,13 +148,13 @@ const Transaction: FC<ITransaction> = ({ amount_token, token, created_at, to, fr
 					<div>
 						<Divider className='bg-text_secondary my-5' />
 						{
-							type === 'fund' ?
+							isFundType ?
 								<ReceivedInfo
 									amount={String(amount_token)}
 									amountType={token}
-									date={dayjs(created_at._seconds * 1000).format('llll')}
+									date={created_at}
 									from={from}
-									callHash={callHash}
+									callHash={txHash||''}
 									note={note}
 									loading={loading}
 									amount_usd={amount_usd}
@@ -159,13 +164,14 @@ const Transaction: FC<ITransaction> = ({ amount_token, token, created_at, to, fr
 								<SentInfo
 									amount={String(amount_token)}
 									amountType={token}
-									date={dayjs(created_at._seconds * 1000).format('llll')}
+									date={created_at}
 									recipient={to}
-									callHash={callHash}
+									callHash={txHash || ''}
 									note={note}
-									from={from}
+									from={executor || ''}
 									loading={loading}
 									amount_usd={amount_usd}
+									txType={type}
 								/>
 						}
 					</div>

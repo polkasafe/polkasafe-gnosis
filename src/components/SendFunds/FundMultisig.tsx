@@ -4,6 +4,7 @@
 import { Form, Spin } from 'antd';
 import { ethers } from 'ethers';
 import React, { useState } from 'react';
+import { MetaMaskAvatar } from 'react-metamask-avatar';
 import FailedTransactionLottie from 'src/assets/lottie-graphics/FailedTransaction';
 import LoadingLottie from 'src/assets/lottie-graphics/Loading';
 import CancelBtn from 'src/components/Settings/CancelBtn';
@@ -18,13 +19,15 @@ import AddressComponent from 'src/ui-components/AddressComponent';
 import Balance from 'src/ui-components/Balance';
 import BalanceInput from 'src/ui-components/BalanceInput';
 import queueNotification from 'src/ui-components/QueueNotification';
+import copyText from 'src/utils/copyText';
+import shortenAddress from 'src/utils/shortenAddress';
 import styled from 'styled-components';
 
 import TransactionSuccessScreen from './TransactionSuccessScreen';
 
 const FundMultisig = ({ className, onCancel, setNewTxn }: { className?: string, onCancel: () => void, setNewTxn?: React.Dispatch<React.SetStateAction<boolean>> }) => {
 	const { network } = useGlobalApiContext();
-	const { activeMultisig, addressBook, fetchMultisigData } = useGlobalUserDetailsContext();
+	const { activeMultisig, addressBook, address } = useGlobalUserDetailsContext();
 
 	const { sendNativeToken } = useGlobalWeb3Context();
 
@@ -50,7 +53,6 @@ const FundMultisig = ({ className, onCancel, setNewTxn }: { className?: string, 
 				headers: firebaseFunctionsHeader(network, localStorage.getItem('address')!, localStorage.getItem('signature')!),
 				method: 'POST'
 			}).then(res => res.json());
-			await fetchMultisigData();
 			queueNotification({
 				header: 'Success!',
 				message: 'You have successfully completed the transaction. ',
@@ -106,31 +108,20 @@ const FundMultisig = ({ className, onCancel, setNewTxn }: { className?: string, 
 									</div>
 									<div className='flex items-center gap-x-[10px]'>
 										<div className='w-full'>
-											{/* <Form.Item
-												name="sender"
-												rules={[{ required: true }]}
-												help={!isValidSender && 'Please add a valid Address.'}
-												className='border-0 outline-0 my-0 p-0'
-												validateStatus={selectedSender && isValidSender ? 'success' : 'error'}
-											>
-												<div className="flex items-center">
-													<AutoComplete
-														filterOption={true}
-														onClick={addSenderHeading}
-														options={autocompleteAddresses}
-														id='sender'
-														placeholder="Send from Address.."
-														onChange={(value) => setSelectedSender(value)}
-														defaultValue={addressBook[0]?.address}
-													/>
-													<div className='absolute right-2'>
-														<button onClick={() => copyText(selectedSender)}>
-															<CopyIcon className='mr-2 text-primary' />
-														</button>
-														<QrModal />
+											<div className='flex gap-x-3 items-center'>
+												<div className='relative'>
+													<MetaMaskAvatar address={address || ''} size={20} />
+												</div>
+												<div>
+													<div className='text-xs font-bold text-white flex items-center gap-x-2'>
+														My Address
+													</div>
+													<div className="flex text-xs">
+														<div title={address || ''} className=' font-normal text-text_secondary'>{address && shortenAddress(address|| '')}</div>
+														<button className='ml-2 mr-1' onClick={() => copyText(address)}></button>
 													</div>
 												</div>
-											</Form.Item> */}
+											</div>
 										</div>
 									</div>
 								</section>

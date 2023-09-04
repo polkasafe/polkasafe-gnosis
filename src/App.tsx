@@ -21,9 +21,9 @@ function App() {
 	return (
 		<BrowserRouter>
 			<ConfigProvider theme={antdTheme}>
-				<ThemeProvider theme={styledTheme}>
+				<ApiContextProvider>
 					<Web3AuthProvider>
-						<ApiContextProvider>
+						<ThemeProvider theme={styledTheme}>
 							<UserDetailsProvider>
 								<DAppContextProvider>
 									<GlobalStyle />
@@ -32,9 +32,9 @@ function App() {
 									</ModalContextProvider>
 								</DAppContextProvider>
 							</UserDetailsProvider>
-						</ApiContextProvider>
+						</ThemeProvider>
 					</Web3AuthProvider>
-				</ThemeProvider>
+				</ApiContextProvider>
 			</ConfigProvider>
 		</BrowserRouter>
 	);

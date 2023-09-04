@@ -3,8 +3,6 @@
 // of the Apache-2.0 license. See the LICENSE file for details.
 
 // import { WarningOutlined } from '@ant-design/icons';
-
-import { EthersAdapter } from '@safe-global/protocol-kit';
 import { AutoComplete, Divider, Form, Input, Modal, Spin } from 'antd';
 import { DefaultOptionType } from 'antd/es/select';
 import classNames from 'classnames';
@@ -17,8 +15,6 @@ import { useGlobalWeb3Context } from 'src/context';
 import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { FIREBASE_FUNCTIONS_URL } from 'src/global/firebaseFunctionsUrl';
-import { returnTxUrl } from 'src/global/gnosisService';
-import { GnosisSafeService } from 'src/services';
 import { NotificationStatus } from 'src/types';
 import AddressComponent from 'src/ui-components/AddressComponent';
 import Balance from 'src/ui-components/Balance';
@@ -41,9 +37,9 @@ interface ISendFundsFormProps {
 
 const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn }: ISendFundsFormProps) => {
 
-	const { activeMultisig, addressBook, address, fetchMultisigData } = useGlobalUserDetailsContext();
+	const { activeMultisig, addressBook, address } = useGlobalUserDetailsContext();
 	const { network } = useGlobalApiContext();
-	const { web3AuthUser, ethProvider, web3Provider } = useGlobalWeb3Context();
+	const { web3AuthUser, safeService } = useGlobalWeb3Context();
 
 	const [note, setNote] = useState<string>('');
 	const [loading, setLoading] = useState(false);
@@ -71,15 +67,7 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 	const handleSubmit = async () => {
 		setLoading(true);
 		try {
-			const signer = ethProvider.getSigner();
-			const web3Adapter = new EthersAdapter({
-				ethers: web3Provider as any,
-				signerOrProvider: signer
-			});
-			const txUrl = returnTxUrl(network);
-			const gnosisService = new GnosisSafeService(web3Adapter, signer, txUrl);
-
-			const safeTxHash = await gnosisService.createSafeTx(activeMultisig, web3AuthUser!.accounts[0], ethers.utils.parseUnits(amount, 'ether').toString(), web3AuthUser!.accounts[0]);
+			const safeTxHash = await safeService.createSafeTx(activeMultisig, web3AuthUser!.accounts[0], ethers.utils.parseUnits(amount, 'ether').toString(), web3AuthUser!.accounts[0], note);
 
 			if (safeTxHash) {
 				const txBody = {
@@ -121,8 +109,6 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 					status: NotificationStatus.SUCCESS
 				});
 				setSuccess(true);
-				await fetchMultisigData();
-
 			}
 		} catch (err) {
 			console.log(err);

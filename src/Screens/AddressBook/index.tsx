@@ -14,12 +14,16 @@ import { useModalContext } from 'src/context/ModalContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { ExternalLinkIcon, SearchIcon } from 'src/ui-components/CustomIcons';
 import { AddBoxIcon, ExportArrowIcon, ImportArrowIcon } from 'src/ui-components/CustomIcons';
+import Loader from 'src/ui-components/Loader';
 const AddressBook = () => {
 	const [searchTerm, setSearchTerm] = useState('');
-	const { addressBook } = useGlobalUserDetailsContext();
+	const { addressBook, loading } = useGlobalUserDetailsContext();
 	const filteredData = addressBook.filter((item: any) => item.name.toLowerCase().includes(searchTerm.toLowerCase()) || item.address.toLowerCase().includes(searchTerm.toLowerCase()));
 	const { openModal } = useModalContext();
 	const userAddress = localStorage.getItem('address');
+	if(loading){
+		return <Loader size='large'/>;
+	}
 	return (
 		<div className='scale-[80%] w-[125%] h-[125%] origin-top-left overflow-x-hidden bg-bg-main rounded-lg'>
 			{userAddress ?

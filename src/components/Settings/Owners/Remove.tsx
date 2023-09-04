@@ -12,105 +12,76 @@ import AddProxySuccessScreen from 'src/components/Multisig/AddProxySuccessScreen
 import CancelBtn from 'src/components/Settings/CancelBtn';
 import RemoveBtn from 'src/components/Settings/RemoveBtn';
 import Loader from 'src/components/UserFlow/Loader';
+import { useGlobalWeb3Context } from 'src/context';
 import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
-import { firebaseFunctionsHeader } from 'src/global/firebaseFunctionsHeader';
-import { FIREBASE_FUNCTIONS_URL } from 'src/global/firebaseFunctionsUrl';
-import { chainProperties } from 'src/global/networkConstants';
-import { IMultisigAddress, NotificationStatus } from 'src/types';
+import {  NotificationStatus } from 'src/types';
 import { WarningCircleIcon } from 'src/ui-components/CustomIcons';
 import queueNotification from 'src/ui-components/QueueNotification';
-import _createMultisig from 'src/utils/_createMultisig';
+import addTransactionEth from 'src/utils/addTransactionEth';
 
 const RemoveOwner = ({ addressToRemove, oldThreshold, oldSignatoriesLength, onCancel }: { addressToRemove: string, oldThreshold: number, oldSignatoriesLength: number, onCancel: () => void }) => {
 	const [newThreshold, setNewThreshold] = useState(oldThreshold === oldSignatoriesLength ? oldThreshold - 1 : oldThreshold);
 	const [loading, setLoading] = useState(false);
 	const [success, setSuccess] = useState<boolean>(false);
 	const [failure, setFailure] = useState<boolean>(false);
-	const [loadingMessages, setLoadingMessages] = useState<string>('');
-	const { multisigAddresses, activeMultisig, address: userAddress, setUserDetailsContextState } = useGlobalUserDetailsContext();
+	const { multisigAddresses, activeMultisig, address } =
+    useGlobalUserDetailsContext();
+	const { web3AuthUser, safeService } = useGlobalWeb3Context();
 	const { network } = useGlobalApiContext();
 	const [txnHash] = useState<string>('');
 
 	const multisig = multisigAddresses.find((item: any) => item.address === activeMultisig || item.proxy === activeMultisig);
-
-	const handleMultisigCreate = async (newSignatories: string[], newThreshold: number) => {
-		try {
-			const address = localStorage.getItem('address');
-			const signature = localStorage.getItem('signature');
-
-			if (!address || !signature || !newSignatories || !newThreshold) {
-				console.log('ERROR');
-				return;
-			}
-			else {
-				setLoadingMessages('Creating Your Proxy.');
-				const createMultisigRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/createMultisig`, {
-					body: JSON.stringify({
-						disabled: true,
-						multisigName: multisig?.name,
-						signatories: newSignatories,
-						threshold: newThreshold
-					}),
-					headers: firebaseFunctionsHeader(network, address, signature),
-					method: 'POST'
-				});
-
-				const { data: multisigData, error: multisigError } = await createMultisigRes.json() as { error: string; data: IMultisigAddress };
-
-				if (multisigError) {
-					return;
-				}
-
-				if (multisigData) {
-					setUserDetailsContextState((prevState: any) => {
-						return {
-							...prevState,
-							multisigAddresses: [...(prevState?.multisigAddresses || []), multisigData],
-							multisigSettings: {
-								...prevState.multisigSettings,
-								[multisigData.address]: {
-									deleted: false,
-									name: multisigData.name
-								}
-							}
-						};
-					});
-				}
-
-			}
-		} catch (error) {
-			console.log('ERROR', error);
-		}
-	};
-
-	const changeMultisig = async () => {
-
-		const newSignatories = multisig && multisig.signatories.filter((item: any) => item !== addressToRemove) || [];
-
-		const newMultisigAddress = _createMultisig(newSignatories, newThreshold, chainProperties[network].decimals);
-		if (multisigAddresses.some((item: any) => item.address === newMultisigAddress.multisigAddress)) {
-			queueNotification({
-				header: 'Multisig Exists',
-				message: 'The new edited multisig already exists in your multisigs.',
-				status: NotificationStatus.WARNING
-			});
-			return;
-		}
-
+	const handleRemoveOwner = async () => {
 		setLoading(true);
 		try {
-			setLoadingMessages('Please Sign The First Transaction to Add New Multisig To Proxy.');
-			setLoadingMessages('Please Sign The Second Transaction to Remove Old Multisig From Proxy.');
-
-			setSuccess(true);
+			const safeTxHash = await safeService.createRemoveOwner(
+				activeMultisig,
+				web3AuthUser!.accounts[0],
+				addressToRemove,
+				newThreshold
+			);
+			if (safeTxHash) {
+				const txBody = {
+					amount_token: 0,
+					data: '0x00',
+					note: 'Owner Added',
+					safeAddress: activeMultisig,
+					to: web3AuthUser?.accounts[0],
+					txHash: safeTxHash,
+					type: 'sent'
+				};
+				const { error: multisigError } = await addTransactionEth({
+					address: web3AuthUser!.accounts[0],
+					network,
+					txBody
+				});
+				if (multisigError) {
+					queueNotification({
+						header: 'Error.',
+						message: 'Please try again.',
+						status: NotificationStatus.ERROR
+					});
+					setFailure(true);
+					return;
+				}
+				onCancel?.();
+				setLoading(false);
+				queueNotification({
+					header: 'Success',
+					message: 'New Transaction Created.',
+					status: NotificationStatus.SUCCESS
+				});
+			}
+		} catch (err) {
+			onCancel?.();
 			setLoading(false);
-			await handleMultisigCreate(newSignatories, newThreshold);
-		} catch (error) {
-			console.log(error);
 			setFailure(true);
-			setLoading(false);
-			setTimeout(() => setFailure(false), 5000);
+			queueNotification({
+				header: 'Error.',
+				message: 'Please try again.',
+				status: NotificationStatus.ERROR
+			});
 		}
 	};
 
@@ -118,7 +89,7 @@ const RemoveOwner = ({ addressToRemove, oldThreshold, oldSignatoriesLength, onCa
 		<>
 			{
 				success ? <AddProxySuccessScreen
-					createdBy={userAddress}
+					createdBy={address}
 					signatories={multisig?.signatories || []}
 					threshold={multisig?.threshold || 2}
 					txnHash={txnHash}
@@ -129,7 +100,7 @@ const RemoveOwner = ({ addressToRemove, oldThreshold, oldSignatoriesLength, onCa
 					:
 					failure ? <FailedTransactionLottie message='Failed!' />
 						:
-						<Spin spinning={loading} indicator={<LoadingLottie message={loadingMessages} />}>
+						<Spin spinning={loading} indicator={<LoadingLottie />}>
 							<Form
 								className='my-0'
 							>
@@ -199,7 +170,7 @@ const RemoveOwner = ({ addressToRemove, oldThreshold, oldSignatoriesLength, onCa
 								</div>
 								<div className='flex items-center justify-between gap-x-4 mt-[30px]'>
 									<CancelBtn onClick={onCancel} />
-									<RemoveBtn loading={loading} onClick={changeMultisig} />
+									<RemoveBtn loading={loading} onClick={handleRemoveOwner} />
 								</div>
 							</Form>
 						</Spin>

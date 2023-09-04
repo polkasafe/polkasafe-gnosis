@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@craco/craco": "^7.1.0",
+    "@ethersproject/abi": "^5.7.0",
     "@polkadot/api": "^10.7.3",
     "@polkadot/api-augment": "^10.7.3",
     "@polkadot/extension-dapp": "^0.46.3",
@@ -43,6 +44,7 @@
     "@xstyled/styled-components": "^3.7.0",
     "antd": "^5.0.4",
     "assert": "^2.0.0",
+    "bn.js": "^5.2.1",
     "browserify-zlib": "^0.2.0",
     "buffer": "^6.0.3",
     "classnames": "^2.3.2",

@@ -2,7 +2,7 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import { v4 as uuidv4 } from 'uuid';
 import cors = require('cors');
-import { addressEq, cryptoWaitReady, decodeAddress, encodeAddress, signatureVerify } from '@polkadot/util-crypto';
+import { cryptoWaitReady, decodeAddress, encodeAddress, signatureVerify } from '@polkadot/util-crypto';
 import { u8aToHex } from '@polkadot/util';
 import {
 	IAddressBookItem,
@@ -97,63 +97,6 @@ export const addTransactionEth = functions.https.onRequest(async (req, res) => {
 	});
 });
 
-export const addLinkTransactionsEth = functions.https.onRequest(async (req, res) => {
-	corsHandler(req, res, async () => {
-		const signature = req.get('x-signature');
-		const network = String(req.get('x-network'));
-		const address = String(req.get('x-address'));
-
-		const { completedTxs, pendingTxs } = req.body;
-
-		const addressRef = firestoreDB.collection('addresses').doc(address);
-		const doc = await addressRef.get();
-
-		if (!doc.exists) return res.status(404).json({ error: responseMessages.address_not_in_db });
-		const addressData = doc.data();
-
-		const isValid = await verifyEthSignature(address || '', signature || '', addressData?.token);
-		if (!isValid) return res.status(400).json({ error: 'something went wrong' });
-
-		try {
-			// const usdValue = await fetchTokenUSDValue(network);
-			await completedTxs.map((tx) => {
-				const newTransaction = {
-					data: '0x00',
-					created_at: new Date(),
-					safeAddress: tx.safe,
-					to: tx.to,
-					amount_token: tx.value,
-					txHash: tx.safeTxHash,
-					network,
-					note: note || '',
-					type,
-					executed: true
-				};
-			});
-			const newTransaction = {
-				data,
-				created_at: new Date(),
-				safeAddress,
-				to,
-				amount_token: String(amount_token),
-				txHash,
-				network,
-				note: note || '',
-				type,
-				executed: executed ? true : false
-			};
-
-			const transactionRef = firestoreDB.collection('transactions').doc(String(txHash));
-			await transactionRef.set(newTransaction);
-
-			return res.status(200).json({ data: responseMessages.success });
-		} catch (err: unknown) {
-			functions.logger.error('Error in addTransaction :', { err, stack: (err as any).stack });
-			return res.status(500).json({ error: responseMessages.internal });
-		}
-	});
-});
-
 export const updateTransaction = functions.https.onRequest(async (req, res) => {
 	corsHandler(req, res, async () => {
 		const signature = req.get('x-signature');
@@ -197,6 +140,77 @@ export const updateTransaction = functions.https.onRequest(async (req, res) => {
 	});
 });
 
+export const updateTransactions = functions.https.onRequest(async (req, res) => {
+	corsHandler(req, res, async () => {
+		const signature = req.get('x-signature');
+		const address = String(req.get('x-address'));
+		const { transactions } = req.body;
+		try {
+			res.status(200).json({ message: 'success' });
+			for (const transaction of transactions) {
+				const { amount_token, created_at, data, executed, network, safeAddress, signatures, to, txHash, type, executor } = transaction;
+				const txRef = firestoreDB.collection('transactions').doc(txHash);
+				const doc = await txRef.get();
+				if (!doc.exists) {
+					const transactionData = {
+						amount_token,
+						created_at,
+						data: data || null,
+						executed,
+						network,
+						safeAddress,
+						signatures,
+						to,
+						txHash: txHash,
+						type,
+						executor
+					};
+					txRef.set(transactionData);
+				}
+			}
+			return;
+		} catch (err: unknown) {
+			functions.logger.error('Error in addTransaction :', { err, stack: (err as any).stack });
+			return res.status(500).json({ error: responseMessages.internal });
+		}
+	});
+});
+
+export const addMultisig = functions.https.onRequest(async (req, res) => {
+	corsHandler(req, res, async () => {
+		const signature = req.get('x-signature');
+		const address = String(req.get('x-address'));
+		const { multisig } = req.body;
+		try {
+			res.status(200).json({ message: 'success' });
+			const {
+				address,
+				disabled,
+				name,
+				network,
+				signatories,
+				threshold
+			} = multisig;
+
+			const multisigRef = firestoreDB.collection('multisigAddresses').doc(address);
+			console.log((await multisigRef.get()).data());
+			const multisigData = {
+				address,
+				disabled,
+				name,
+				network,
+				signatories,
+				threshold
+			};
+			multisigRef.set(multisigData, { merge: true });
+			return;
+		} catch (err: unknown) {
+			functions.logger.error('Error in addTransaction :', { err, stack: (err as any).stack });
+			return res.status(500).json({ error: responseMessages.internal });
+		}
+	});
+});
+
 export const completeTransaction = functions.https.onRequest(async (req, res) => {
 	corsHandler(req, res, async () => {
 		const signature = req.get('x-signature');
@@ -208,23 +222,19 @@ export const completeTransaction = functions.https.onRequest(async (req, res) =>
 		if (!doc.exists) return res.status(404).json({ error: responseMessages.address_not_in_db });
 		const addressData = doc.data();
 
-		const isValid = await verifyEthSignature(address || '', signature || '', addressData?.token);
-		if (!isValid) return res.status(400).json({ error: 'something went wrong' });
+		// const isValid = await verifyEthSignature(address || '', signature || '', addressData?.token);
+		// if (!isValid) return res.status(400).json({ error: 'something went wrong' });
 
 		const { receipt, txHash } = req.body;
 
 		try {
 			const query = firestoreDB.collection('transactions').doc(txHash);
-			const doc = await query.get();
-
-			if (doc.exists) {
-				query.update({
-					receipt,
-					executed: true
-				});
-			}
-
-			return res.status(200).json({ message: 'updated' });
+			res.status(200).json({ message: 'updated' });
+			query.update({
+				receipt,
+				executed: true
+			});
+			return;
 		} catch (err: unknown) {
 			functions.logger.error('Error in addTransaction :', { err, stack: (err as any).stack });
 			return res.status(500).json({ error: responseMessages.internal });
@@ -234,7 +244,10 @@ export const completeTransaction = functions.https.onRequest(async (req, res) =>
 
 export const getAllTransaction = functions.https.onRequest(async (req, res) => {
 	corsHandler(req, res, async () => {
-		const signature = req.get('x-signature');
+		const { limit } = req.query;
+		if (limit && isNaN(Number(limit))) {
+			return res.status(404).json({ error: responseMessages.address_not_in_db });
+		}
 		const address = String(req.get('x-address'));
 		const multisigAddress = String(req.get('x-multisig'));
 
@@ -242,19 +255,20 @@ export const getAllTransaction = functions.https.onRequest(async (req, res) => {
 		const doc = await addressRef.get();
 
 		if (!doc.exists) return res.status(404).json({ error: responseMessages.address_not_in_db });
-		const addressData = doc.data();
 
-		const isValid = await verifyEthSignature(address || '', signature || '', addressData?.token);
-		if (!isValid) return res.status(400).json({ error: 'something went wrong' });
+		// const isValid = await verifyEthSignature(address || '', signature || '', addressData?.token);
+		// if (!isValid) return res.status(400).json({ error: 'something went wrong' });
 
 		try {
-			const query = firestoreDB.collection('transactions')
-				.where('safeAddress', '==', multisigAddress);
-			const querySnapshot = await query.get();
-
-			const transactionsArray = querySnapshot.docs.map((doc) => doc.data());
-
-			return res.status(200).json({ data: transactionsArray });
+			const queuedQuery = firestoreDB.collection('transactions')
+				.where('safeAddress', '==', multisigAddress).where('executed', '==', false).orderBy('created_at', 'desc').limit(Number(limit));
+			const queuedSnapshot = await queuedQuery.get();
+			const historyQuery = firestoreDB.collection('transactions')
+				.where('safeAddress', '==', multisigAddress).where('executed', '==', true).orderBy('created_at', 'desc').limit(Number(limit));
+			const historySnapshot = await historyQuery.get();
+			const queued:any = queuedSnapshot.docs.map((doc) => doc.data());
+			const complete:any = historySnapshot.docs.map((doc) => doc.data());
+			return res.status(200).json({ data: { queued, complete } });
 		} catch (err: unknown) {
 			functions.logger.error('Error in addTransaction :', { err, stack: (err as any).stack });
 			return res.status(500).json({ error: responseMessages.internal });
@@ -450,7 +464,7 @@ export const addToAddressBookEth = functions.https.onRequest(async (req, res) =>
 		const signature = req.get('x-signature');
 		const network = String(req.get('x-network'));
 
-		const substrateAddress = getSubstrateAddress(String(req.get('x-address')));
+		const substrateAddress = String(req.get('x-address'));
 
 		const address: string = substrateAddress !== '' ? substrateAddress : req.get('x-address') || '';
 
@@ -469,18 +483,11 @@ export const addToAddressBookEth = functions.https.onRequest(async (req, res) =>
 		} as IUser;
 		const addressBook = addressDoc.addressBook || [];
 
-		const isValid = await verifyEthSignature(address, signature!, addressData?.token);
-		if (!isValid) return res.status(400).json({ error: 'something went wrong' });
+		// const isValid = await verifyEthSignature(address, signature!, addressData?.token);
+		// if (!isValid) return res.status(400).json({ error: 'something went wrong' });
 
 		try {
-			const addressIndex = addressBook.findIndex((a) => a.address == addressToAdd);
-			if (addressIndex > -1) {
-				addressBook[addressIndex] = { name, address: addressToAdd };
-				await addressRef.set({ addressBook }, { merge: true });
-				return res.status(200).json({ data: addressBook.map((item) => ({ ...item, address: encodeAddress(item.address, chainProperties[network].ss58Format) })) });
-			}
-
-			const newAddressBook = [...addressBook, { name, address: addressToAdd }];
+			const newAddressBook = [...addressBook, { address: addressToAdd, name }];
 			await addressRef.set({ addressBook: newAddressBook }, { merge: true });
 			return res.status(200).json({ data: newAddressBook });
 		} catch (err) {
@@ -497,7 +504,6 @@ export const connectAddressEth = functions.https.onRequest(async (req, res) => {
 		const address: string = substrateAddress !== '' ? substrateAddress : req.get('x-address') || '';
 
 		const multisigAddresses = await getMultisigAddressesByAddress(address);
-		console.log(multisigAddresses);
 
 		const addressRef = firestoreDB.collection('addresses').doc(address);
 		const doc = await addressRef.get();
@@ -522,7 +528,7 @@ export const connectAddressEth = functions.https.onRequest(async (req, res) => {
 			if (data && data.created_at) {
 				const addressDoc = {
 					...data,
-					created_at: data?.created_at.toDate()
+					created_at: data?.created_at?.toDate() || new Date()
 				} as IUser;
 
 				const resUser: IUserResponse = {
@@ -653,8 +659,8 @@ const getMultisigAddressesByAddress = async (address: string) => {
 
 	return multisigAddresses.docs.map((doc) => ({
 		...doc.data(),
-		created_at: doc.data().created_at.toDate(),
-		updated_at: doc.data().updated_at?.toDate() || doc.data().created_at.toDate()
+		created_at: doc.data().created_at?.toDate() || new Date(),
+		updated_at: doc.data().updated_at?.toDate() || doc.data().created_at?.toDate() || new Date()
 	})) as IMultisigAddress[];
 };
 
@@ -1006,6 +1012,35 @@ export const createMultisig = functions.https.onRequest(async (req, res) => {
 			return;
 		} catch (err: unknown) {
 			functions.logger.error('Error in createMultisig :', { err, stack: (err as any).stack });
+			return res.status(500).json({ error: responseMessages.internal });
+		}
+	});
+});
+
+export const updateMultisigSignatory = functions.https.onRequest(async (req, res) => {
+	corsHandler(req, res, async () => {
+		const signature = req.get('x-signature');
+		const address = req.get('x-address');
+		const network = String(req.get('x-network'));
+		console.log(signature, address, network);
+		const { signatory, threshold, multisig } = req.body;
+		try {
+			const txRef = firestoreDB.collection('multisigAddresses').doc(`${multisig}_${network}`);
+			const txDoc = await txRef.get();
+			const txDocData = txDoc.data() as any;
+
+			if (txDoc.exists && txDocData.address === multisig) {
+				const payload = {
+					...txDocData,
+					threshold,
+					signatories: [...(txDocData.signatories|| []), signatory]
+				};
+				txRef.update(payload);
+				return res.status(200).json({ data: responseMessages.success });
+			}
+			return res.status(400).json({ error: 'multisig not found' });
+		} catch (err: unknown) {
+			functions.logger.error('Error in getMultisigByMultisigAddress :', { err, stack: (err as any).stack });
 			return res.status(500).json({ error: responseMessages.internal });
 		}
 	});
@@ -1439,7 +1474,7 @@ export const getNotifications = functions.https.onRequest(async (req, res) => {
 
 			const notifications: INotification[] = notificationsSnapshot.docs.map((doc) => ({
 				...doc.data(),
-				created_at: doc.data().created_at.toDate()
+				created_at: doc.data().created_at?.toDate()
 			} as INotification));
 
 			return res.status(200).json({ data: notifications });

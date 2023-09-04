@@ -8,7 +8,7 @@ import { Spin } from 'antd';
 import { ethers } from 'ethers';
 import React, { FC, useState } from 'react';
 import { MetaMaskAvatar } from 'react-metamask-avatar';
-import ethLogo from 'src/assets/eth.png';
+import astarLogo from 'src/assets/astar-logo.png';
 import { useModalContext } from 'src/context/ModalContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import AddressQr from 'src/ui-components/AddressQr';
@@ -36,7 +36,7 @@ const DashboardCard = ({ className, setNewTxn, transactionLoading, openTransacti
 	const { openModal } = useModalContext();
 
 	const [openFundMultisigModal, setOpenFundMultisigModal] = useState(false);
-	const currentMultisig = multisigAddresses?.find((item: any) => item.address === activeMultisig || item.proxy === activeMultisig);
+	const currentMultisig = multisigAddresses?.find((item: any) => item.address === activeMultisig);
 	const TransactionModal: FC = () => {
 		return (
 			<>
@@ -98,9 +98,9 @@ const DashboardCard = ({ className, setNewTxn, transactionLoading, openTransacti
 			<div className={`${className} relative bg-bg-main flex flex-col justify-between rounded-lg p-5 shadow-lg h-[17rem] scale-90 w-[111%] origin-top-left`}>
 				<div className='absolute right-5 top-5'>
 					<div className="flex gap-x-4 items-center">
-						<a className='w-5' target='_blank' href={`https://goerli.etherscan.io/address/${activeMultisig}`} rel="noreferrer">
-							<img className='w-5' src={ethLogo} alt="icon" />
-						</a>
+						<div className='w-5' rel="noreferrer">
+							<img className='w-5' src={astarLogo} alt="icon" />
+						</div>
 					</div>
 				</div>
 				<div className='w-full'>
@@ -135,14 +135,13 @@ const DashboardCard = ({ className, setNewTxn, transactionLoading, openTransacti
 						</div>
 					</div>
 					<div>
-						<div className='text-white'>ETH</div>
+						<div className='text-white'>ASTR</div>
 						<div className='font-bold text-lg text-primary'>{!activeMultisigData?.safeBalance ? <Spin size='default' /> : ethers.utils.formatEther(activeMultisigData.safeBalance.toString()).split('').slice(0, 5).join('')}</div>
 					</div>
 					<div>
 						<div className='text-white'>USD Amount</div>
 						<div className='font-bold text-lg text-primary'>
 							{0}
-
 						</div>
 					</div>
 				</div>

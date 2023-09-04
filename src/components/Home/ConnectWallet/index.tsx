@@ -10,7 +10,7 @@ import { Wallet } from 'src/types';
 import { WalletIcon } from 'src/ui-components/CustomIcons';
 
 const ConnectWallet = () => {
-	const { login, handleWeb3AuthConnection } = useGlobalWeb3Context();
+	const { handleWeb3AuthConnection } = useGlobalWeb3Context();
 	const { setUserDetailsContextState } = useGlobalUserDetailsContext();
 
 	const [loading, setLoading] = useState<boolean>(false);
@@ -18,8 +18,11 @@ const ConnectWallet = () => {
 	const handleLogin = async () => {
 		try {
 			setLoading(true);
-			const ethProvider = await login();
-			const userData = await handleWeb3AuthConnection(ethProvider);
+			const { data: userData, error } = await handleWeb3AuthConnection();
+			if(error){
+				setLoading(false);
+				return;
+			}
 			if(userData?.multisigAddresses?.[0]?.address){
 				localStorage.setItem('active_multisig', userData.multisigAddresses[0].address);
 			}
@@ -56,7 +59,6 @@ const ConnectWallet = () => {
 					Connect Wallet
 				</Button>
 			</>
-
 		</div>
 	);
 };

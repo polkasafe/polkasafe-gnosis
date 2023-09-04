@@ -17,15 +17,12 @@ import { useModalContext } from 'src/context/ModalContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { firebaseFunctionsHeader } from 'src/global/firebaseFunctionsHeader';
 import { FIREBASE_FUNCTIONS_URL } from 'src/global/firebaseFunctionsUrl';
-import { returnTxUrl } from 'src/global/gnosisService';
-import { GnosisSafeService } from 'src/services';
 import { IMultisigAddress } from 'src/types';
 import { NotificationStatus } from 'src/types';
 import { DashDotIcon, OutlineCloseIcon } from 'src/ui-components/CustomIcons';
 import PrimaryButton from 'src/ui-components/PrimaryButton';
 import ProxyImpPoints from 'src/ui-components/ProxyImpPoints';
 import queueNotification from 'src/ui-components/QueueNotification';
-import { createAdapter } from 'src/utils/web3';
 
 import AddAddress from '../AddressBook/AddAddress';
 import DragDrop from '../Multisig/DragDrop';
@@ -43,7 +40,6 @@ interface IMultisigProps {
 const CreateMultisig: React.FC<IMultisigProps> = ({ onCancel, homepage = false }) => {
 	const { setUserDetailsContextState, address: userAddress, multisigAddresses } = useGlobalUserDetailsContext();
 	const { network } = useGlobalApiContext();
-	const { ethProvider } = useGlobalWeb3Context();
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const [uploadSignatoriesJson, setUploadSignatoriesJson] = useState(false);
@@ -53,6 +49,7 @@ const CreateMultisig: React.FC<IMultisigProps> = ({ onCancel, homepage = false }
 	const [signatories, setSignatories] = useState<string[]>([userAddress]);
 	const { openModal, toggleVisibility } = useModalContext();
 	const { fetchUserData } = useGlobalUserDetailsContext();
+	const { safeService } = useGlobalWeb3Context();
 
 	const [loading, setLoading] = useState<boolean>(false);
 	const [success] = useState<boolean>(false);
@@ -92,22 +89,17 @@ const CreateMultisig: React.FC<IMultisigProps> = ({ onCancel, homepage = false }
 			const address = localStorage.getItem('address');
 			const signature = localStorage.getItem('signature');
 
-			if (!address || !signature) {
+			if (!address || !signature || !safeService) {
+				console.log('CreateMultisig line 97');
 				return;
 			}
 			else {
-
-				const signer = ethProvider.getSigner();
-				const adapter = createAdapter('eth', ethProvider);
-				const txUrl = returnTxUrl(network);
-				const gnosisService = new GnosisSafeService(adapter, signer, txUrl);
-				console.log(gnosisService);
-				const safeAddress = await gnosisService.createSafe(
+				console.log(safeService);
+				const safeAddress = await safeService.createSafe(
 					signatories as [string],
 					threshold!);
 				// if (safeAddress) return;
 				console.log(safeAddress);
-				console.log('txUrl', txUrl);
 				const { data: multisigData, error: multisigError } = await fetch(`${FIREBASE_FUNCTIONS_URL}/createMultisigEth`, {
 					body: JSON.stringify({
 						signatories: signatories,

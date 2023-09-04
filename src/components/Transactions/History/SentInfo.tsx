@@ -26,10 +26,11 @@ interface ISentInfoProps {
 	note?: string
 	loading?: boolean
 	amount_usd: number
-	from: string
+	from: string,
+	txType?:string
 }
 
-const SentInfo: FC<ISentInfoProps> = ({ amount, from, className, date, recipient, callHash, note, loading }) => {
+const SentInfo: FC<ISentInfoProps> = ({ amount, from, className, date, recipient, callHash, note, loading, txType }) => {
 	const { addressBook, activeMultisig, multisigAddresses } = useGlobalUserDetailsContext();
 	const { network } = useGlobalApiContext();
 	const threshold = multisigAddresses?.find((item: any) => item.address === activeMultisig || item.proxy === activeMultisig)?.threshold || 0;
@@ -41,51 +42,53 @@ const SentInfo: FC<ISentInfoProps> = ({ amount, from, className, date, recipient
 			<article
 				className='p-4 rounded-lg bg-bg-main flex-1'
 			>
-				<p
-					className='flex items-center gap-x-1 text-white font-medium text-sm leading-[15px]'
-				>
-					<span>
+				{!(txType === 'addOwnerWithThreshold' || txType === 'removeOwner') && recipient && amount && <>
+					<p
+						className='flex items-center gap-x-1 text-white font-medium text-sm leading-[15px]'
+					>
+						<span>
 						Sent
-					</span>
-					<span
-						className='text-failure'
-					>
-						{ethers.utils.formatEther(amount)}
-					</span>
-					<span>
+						</span>
+						<span
+							className='text-failure'
+						>
+							{ethers.utils.formatEther(amount)}
+						</span>
+						<span>
 						to:
-					</span>
-				</p>
-				<div
-					className='mt-3 flex items-center gap-x-4'
-				>
-					<MetaMaskAvatar address={recipient} size={30}/>
+						</span>
+					</p>
 					<div
-						className='flex flex-col gap-y-[6px]'
+						className='mt-3 flex items-center gap-x-4'
 					>
-						<p
-							className='font-medium text-sm leading-[15px] text-white'
+						<MetaMaskAvatar address={recipient} size={30}/>
+						<div
+							className='flex flex-col gap-y-[6px]'
 						>
-							{addressBook?.find((item: any) => item.address === recipient)?.name || DEFAULT_ADDRESS_NAME}
-						</p>
-						<p
-							className='flex items-center gap-x-3 font-normal text-xs leading-[13px] text-text_secondary'
-						>
-							<span>
-								{recipient}
-							</span>
-							<span
-								className='flex items-center gap-x-2 text-sm'
+							<p
+								className='font-medium text-sm leading-[15px] text-white'
 							>
-								<button onClick={() => copyText(recipient)}><CopyIcon className='hover:text-primary' /></button>
-								<a href={`https://${network}.subscan.io/account/${recipient}`} target='_blank' rel="noreferrer" >
-									<ExternalLinkIcon />
-								</a>
-							</span>
-						</p>
+								{addressBook?.find((item: any) => item.address === recipient)?.name || DEFAULT_ADDRESS_NAME}
+							</p>
+							<p
+								className='flex items-center gap-x-3 font-normal text-xs leading-[13px] text-text_secondary'
+							>
+								<span>
+									{recipient}
+								</span>
+								<span
+									className='flex items-center gap-x-2 text-sm'
+								>
+									<button onClick={() => copyText(recipient)}><CopyIcon className='hover:text-primary' /></button>
+									<a href={`https://${network}.subscan.io/account/${recipient}`} target='_blank' rel="noreferrer" >
+										<ExternalLinkIcon />
+									</a>
+								</span>
+							</p>
+						</div>
 					</div>
-				</div>
-				<Divider className='bg-text_secondary my-5' />
+					<Divider className='bg-text_secondary my-5' />
+				</>}
 				<div
 					className='flex items-center gap-x-7 mb-3'
 				>
