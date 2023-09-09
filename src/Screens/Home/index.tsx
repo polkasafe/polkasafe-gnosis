@@ -12,16 +12,14 @@ import DashboardCard from 'src/components/Home/DashboardCard';
 import TxnCard from 'src/components/Home/TxnCard';
 import AddMultisig from 'src/components/Multisig/AddMultisig';
 import Loader from 'src/components/UserFlow/Loader';
-import { useGlobalWeb3Context } from 'src/context';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import Spinner from 'src/ui-components/Loader';
 import styled from 'styled-components';
 
 const Home = () => {
-	const { address, multisigAddresses, createdAt, addressBook, activeMultisig, loading } = useGlobalUserDetailsContext();
+	const { address, multisigAddresses, createdAt, addressBook, activeMultisig, loading, safeService } = useGlobalUserDetailsContext();
 	const [openNewUserModal, setOpenNewUserModal] = useState(false);
 	const [hasProxy] = useState<boolean>(true);
-	const { web3AuthUser, ethProvider, safeService } = useGlobalWeb3Context();
 
 	const [transactionLoading] = useState(false);
 	const [isOnchain, setIsOnchain] = useState(true);
@@ -37,19 +35,16 @@ const Home = () => {
 	useEffect(() => {
 		const handleNewTransaction = async () => {
 			if (!activeMultisig || !safeService) return;
-
-			if (web3AuthUser && ethProvider) {
-				console.log(safeService, activeMultisig);
-				const safeData = await safeService.getSafeCreationInfo(activeMultisig);
-				if (safeData) {
-					setIsOnchain(true);
-				} else {
-					setIsOnchain(false);
-				}
+			const safeData = await safeService.getSafeCreationInfo(activeMultisig);
+			if (safeData) {
+				setIsOnchain(true);
+			} else {
+				setIsOnchain(false);
 			}
+
 		};
 		handleNewTransaction();
-	}, [web3AuthUser, ethProvider, activeMultisig, safeService]);
+	}, [activeMultisig, safeService]);
 
 	return (
 		<>

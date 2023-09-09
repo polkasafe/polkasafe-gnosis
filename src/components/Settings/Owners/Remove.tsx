@@ -12,7 +12,6 @@ import AddProxySuccessScreen from 'src/components/Multisig/AddProxySuccessScreen
 import CancelBtn from 'src/components/Settings/CancelBtn';
 import RemoveBtn from 'src/components/Settings/RemoveBtn';
 import Loader from 'src/components/UserFlow/Loader';
-import { useGlobalWeb3Context } from 'src/context';
 import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import {  NotificationStatus } from 'src/types';
@@ -25,9 +24,8 @@ const RemoveOwner = ({ addressToRemove, oldThreshold, oldSignatoriesLength, onCa
 	const [loading, setLoading] = useState(false);
 	const [success, setSuccess] = useState<boolean>(false);
 	const [failure, setFailure] = useState<boolean>(false);
-	const { multisigAddresses, activeMultisig, address } =
+	const { multisigAddresses, activeMultisig, address, safeService } =
     useGlobalUserDetailsContext();
-	const { web3AuthUser, safeService } = useGlobalWeb3Context();
 	const { network } = useGlobalApiContext();
 	const [txnHash] = useState<string>('');
 
@@ -37,7 +35,7 @@ const RemoveOwner = ({ addressToRemove, oldThreshold, oldSignatoriesLength, onCa
 		try {
 			const safeTxHash = await safeService.createRemoveOwner(
 				activeMultisig,
-				web3AuthUser!.accounts[0],
+				address,
 				addressToRemove,
 				newThreshold
 			);
@@ -47,12 +45,12 @@ const RemoveOwner = ({ addressToRemove, oldThreshold, oldSignatoriesLength, onCa
 					data: '0x00',
 					note: 'Owner Added',
 					safeAddress: activeMultisig,
-					to: web3AuthUser?.accounts[0],
+					to: address,
 					txHash: safeTxHash,
 					type: 'sent'
 				};
 				const { error: multisigError } = await addTransactionEth({
-					address: web3AuthUser!.accounts[0],
+					address: address,
 					network,
 					txBody
 				});

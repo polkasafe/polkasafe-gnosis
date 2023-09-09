@@ -6,7 +6,6 @@ import classNames from 'classnames';
 import React, { useRef, useState } from 'react';
 import { MetaMaskAvatar } from 'react-metamask-avatar';
 import { Link, useNavigate } from 'react-router-dom';
-// import { useGlobalWeb3Context } from 'src/context';
 import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { DEFAULT_ADDRESS_NAME } from 'src/global/default';
@@ -24,7 +23,6 @@ interface IAddress {
 const AddressDropdown = () => {
 	const { address, addressBook, loggedInWallet, setUserDetailsContextState } = useGlobalUserDetailsContext();
 	const { network } = useGlobalApiContext();
-	// const { logout } = useGlobalWeb3Context();
 	const navigate = useNavigate();
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -33,8 +31,6 @@ const AddressDropdown = () => {
 
 	const handleDisconnect = async () => {
 		localStorage.clear();
-
-		// await logout();
 		setUserDetailsContextState((prevState: any) => {
 			return {
 				...prevState,

@@ -1,6 +1,7 @@
 // Copyright 2022-2023 @Polkasafe/polkaSafe-ui authors & contributors
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
+import { useSigner } from '@thirdweb-dev/react';
 import { Form, Spin } from 'antd';
 import { ethers } from 'ethers';
 import React, { useState } from 'react';
@@ -9,7 +10,6 @@ import FailedTransactionLottie from 'src/assets/lottie-graphics/FailedTransactio
 import LoadingLottie from 'src/assets/lottie-graphics/Loading';
 import CancelBtn from 'src/components/Settings/CancelBtn';
 import ModalBtn from 'src/components/Settings/ModalBtn';
-import { useGlobalWeb3Context } from 'src/context';
 import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { firebaseFunctionsHeader } from 'src/global/firebaseFunctionsHeader';
@@ -29,8 +29,6 @@ const FundMultisig = ({ className, onCancel, setNewTxn }: { className?: string, 
 	const { network } = useGlobalApiContext();
 	const { activeMultisig, addressBook, address } = useGlobalUserDetailsContext();
 
-	const { sendNativeToken } = useGlobalWeb3Context();
-
 	const [selectedSender] = useState(addressBook[0].address);
 	const [amount, setAmount] = useState('0');
 	const [loading, setLoading] = useState(false);
@@ -39,12 +37,20 @@ const FundMultisig = ({ className, onCancel, setNewTxn }: { className?: string, 
 	const [loadingMessages] = useState<string>('');
 	const [txnHash] = useState<string>('');
 	const [selectedAccountBalance, setSelectedAccountBalance] = useState<string>('');
+	const signer = useSigner();
 
 	const handleSubmit = async () => {
 		setLoading(true);
 		try {
-			const { transactionHash, to } = await sendNativeToken(activeMultisig, ethers.utils.parseUnits(amount, 'ether'));
-			await fetch(`${FIREBASE_FUNCTIONS_URL}/addTransactionEth`, {
+			if(!signer){
+				return;
+			}
+			const tx = await signer.sendTransaction({
+				to: activeMultisig,
+				value: ethers.utils.parseUnits(amount.toString(), 'ether').toString()
+			});
+			const { transactionHash, to } = await tx.wait();
+			fetch(`${FIREBASE_FUNCTIONS_URL}/addTransactionEth`, {
 				body: JSON.stringify({
 					amount_token: ethers.utils.parseUnits(amount.toString(), 'ether').toString(),
 					// eslint-disable-next-line sort-keys

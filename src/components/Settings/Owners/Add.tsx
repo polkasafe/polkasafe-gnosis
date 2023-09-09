@@ -12,7 +12,6 @@ import AddProxySuccessScreen from 'src/components/Multisig/AddProxySuccessScreen
 import CancelBtn from 'src/components/Settings/CancelBtn';
 import AddBtn from 'src/components/Settings/ModalBtn';
 import Loader from 'src/components/UserFlow/Loader';
-import { useGlobalWeb3Context } from 'src/context';
 import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { NotificationStatus } from 'src/types';
@@ -50,10 +49,9 @@ const AddOwner = ({
   onCancel?: () => void;
   className?: string;
 }) => {
-	const { multisigAddresses, activeMultisig, addressBook, address } =
+	const { multisigAddresses, activeMultisig, addressBook, address, safeService } =
     useGlobalUserDetailsContext();
 	const { network } = useGlobalApiContext();
-	const { web3AuthUser, safeService } = useGlobalWeb3Context();
 	const multisig = multisigAddresses.find(
 		(item: any) =>
 			item.address === activeMultisig || item.proxy === activeMultisig
@@ -104,7 +102,7 @@ const AddOwner = ({
 		try {
 			const safeTxHash = await safeService.createAddOwner(
 				activeMultisig,
-				web3AuthUser!.accounts[0],
+				address,
 				signatoriesArray?.[0].address,
 				newThreshold
 			);
@@ -114,12 +112,12 @@ const AddOwner = ({
 					data: '0x00',
 					note: 'Owner Added',
 					safeAddress: activeMultisig,
-					to: web3AuthUser?.accounts[0],
+					to: address,
 					txHash: safeTxHash,
 					type: 'sent'
 				};
 				const { error: multisigError } = await addTransactionEth({
-					address: web3AuthUser!.accounts[0],
+					address: address,
 					network,
 					txBody
 				});

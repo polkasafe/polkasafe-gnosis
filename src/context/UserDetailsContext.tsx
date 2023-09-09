@@ -2,6 +2,8 @@
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
 
+import { EthersAdapter } from '@safe-global/protocol-kit';
+import { useAddress, useSigner } from '@thirdweb-dev/react';
 import React, {
 	createContext,
 	useCallback,
@@ -9,24 +11,25 @@ import React, {
 	useEffect,
 	useState
 } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { DEFAULT_ADDRESS_NAME } from 'src/global/default';
 import { firebaseFunctionsHeader } from 'src/global/firebaseFunctionsHeader';
 import { FIREBASE_FUNCTIONS_URL } from 'src/global/firebaseFunctionsUrl';
-import { chainProperties } from 'src/global/networkConstants';
-import { UserDetailsContextType, Wallet } from 'src/types';
+import { returnTxUrl } from 'src/global/gnosisService';
+import { GnosisSafeService } from 'src/services';
+import { UserDetailsContextType } from 'src/types';
 import { convertSafeMultisig } from 'src/utils/convertSafeData/convertSafeMultisig';
 
-// import updateDB, { UpdateDB } from 'src/utils/updateDB';
 import { useGlobalApiContext } from './ApiContext';
-import { useGlobalWeb3Context } from './Web3Auth';
 
 const initialUserDetailsContext: UserDetailsContextType = {
 	activeMultisig: localStorage.getItem('active_multisig') || '',
 	address: localStorage.getItem('address') || '',
 	addressBook: [],
 	createdAt: new Date(),
-	loggedInWallet: Wallet.WEB3AUTH,
+	loggedInWallet: localStorage.getItem('logged_in_wallet') || '',
 	multisigAddresses: [],
+	notification_preferences: {},
 	setActiveMultisigData: (): void => {
 		throw new Error('setUserDetailsContextState function must be overridden');
 	},
@@ -48,54 +51,59 @@ export function useGlobalUserDetailsContext() {
 export const UserDetailsProvider = ({
 	children
 }: React.PropsWithChildren<{}>) => {
+	const address = useAddress();
 	const [userDetailsContextState, setUserDetailsContextState] = useState(
 		initialUserDetailsContext
 	);
 	const [activeMultisigData, setActiveMultisigData] = useState<any>({});
-	const { ethProvider, web3Provider, safeService } =
-    useGlobalWeb3Context();
 	const { network } = useGlobalApiContext();
-	const { switchChain, addChain } = useGlobalWeb3Context();
+	const navigate = useNavigate();
+	const [safeService, setSafeService] = useState<null | GnosisSafeService>(
+		null
+	);
+	const signer = useSigner();
 
 	const [loading, setLoading] = useState(false);
 
-	const address = localStorage.getItem('address');
-	const signature = localStorage.getItem('signature');
-
-	const fetchUserData = useCallback(async () => {
-		if (!address && !signature) {
-			console.log('something');
+	const connectAddress = useCallback(async (passedNetwork:string = network, address?:string, signature?:string) => {
+		setLoading(true);
+		const user = await fetch(`${FIREBASE_FUNCTIONS_URL}/connectAddress`, {
+			headers: firebaseFunctionsHeader(passedNetwork, address, signature),
+			method: 'POST'
+		});
+		const { data: userData, error: connectAddressErr } = await user.json();
+		if(!signer){
 			return;
 		}
-		setLoading(true);
-		const { data } = await fetch(`${FIREBASE_FUNCTIONS_URL}/connectAddressEth`, {
-			headers: firebaseFunctionsHeader(network, address!, signature!),
-			method: 'POST'
-		}).then((res) => res.json());
-
-		const getMultisig = localStorage.getItem('active_multisig') || '';
-
-		if (data?.multisigAddresses.length > 0) {
-			if(!getMultisig){
-				localStorage.setItem(
-					'active_multisig',
-					data?.multisigAddresses[0].address
-				);
-			}
+		if (!connectAddressErr && userData) {
+			setUserDetailsContextState((prevState) => {
+				return {
+					...prevState,
+					activeMultisig: localStorage.getItem('active_multisig') || userData?.multisigAddresses?.[0].address || '',
+					address: userData?.address,
+					addressBook: userData?.addressBook || [],
+					createdAt: userData?.created_at,
+					multisigAddresses: userData?.multisigAddresses,
+					multisigSettings: userData?.multisigSettings || {},
+					notification_preferences: userData?.notification_preferences
+					|| initialUserDetailsContext.notification_preferences
+				};
+			});
+			const txUrl = returnTxUrl(network);
+			const web3Adapter = new EthersAdapter({
+				ethers: signer.provider as any,
+				signerOrProvider: signer
+			});
+			const gnosisService = new GnosisSafeService(web3Adapter, signer, txUrl);
+			setSafeService(gnosisService);
+		} else {
+			localStorage.clear();
+			setUserDetailsContextState(initialUserDetailsContext);
+			navigate('/');
 		}
-		setUserDetailsContextState((prevState) => {
-			return {
-				...prevState,
-				activeMultisig: data?.multisigAddresses.length > 0 ? getMultisig || data?.multisigAddresses?.[0]?.address : '',
-				address: data?.address,
-				addressBook: data?.addressBook || [],
-				createdAt: data?.created_at,
-				loggedInWallet: Wallet.WEB3AUTH,
-				multisigAddresses: data?.multisigAddresses
-			};
-		});
 		setLoading(false);
-	}, [address, network, signature]);
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [network, signer]);
 
 	const updateCurrentMultisigData = useCallback(async () => {
 		if (
@@ -105,11 +113,11 @@ export const UserDetailsProvider = ({
 			|| !address
 		) {
 			console.log(
-				userDetailsContextState.activeMultisig, safeService, userDetailsContextState.multisigAddresses, address
+				userDetailsContextState.activeMultisig,
+				safeService,
+				userDetailsContextState.multisigAddresses,
+				address
 			);
-			// if(!ethProvider){
-			// setExpired(true);
-			// }
 			return;
 		}
 		try {
@@ -120,7 +128,7 @@ export const UserDetailsProvider = ({
 			if (!multisig) {
 				return;
 			}
-			if(!userDetailsContextState.activeMultisig){
+			if (!userDetailsContextState.activeMultisig) {
 				return;
 			}
 			const multiData = await safeService.getMultisigData(
@@ -133,53 +141,44 @@ export const UserDetailsProvider = ({
 					network
 				});
 			}
-			const safeBalance = await ethProvider?.getBalance(
+			const safeBalance = await signer?.provider?.getBalance(
 				userDetailsContextState.activeMultisig
 			);
 			setActiveMultisigData({ ...activeData, safeBalance });
 		} catch (err) {
 			console.log('err from update current multisig data', err);
 		}
-	// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [
-		address,
-		ethProvider,
-		network,
-		safeService,
-		userDetailsContextState.activeMultisig,
-		userDetailsContextState.multisigAddresses
-	]);
+	}, [address, network, safeService, signer?.provider, userDetailsContextState.activeMultisig, userDetailsContextState.multisigAddresses]);
 
 	useEffect(() => {
-		if (address) fetchUserData();
-	}, [address, fetchUserData]);
-
-	useEffect(() => {
-		const chains = async () => {
-			await addChain(network);
-			await switchChain(chainProperties[network].chainId);
-		};
-		if (ethProvider) {
-			chains();
+		if (localStorage.getItem('signature')) {
+			connectAddress();
+		} else {
+			localStorage.clear();
+			setLoading(false);
+			navigate('/');
 		}
-	}, [addChain, ethProvider, network, switchChain]);
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [connectAddress]);
 
 	useEffect(() => {
-		if (!ethProvider || !web3Provider) {
+		if(!userDetailsContextState.activeMultisig){
 			return;
 		}
 		updateCurrentMultisigData();
-	}, [ethProvider, updateCurrentMultisigData, web3Provider]);
+	}, [updateCurrentMultisigData, userDetailsContextState.activeMultisig]);
 
 	return (
 		<UserDetailsContext.Provider
 			value={{
 				activeMultisigData,
-				fetchUserData,
+				connectAddress,
 				loading,
 				...userDetailsContextState,
+				safeService,
 				setActiveMultisigData,
 				setLoading,
+				setSafeService,
 				setUserDetailsContextState,
 				updateCurrentMultisigData
 			}}

@@ -5,7 +5,6 @@ import { Form, Input } from 'antd';
 import classNames from 'classnames';
 import React, { useEffect, useRef, useState } from 'react';
 import NetworkCard from 'src/components/NetworksDropdown/NetworkCard';
-import { useGlobalWeb3Context } from 'src/context';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { CheckOutlined, CircleArrowDownIcon } from 'src/ui-components/CustomIcons';
 
@@ -19,8 +18,7 @@ interface Props {
 }
 
 const NameAddress = ({ multisigAddress, setMultisigAddress, multisigName, setMultisigName }: Props) => {
-	const { address } = useGlobalUserDetailsContext();
-	const { safeService } = useGlobalWeb3Context();
+	const { address, safeService } = useGlobalUserDetailsContext();
 	const { multisigAddresses } = useGlobalUserDetailsContext();
 	const [isVisible, toggleVisibility] = useState(false);
 	const isMouseEnter = useRef(false);

@@ -8,7 +8,6 @@ import { ethers } from 'ethers';
 import React, { FC, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { ParachainIcon } from 'src/components/NetworksDropdown';
-import { useGlobalWeb3Context } from 'src/context';
 import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { FIREBASE_FUNCTIONS_URL } from 'src/global/firebaseFunctionsUrl';
@@ -58,7 +57,7 @@ const Transaction: FC<ITransactionProps> = ({
 	txType,
 	recipientAddress
 }) => {
-	const { activeMultisig, address } = useGlobalUserDetailsContext();
+	const { activeMultisig, address, safeService } = useGlobalUserDetailsContext();
 	const [loading, setLoading] = useState(false);
 	const [success, setSuccess] = useState(false);
 	const [failure, setFailure] = useState(false);
@@ -66,7 +65,6 @@ const Transaction: FC<ITransactionProps> = ({
 	const [loadingMessages, setLoadingMessage] = useState('');
 	const [openLoadingModal, setOpenLoadingModal] = useState(false);
 	const { network } = useGlobalApiContext();
-	const { web3AuthUser, safeService } = useGlobalWeb3Context();
 
 	const [transactionInfoVisible, toggleTransactionVisible] = useState(false);
 	const [callDataString, setCallDataString] = useState<string>(callData || '');
@@ -91,7 +89,7 @@ const Transaction: FC<ITransactionProps> = ({
 			);
 			if (response) {
 				const updateTx = {
-					signer: web3AuthUser!.accounts[0],
+					signer: address,
 					txHash: callHash,
 					txSignature: response
 				};
@@ -101,7 +99,7 @@ const Transaction: FC<ITransactionProps> = ({
 						Accept: 'application/json',
 						'Acess-Control-Allow-Origin': '*',
 						'Content-Type': 'application/json',
-						'x-address': web3AuthUser!.accounts[0],
+						'x-address': address,
 						'x-api-key': '47c058d8-2ddc-421e-aeb5-e2aa99001949',
 						'x-signature': localStorage.getItem('signature')!,
 						'x-source': 'polkasafe'
@@ -161,7 +159,7 @@ const Transaction: FC<ITransactionProps> = ({
 						Accept: 'application/json',
 						'Acess-Control-Allow-Origin': '*',
 						'Content-Type': 'application/json',
-						'x-address': web3AuthUser!.accounts[0],
+						'x-address': address,
 						'x-api-key': '47c058d8-2ddc-421e-aeb5-e2aa99001949',
 						'x-network': network,
 						'x-signature': localStorage.getItem('signature')!,

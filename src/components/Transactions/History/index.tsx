@@ -6,7 +6,6 @@ import dayjs from 'dayjs';
 import React, { useEffect, useState } from 'react';
 import { FC } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useGlobalWeb3Context } from 'src/context';
 import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { usePagination } from 'src/hooks/usePagination';
@@ -29,8 +28,7 @@ const History: FC<IHistory> = () => {
 	const { currentPage, setPage, totalDocs } = usePagination();
 	const [transactions, setTransactions] = useState<any[]>([]);
 	const [loading, setLoading] = useState<boolean>(false);
-	const { activeMultisig } = useGlobalUserDetailsContext();
-	const { safeService } = useGlobalWeb3Context();
+	const { activeMultisig, safeService } = useGlobalUserDetailsContext();
 	const { network } = useGlobalApiContext();
 	const { address } = useGlobalUserDetailsContext();
 

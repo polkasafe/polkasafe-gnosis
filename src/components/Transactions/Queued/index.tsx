@@ -5,7 +5,6 @@
 import dayjs from 'dayjs';
 import React, { FC, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useGlobalWeb3Context } from 'src/context';
 import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import Loader from 'src/ui-components/Loader';
@@ -26,43 +25,12 @@ interface IQueued {
 }
 
 const Queued: FC<IQueued> = () => {
-	const { address, activeMultisig, setActiveMultisigData, activeMultisigData } = useGlobalUserDetailsContext();
+	const { address, activeMultisig, setActiveMultisigData, activeMultisigData, safeService } = useGlobalUserDetailsContext();
 	const [queuedTransactions, setQueuedTransactions] = useState<any[]>([]);
 	const [loading, setLoading] = useState<boolean>(false);
 	const location = useLocation();
 	const [refetch, setRefetch] = useState<boolean>(false);
-	const { safeService } = useGlobalWeb3Context();
 	const { network } = useGlobalApiContext();
-
-	useEffect(() => {
-		const hash = location.hash.slice(1);
-		const elem = document.getElementById(hash);
-		if (elem) {
-			elem.scrollIntoView({ behavior: 'smooth', block: 'start' });
-		}
-	}, [location.hash, queuedTransactions]);
-
-	useEffect(() => {
-		if(!safeService){
-			return;
-		}
-		(async () => {
-			setLoading(true);
-			try {
-				const safeData = await safeService.getPendingTx(
-					activeMultisig
-				);
-				const convertedData = safeData.results.map((safe:any) => convertSafePendingData({ ...safe, network }));
-				setQueuedTransactions(convertedData);
-				if(convertedData?.length > 0)
-					updateDB(UpdateDB.Update_Pending_Transaction, { transactions: convertedData }, address, network);
-			} catch (error) {
-				console.log(error);
-			} finally {
-				setLoading(false);
-			}
-		})();
-	}, [activeMultisig, address, network, refetch, safeService]);
 
 	const handleAfterApprove = (callHash:string) => {
 		const payload = queuedTransactions.map(queue => {
@@ -103,6 +71,37 @@ const Queued: FC<IQueued> = () => {
 		}
 		setQueuedTransactions(payload);
 	};
+
+	useEffect(() => {
+		const hash = location.hash.slice(1);
+		const elem = document.getElementById(hash);
+		if (elem) {
+			elem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+		}
+	}, [location.hash, queuedTransactions]);
+
+	useEffect(() => {
+		if(!safeService){
+			console.log('retiring');
+			return;
+		}
+		(async () => {
+			setLoading(true);
+			try {
+				const safeData = await safeService.getPendingTx(
+					activeMultisig
+				);
+				const convertedData = safeData.results.map((safe:any) => convertSafePendingData({ ...safe, network }));
+				setQueuedTransactions(convertedData);
+				if(convertedData?.length > 0)
+					updateDB(UpdateDB.Update_Pending_Transaction, { transactions: convertedData }, address, network);
+			} catch (error) {
+				console.log(error);
+			} finally {
+				setLoading(false);
+			}
+		})();
+	}, [activeMultisig, address, network, refetch, safeService]);
 
 	if (loading) {
 		return (

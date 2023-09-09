@@ -11,7 +11,6 @@ import LoadingLottie from 'src/assets/lottie-graphics/Loading';
 import SuccessTransactionLottie from 'src/assets/lottie-graphics/SuccessTransaction';
 import CancelBtn from 'src/components/Multisig/CancelBtn';
 import AddBtn from 'src/components/Multisig/ModalBtn';
-import { useGlobalWeb3Context } from 'src/context';
 import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useModalContext } from 'src/context/ModalContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
@@ -48,8 +47,7 @@ const CreateMultisig: React.FC<IMultisigProps> = ({ onCancel, homepage = false }
 	const [threshold, setThreshold] = useState<number | null>(2);
 	const [signatories, setSignatories] = useState<string[]>([userAddress]);
 	const { openModal, toggleVisibility } = useModalContext();
-	const { fetchUserData } = useGlobalUserDetailsContext();
-	const { safeService } = useGlobalWeb3Context();
+	const { safeService } = useGlobalUserDetailsContext();
 
 	const [loading, setLoading] = useState<boolean>(false);
 	const [success] = useState<boolean>(false);
@@ -139,7 +137,6 @@ const CreateMultisig: React.FC<IMultisigProps> = ({ onCancel, homepage = false }
 						status: NotificationStatus.SUCCESS
 					});
 					setCreateMultisigData(multisigData);
-					fetchUserData();
 				}
 
 			}

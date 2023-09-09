@@ -2,14 +2,12 @@
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
 import { AutoComplete, Form, Input, Modal, Spin } from 'antd';
-import { DefaultOptionType } from 'antd/es/select';
 import BN from 'bn.js';
 import React, { FC, useEffect, useState } from 'react';
 import FailedTransactionLottie from 'src/assets/lottie-graphics/FailedTransaction';
 import LoadingLottie from 'src/assets/lottie-graphics/Loading';
 import CancelBtn from 'src/components/Settings/CancelBtn';
 import ModalBtn from 'src/components/Settings/ModalBtn';
-import { useGlobalWeb3Context } from 'src/context';
 import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { chainProperties } from 'src/global/networkConstants';
@@ -28,7 +26,6 @@ import TransactionSuccessScreen from './TransactionSuccessScreen';
 const ExistentialDeposit = ({ className, onCancel, setNewTxn }: { className?: string, onCancel: () => void, setNewTxn?: React.Dispatch<React.SetStateAction<boolean>> }) => {
 	const { network } = useGlobalApiContext();
 	const { activeMultisig, multisigAddresses, addressBook } = useGlobalUserDetailsContext();
-	const { web3AuthUser } = useGlobalWeb3Context();
 
 	const [selectedSender, setSelectedSender] = useState(addressBook[0].address || '');
 	const [amount, setAmount] = useState(new BN(0));
@@ -51,8 +48,8 @@ const ExistentialDeposit = ({ className, onCancel, setNewTxn }: { className?: st
 		}
 	}, [selectedSender]);
 
-	const autocompleteAddresses: DefaultOptionType[] = web3AuthUser?.accounts.map(item => ({
-		label: <AddressComponent name={''} address={item} />,
+	const autocompleteAddresses: any[] = addressBook?.map(item => ({
+		label: <AddressComponent name={''} address={item.address} />,
 		value: item
 	})) || [];
 

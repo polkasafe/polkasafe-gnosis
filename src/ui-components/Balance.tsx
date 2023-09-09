@@ -2,9 +2,9 @@
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
 
+import { useSigner } from '@thirdweb-dev/react';
 import { ethers } from 'ethers';
 import React, { useEffect, useState } from 'react';
-import { useGlobalWeb3Context } from 'src/context';
 
 interface Props {
 	className?: string
@@ -13,18 +13,17 @@ interface Props {
 }
 
 const Balance = ({ address, className }: Props) => {
-
-	const { ethProvider } = useGlobalWeb3Context();
+	const signer= useSigner();
 
 	const [balance, setBalance] = useState<string>('0');
 
 	const fetchEthBalance = async (address: string) => {
 		try {
-			if(!ethProvider){
+			if(!signer?.provider){
 				return;
 			}
 			const balance = ethers?.utils?.formatEther(
-				await ethProvider?.getBalance(address)
+				await signer.provider?.getBalance(address)
 			);
 			if(balance)
 				setBalance(balance);

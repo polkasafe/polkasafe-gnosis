@@ -7,7 +7,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import noTransactionsHistory from 'src/assets/icons/no-transaction.svg';
 import noTransactionsQueued from 'src/assets/icons/no-transactions-queued.svg';
-import { useGlobalWeb3Context } from 'src/context';
 import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import {
@@ -27,9 +26,7 @@ import TopRightArrow from '../../assets/icons/top-right-arrow.svg';
 const DEFAULT_TXN_CARD_LIMIT = 8;
 
 const TxnCard = () => {
-	const { activeMultisig, address } = useGlobalUserDetailsContext();
-	const { safeService } = useGlobalWeb3Context();
-
+	const { activeMultisig, address, safeService } = useGlobalUserDetailsContext();
 	const [queuedTransactions, setQueuedTransactions] = useState<any>([]);
 	const [completedTransactions, setCompletedTransactions] = useState<any>([]);
 	const { network } = useGlobalApiContext();

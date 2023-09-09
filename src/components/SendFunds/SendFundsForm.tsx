@@ -11,7 +11,6 @@ import React, { FC, useState } from 'react';
 import LoadingLottie from 'src/assets/lottie-graphics/Loading';
 import CancelBtn from 'src/components/Settings/CancelBtn';
 import ModalBtn from 'src/components/Settings/ModalBtn';
-import { useGlobalWeb3Context } from 'src/context';
 import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { FIREBASE_FUNCTIONS_URL } from 'src/global/firebaseFunctionsUrl';
@@ -37,9 +36,8 @@ interface ISendFundsFormProps {
 
 const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn }: ISendFundsFormProps) => {
 
-	const { activeMultisig, addressBook, address } = useGlobalUserDetailsContext();
+	const { activeMultisig, addressBook, address, safeService } = useGlobalUserDetailsContext();
 	const { network } = useGlobalApiContext();
-	const { web3AuthUser, safeService } = useGlobalWeb3Context();
 
 	const [note, setNote] = useState<string>('');
 	const [loading, setLoading] = useState(false);
@@ -67,7 +65,7 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 	const handleSubmit = async () => {
 		setLoading(true);
 		try {
-			const safeTxHash = await safeService.createSafeTx(activeMultisig, web3AuthUser!.accounts[0], ethers.utils.parseUnits(amount, 'ether').toString(), web3AuthUser!.accounts[0], note);
+			const safeTxHash = await safeService.createSafeTx(activeMultisig, recipientAddress, ethers.utils.parseUnits(amount, 'ether').toString(), address, note);
 
 			if (safeTxHash) {
 				const txBody = {
@@ -75,7 +73,7 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 					data: '0x00',
 					note,
 					safeAddress: activeMultisig,
-					to: web3AuthUser?.accounts[0],
+					to: recipientAddress,
 					txHash: safeTxHash,
 					type: 'sent'
 				};
@@ -85,7 +83,7 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 						'Accept': 'application/json',
 						'Acess-Control-Allow-Origin': '*',
 						'Content-Type': 'application/json',
-						'x-address': web3AuthUser!.accounts[0],
+						'x-address': address,
 						'x-api-key': '47c058d8-2ddc-421e-aeb5-e2aa99001949',
 						'x-network': network,
 						'x-signature': localStorage.getItem('signature')!,
@@ -251,13 +249,6 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 						created_at={new Date()}
 					/> :
 					<Spin wrapperClassName={className} spinning={loading} indicator={<LoadingLottie message={loadingMessages} />}>
-						{/* {initiatorBalance.lte(totalDeposit.add(totalGas)) && !fetchBalancesLoading ? <section className='mb-4 text-[13px] w-full text-waiting bg-waiting bg-opacity-10 p-2.5 rounded-lg font-normal flex items-center gap-x-2'>
-							<WarningCircleIcon />
-							<p>The balance in your logged in account {addressBook.find((item: any) => item.address === address)?.name} is less than the Minimum Deposit({formatBnBalance(totalDeposit.add(totalGas), { numberAfterComma: 3, withUnit: true }, network)}) required to create a Transaction.</p>
-						</section>
-							:
-							<Skeleton className={`${!fetchBalancesLoading && 'opacity-0'}`} active paragraph={{ rows: 0 }} />
-						} */}
 						<Form
 							className={classNames('max-h-[68vh] overflow-y-auto px-2')}
 							form={form}
@@ -374,33 +365,6 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 									</article>
 								</div>
 							</section>
-
-							{/* <section className='mt-[15px]'>
-								<div className='flex items-center gap-x-[10px]'>
-									<article className='w-[500px] flex items-center gap-x-3'>
-										<p className='text-white text-sm font-normal leading-[15px]'>
-											Transfer with account keep-alive checks
-										</p>
-										<Switch disabled size='small' className='text-primary' defaultChecked />
-									</article>
-									<article className='w-[412px] flex items-center'>
-										<span className='-mr-1.5 z-0'>
-											<LineIcon className='text-5xl' />
-										</span>
-										<p className='p-3 bg-bg-secondary rounded-xl font-normal text-sm text-text_secondary leading-[15.23px]'>With the keep-alive option set, the account is protected against removal due to low balances.
-										</p>
-									</article>
-								</div>
-							</section> */}
-
-							{/* <section className='mt-4 max-w-[500px] text-waiting bg-waiting bg-opacity-10 p-3 rounded-lg font-normal text-xs leading-[13px] flex items-center gap-x-[11px]'>
-						<span>
-							<WarningCircleIcon className='text-base' />
-						</span>
-						<p className=''>
-							The transaction, after application of the transfer fees, will drop the available balance below the existential deposit. As such the transfer will fail. The account needs more free funds to cover the transaction fees.
-						</p>
-					</section> */}
 
 						</Form>
 						<section className='flex items-center gap-x-5 justify-center mt-10'>

@@ -48,7 +48,7 @@ export enum Triggers {
 }
 
 export interface UserDetailsContextType {
-	loggedInWallet: Wallet;
+	loggedInWallet: any;
 	activeMultisig: string;
 	address: string;
 	createdAt: Date;
@@ -62,7 +62,12 @@ export interface UserDetailsContextType {
 	setLoading?: any
 	loading?: boolean,
 	setActiveMultisigData: any
-	updateCurrentMultisigData:any
+	updateCurrentMultisigData:any,
+	login?:()=>any
+	notification_preferences?: any,
+	connectAddress?:any
+	safeService?:any
+	setSafeService?:any
 }
 
 export enum Wallet {

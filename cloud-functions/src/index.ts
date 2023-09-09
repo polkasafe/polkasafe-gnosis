@@ -50,9 +50,127 @@ import { IPAUser } from './notification-engine/polkassembly/_utils/types';
 import scheduledApprovalReminder from './notification-engine/polkasafe/scheduledApprovalReminder';
 import { ethers } from 'ethers';
 import _createMultisig from './utlils/_createMultisig';
+import { verifyLogin } from '@thirdweb-dev/auth/evm';
 
 admin.initializeApp();
 const firestoreDB = admin.firestore();
+
+export const connectAddress = functions.https.onRequest(async (req, res) => {
+	corsHandler(req, res, async () => {
+		// const signature = req.get('x-signature');
+		const address = req.get('x-address');
+		const network = String(req.get('x-network'));
+		if (!address) {
+			return res.status(500).json({ error: responseMessages.internal });
+		}
+
+		// const { isValid, error } = await isValidRequest(address, signature, network);
+		// if (!isValid) return res.status(400).json({ error });
+
+		try {
+			const DEFAULT_NOTIFICATION_PREFERENCES: IUserNotificationPreferences = {
+				channelPreferences: {
+					[CHANNEL.IN_APP]: {
+						name: CHANNEL.IN_APP,
+						enabled: true,
+						handle: String(address),
+						verified: true
+					}
+				},
+				triggerPreferences: {}
+			};
+
+			const multisigAddresses = await getMultisigAddressesByAddress(address);
+
+			// check if address doc already exists
+			const docId =`${address}_${network}`;
+			const addressRef = firestoreDB.collection('addresses').doc(docId);
+			const doc = await addressRef.get();
+			if (doc.exists) {
+				const data = doc.data();
+				if (data && data.created_at) {
+					const addressDoc = {
+						...data,
+						created_at: data?.created_at.toDate()
+					} as IUser;
+
+					const resUser: IUserResponse = {
+						address: addressDoc.address,
+						email: addressDoc.email,
+						created_at: addressDoc.created_at,
+						addressBook: addressDoc.addressBook,
+						multisigAddresses: multisigAddresses.map((item) => (
+							{
+								...item,
+								signatories: item.signatories.map((signatory) => signatory)
+							})),
+						multisigSettings: addressDoc.multisigSettings,
+						notification_preferences: addressDoc.notification_preferences || DEFAULT_NOTIFICATION_PREFERENCES,
+						transactionFields: addressDoc.transactionFields
+					};
+
+					res.status(200).json({ data: resUser });
+					if (addressDoc.notification_preferences) return;
+
+					// set default notification preferences if not set
+					await doc.ref.update({ notification_preferences: DEFAULT_NOTIFICATION_PREFERENCES });
+					return;
+				}
+			}
+
+			const newAddress: IAddressBookItem = {
+				name: DEFAULT_USER_ADDRESS_NAME,
+				address: String(address)
+			};
+
+			// else create a new user document
+			const newUser: IUser = {
+				address: String(address),
+				created_at: new Date(),
+				email: null,
+				addressBook: [newAddress],
+				multisigSettings: {},
+				notification_preferences: DEFAULT_NOTIFICATION_PREFERENCES
+			};
+
+			const newUserResponse: IUserResponse = {
+				...newUser,
+				multisigAddresses
+			};
+
+			await addressRef.set(newUser, { merge: true });
+			return res.status(200).json({ data: newUserResponse });
+		} catch (err: unknown) {
+			functions.logger.error('Error in connectAddress :', { err, stack: (err as any).stack });
+			return res.status(500).json({ error: responseMessages.internal });
+		}
+	});
+});
+
+export const login = functions.https.onRequest(async (req, res) => {
+	corsHandler(req, res, async () => {
+		const network = req.get('x-network');
+		const { payload, signature } = req.body;
+		try {
+			const { address, error } = await verifyLogin(
+			process.env.NEXT_PUBLIC_THIRDWEB_AUTH_DOMAIN as string,
+			payload,
+			);
+
+			if (!address) {
+				return res.status(401).json({ error });
+			}
+			const token = `<Bytes>polkasafe-login-${uuidv4()}</Bytes>`;
+			const docId = `${address}_${network}`;
+			const addressRef = firestoreDB.collection('addresses').doc(docId);
+			await addressRef.set({ address, token }, { merge: true });
+			return res.status(200).json({ token, signature, address });
+		} catch (err: unknown) {
+			functions.logger.error('Error in getConnectAddressToken :', { err, stack: (err as any).stack });
+			return res.status(500).json({ error: responseMessages.internal });
+		}
+	});
+});
 
 export const addTransactionEth = functions.https.onRequest(async (req, res) => {
 	corsHandler(req, res, async () => {
@@ -355,6 +473,7 @@ export const createMultisigEth = functions.https.onRequest(async (req, res) => {
 		return res.status(201).json({ data: 'multisig created successfully' });
 	});
 });
+
 export const getMultisigsByNetworkEth = functions.https.onRequest(async (req, res) => {
 	corsHandler(req, res, async () => {
 		const network = String(req.get('x-network'));
@@ -627,7 +746,6 @@ const corsHandler = cors({ origin: true });
 
 const isValidRequest = async (address?: string, signature?: string, network?: string): Promise<{ isValid: boolean, error: string }> => {
 	if (!address || !signature || !network) return { isValid: false, error: responseMessages.missing_headers };
-	if (!isValidSubstrateAddress(address)) return { isValid: false, error: responseMessages.invalid_headers };
 	if (!Object.values(networks).includes(network)) return { isValid: false, error: responseMessages.invalid_network };
 
 	const isValid = await isValidSignature(signature, address);
@@ -663,116 +781,6 @@ const getMultisigAddressesByAddress = async (address: string) => {
 		updated_at: doc.data().updated_at?.toDate() || doc.data().created_at?.toDate() || new Date()
 	})) as IMultisigAddress[];
 };
-
-export const getConnectAddressToken = functions.https.onRequest(async (req, res) => {
-	corsHandler(req, res, async () => {
-		const address = req.get('x-address');
-		if (!address) return res.status(400).json({ error: responseMessages.missing_params });
-		if (!isValidSubstrateAddress(address)) return res.status(400).json({ error: responseMessages.invalid_params });
-
-		try {
-			const token = `<Bytes>polkasafe-login-${uuidv4()}</Bytes>`;
-
-			const substrateAddress = getSubstrateAddress(String(address));
-			const addressRef = firestoreDB.collection('addresses').doc(substrateAddress);
-			await addressRef.set({ address: substrateAddress, token }, { merge: true });
-			return res.status(200).json({ data: token });
-		} catch (err: unknown) {
-			functions.logger.error('Error in getConnectAddressToken :', { err, stack: (err as any).stack });
-			return res.status(500).json({ error: responseMessages.internal });
-		}
-	});
-});
-
-export const connectAddress = functions.https.onRequest(async (req, res) => {
-	corsHandler(req, res, async () => {
-		const signature = req.get('x-signature');
-		const address = req.get('x-address');
-		const network = String(req.get('x-network'));
-
-		const { isValid, error } = await isValidRequest(address, signature, network);
-		if (!isValid) return res.status(400).json({ error });
-
-		try {
-			const substrateAddress = getSubstrateAddress(String(address));
-
-			const DEFAULT_NOTIFICATION_PREFERENCES: IUserNotificationPreferences = {
-				channelPreferences: {
-					[CHANNEL.IN_APP]: {
-						name: CHANNEL.IN_APP,
-						enabled: true,
-						handle: String(substrateAddress),
-						verified: true
-					}
-				},
-				triggerPreferences: {}
-			};
-
-			const multisigAddresses = await getMultisigAddressesByAddress(substrateAddress);
-
-			// check if address doc already exists
-			const addressRef = firestoreDB.collection('addresses').doc(substrateAddress);
-			const doc = await addressRef.get();
-			if (doc.exists) {
-				const data = doc.data();
-				if (data && data.created_at) {
-					const addressDoc = {
-						...data,
-						created_at: data?.created_at.toDate()
-					} as IUser;
-
-					const resUser: IUserResponse = {
-						address: encodeAddress(addressDoc.address, chainProperties[network].ss58Format),
-						email: addressDoc.email,
-						created_at: addressDoc.created_at,
-						addressBook: addressDoc.addressBook?.map((item) => ({ ...item, address: encodeAddress(item.address, chainProperties[network].ss58Format) })),
-						multisigAddresses: multisigAddresses.map((item) => (
-							{
-								...item,
-								signatories: item.signatories.map((signatory) => encodeAddress(signatory, chainProperties[network].ss58Format))
-							})),
-						multisigSettings: addressDoc.multisigSettings,
-						notification_preferences: addressDoc.notification_preferences || DEFAULT_NOTIFICATION_PREFERENCES,
-						transactionFields: addressDoc.transactionFields
-					};
-
-					res.status(200).json({ data: resUser });
-					if (addressDoc.notification_preferences) return;
-
-					// set default notification preferences if not set
-					await doc.ref.update({ notification_preferences: DEFAULT_NOTIFICATION_PREFERENCES });
-					return;
-				}
-			}
-
-			const newAddress: IAddressBookItem = {
-				name: DEFAULT_USER_ADDRESS_NAME,
-				address: String(substrateAddress)
-			};
-
-			// else create a new user document
-			const newUser: IUser = {
-				address: String(substrateAddress),
-				created_at: new Date(),
-				email: null,
-				addressBook: [newAddress],
-				multisigSettings: {},
-				notification_preferences: DEFAULT_NOTIFICATION_PREFERENCES
-			};
-
-			const newUserResponse: IUserResponse = {
-				...newUser,
-				multisigAddresses
-			};
-
-			await addressRef.set(newUser, { merge: true });
-			return res.status(200).json({ data: newUserResponse });
-		} catch (err: unknown) {
-			functions.logger.error('Error in connectAddress :', { err, stack: (err as any).stack });
-			return res.status(500).json({ error: responseMessages.internal });
-		}
-	});
-});
 
 export const addToAddressBook = functions.https.onRequest(async (req, res) => {
 	corsHandler(req, res, async () => {

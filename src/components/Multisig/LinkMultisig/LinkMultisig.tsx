@@ -5,18 +5,14 @@
 /* eslint-disable sort-keys */
 
 import { SafeInfoResponse } from '@safe-global/api-kit';
-import { EthersAdapter } from '@safe-global/protocol-kit';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CancelBtn from 'src/components/Multisig/CancelBtn';
 import AddBtn from 'src/components/Multisig/ModalBtn';
-import { useGlobalWeb3Context } from 'src/context';
 import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { firebaseFunctionsHeader } from 'src/global/firebaseFunctionsHeader';
 import { FIREBASE_FUNCTIONS_URL } from 'src/global/firebaseFunctionsUrl';
-import { returnTxUrl } from 'src/global/gnosisService';
-import { GnosisSafeService } from 'src/services';
 import { IMultisigAddress, NotificationStatus } from 'src/types';
 import queueNotification from 'src/ui-components/QueueNotification';
 
@@ -35,9 +31,8 @@ const LinkMultisig = ({ onCancel }: { onCancel: () => void }) => {
 	const [nameAddress, setNameAddress] = useState(true);
 	const [viewOwners, setViewOwners] = useState(true);
 	const [viewReviews, setViewReviews] = useState(true);
-	const { address, addressBook, fetchUserData } = useGlobalUserDetailsContext();
+	const { address, addressBook, safeService } = useGlobalUserDetailsContext();
 	const { network } = useGlobalApiContext();
-	const { ethProvider } = useGlobalWeb3Context();
 	const navigate = useNavigate();
 
 	const [multisigAddress, setMultisigAddress] = useState<string>('');
@@ -69,15 +64,7 @@ const LinkMultisig = ({ onCancel }: { onCancel: () => void }) => {
 				return;
 			}
 			else {
-				const signer = ethProvider.getSigner();
-				const adapter = new EthersAdapter({
-					ethers: ethProvider,
-					signerOrProvider: signer
-				});
-				const txUrl = returnTxUrl(network);
-				const gnosisService = new GnosisSafeService(adapter, signer, txUrl);
-
-				const info = await gnosisService.getMultisigData(multisigAddress);
+				const info = await safeService.getMultisigData(multisigAddress);
 				setMultisigInfo(info);
 
 				// const getMultisigDataRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/getMultisigDataByMultisigAddress`, {
@@ -107,7 +94,7 @@ const LinkMultisig = ({ onCancel }: { onCancel: () => void }) => {
 					setNameAddress(false);
 					setViewOwners(false);
 					setThreshold(info.threshold);
-					setSignatoriesArray(info.owners.map(address => ({ name: '', address })));
+					setSignatoriesArray(info.owners.map((address:any) => ({ name: '', address })));
 				}
 			}
 		} catch (error) {
@@ -164,9 +151,6 @@ const LinkMultisig = ({ onCancel }: { onCancel: () => void }) => {
 					message: 'Multisig Linked Successfully.',
 					status: NotificationStatus.SUCCESS
 				});
-
-				await fetchUserData();
-
 				navigate('/', { replace: true });
 			} catch (err) {
 				console.log(err);
