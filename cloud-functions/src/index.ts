@@ -16,7 +16,9 @@ import {
 	IUserResponse,
 	IUserNotificationTriggerPreferences,
 	IUserNotificationChannelPreferences,
-	ITransactionFields
+	ITransactionFields,
+	ISharedAddressBooks,
+	ISharedAddressBookRecord
 } from './types';
 import isValidSubstrateAddress from './utlils/isValidSubstrateAddress';
 import getSubstrateAddress from './utlils/getSubstrateAddress';
@@ -150,7 +152,7 @@ export const connectAddress = functions.https.onRequest(async (req, res) => {
 export const login = functions.https.onRequest(async (req, res) => {
 	corsHandler(req, res, async () => {
 		const network = req.get('x-network');
-		const { payload, signature } = req.body;
+		const { payload } = req.body;
 		try {
 			const { address, error } = await verifyLogin(
 			process.env.NEXT_PUBLIC_THIRDWEB_AUTH_DOMAIN as string,
@@ -164,7 +166,7 @@ export const login = functions.https.onRequest(async (req, res) => {
 			const docId = `${address}_${network}`;
 			const addressRef = firestoreDB.collection('addresses').doc(docId);
 			await addressRef.set({ address, token }, { merge: true });
-			return res.status(200).json({ token, signature, address });
+			return res.status(200).json({ token, signature: payload.signature, address });
 		} catch (err: unknown) {
 			functions.logger.error('Error in getConnectAddressToken :', { err, stack: (err as any).stack });
 			return res.status(500).json({ error: responseMessages.internal });
@@ -178,33 +180,35 @@ export const addTransactionEth = functions.https.onRequest(async (req, res) => {
 		const network = String(req.get('x-network'));
 		const address = String(req.get('x-address'));
 
-		const { amount_token, safeAddress, data, txHash, to, note, type, executed } = req.body;
+		const { amount_token, safeAddress, callData, callHash, to, note, type, executed, transactionFields } = req.body;
+		if (!callHash || !network ) return res.status(400).json({ error: responseMessages.invalid_params });
 
-		const addressRef = firestoreDB.collection('addresses').doc(address);
-		const doc = await addressRef.get();
+		// const addressRef = firestoreDB.collection('addresses').doc(`${address}_${network}`);
+		// const doc = await addressRef.get();
 
-		if (!doc.exists) return res.status(404).json({ error: responseMessages.address_not_in_db });
-		const addressData = doc.data();
+		// if (!doc.exists) return res.status(404).json({ error: responseMessages.address_not_in_db });
+		// const addressData = doc.data();
 
-		const isValid = await verifyEthSignature(address || '', signature || '', addressData?.token);
-		if (!isValid) return res.status(400).json({ error: 'something went wrong' });
+		// const isValid = await verifyEthSignature(address || '', signature || '', addressData?.token);
+		// if (!isValid) return res.status(400).json({ error: 'something went wrong' });
 
 		try {
 			// const usdValue = await fetchTokenUSDValue(network);
 			const newTransaction = {
-				data,
+				callData,
 				created_at: new Date(),
 				safeAddress,
-				to,
-				amount_token: String(amount_token),
-				txHash,
+				to: to || '',
+				amount_token: String(amount_token) || '',
+				callHash,
 				network,
 				note: note || '',
-				type,
-				executed: executed ? true : false
+				type: type || 'sent',
+				transactionFields: transactionFields || {},
+				executed: executed || false
 			};
 
-			const transactionRef = firestoreDB.collection('transactions').doc(String(txHash));
+			const transactionRef = firestoreDB.collection('transactions').doc(String(callHash));
 			await transactionRef.set(newTransaction);
 
 			return res.status(200).json({ data: responseMessages.success });
@@ -438,7 +442,7 @@ export const createMultisigEth = functions.https.onRequest(async (req, res) => {
 		if (!doc.exists) return res.status(404).json({ error: responseMessages.address_not_in_db });
 		const addressData = doc.data();
 
-		const { signatories, threshold, multisigName, safeAddress, disabled } = req.body;
+		const { signatories, threshold, multisigName, safeAddress, disabled, addressBook } = req.body;
 
 		if (!signatories || !threshold || !multisigName || !safeAddress) {
 			return res.status(400).json({ error: responseMessages.missing_params });
@@ -469,6 +473,30 @@ export const createMultisigEth = functions.https.onRequest(async (req, res) => {
 			updated_at: new Date()
 		};
 		await multisigColl.doc(safeAddress).set(multisigDocument);
+
+		if (addressBook) {
+			const addressBookRef = firestoreDB.collection('addressBooks').doc(`${safeAddress}_${network}`);
+			const records: { [address: string]: ISharedAddressBookRecord } = {} as any;
+			signatories.forEach((signatory) => {
+				records[signatory] = {
+					name: addressBook[signatory]?.name || '',
+					address: signatory,
+					created_at: addressBook[signatory]?.created_at || new Date(),
+					updated_at: addressBook[signatory]?.updated_at || new Date(),
+					updatedBy: addressBook[signatory]?.updatedBy || substrateAddress,
+					email: addressBook[signatory]?.email || '',
+					discord: addressBook[signatory]?.discord || '',
+					telegram: addressBook[signatory]?.telegram || '',
+					roles: addressBook[signatory]?.roles || []
+				};
+			});
+			const updatedAddressEntry: ISharedAddressBooks = {
+				records,
+				multisig: safeAddress
+			};
+
+			await addressBookRef.set({ ...updatedAddressEntry }, { merge: true });
+		}
 
 		return res.status(201).json({ data: 'multisig created successfully' });
 	});
@@ -587,26 +615,31 @@ export const addToAddressBookEth = functions.https.onRequest(async (req, res) =>
 
 		const address: string = substrateAddress !== '' ? substrateAddress : req.get('x-address') || '';
 
-		const addressRef = firestoreDB.collection('addresses').doc(address);
+		const addressRef = firestoreDB.collection('addresses').doc(`${address}_${network}`);
 		const doc = await addressRef.get();
 
 		if (!doc.exists) return res.status(404).json({ error: responseMessages.address_not_in_db });
 		const addressData = doc.data();
 
-		const { name, address: addressToAdd } = req.body;
+		const { name, address: addressToAdd, roles=[], email='', discord='', telegram='', nickName='' } = req.body;
 		if (!name || !addressToAdd) return res.status(400).json({ error: responseMessages.missing_params });
 
 		const addressDoc = {
-			...doc.data(),
+			...addressData,
 			created_at: doc.data()?.created_at.toDate()
 		} as IUser;
 		const addressBook = addressDoc.addressBook || [];
 
-		// const isValid = await verifyEthSignature(address, signature!, addressData?.token);
-		// if (!isValid) return res.status(400).json({ error: 'something went wrong' });
+		// check if address already exists in address book
+		const addressIndex = addressBook.findIndex((a) => a.address == addressToAdd);
+		if (addressIndex > -1) {
+			addressBook[addressIndex] = { name, address: addressToAdd, roles, email, discord, telegram, nickName };
+			await addressRef.set({ addressBook }, { merge: true });
+			return res.status(200).json({ data: addressBook.map((item) => ({ ...item, address: encodeAddress(item.address, chainProperties[network].ss58Format) })) });
+		}
 
 		try {
-			const newAddressBook = [...addressBook, { address: addressToAdd, name }];
+			const newAddressBook = [...addressBook, { name, address: addressToAdd, roles, email, discord, telegram, nickName }];
 			await addressRef.set({ addressBook: newAddressBook }, { merge: true });
 			return res.status(200).json({ data: newAddressBook });
 		} catch (err) {
@@ -624,7 +657,7 @@ export const connectAddressEth = functions.https.onRequest(async (req, res) => {
 
 		const multisigAddresses = await getMultisigAddressesByAddress(address);
 
-		const addressRef = firestoreDB.collection('addresses').doc(address);
+		const addressRef = firestoreDB.collection('addresses').doc(`${address}_${network}`);
 		const doc = await addressRef.get();
 
 		if (!doc.exists) return res.status(404).json({ error: responseMessages.address_not_in_db });
@@ -699,11 +732,10 @@ export const connectAddressEth = functions.https.onRequest(async (req, res) => {
 
 export const removeFromAddressBookEth = functions.https.onRequest(async (req, res) => {
 	corsHandler(req, res, async () => {
-		const substrateAddress = getSubstrateAddress(String(req.get('x-address')));
+		const address = (String(req.get('x-address'))) || '';
+		const network = (String(req.get('x-network')));
 
-		const address: string = substrateAddress !== '' ? substrateAddress : req.get('x-address') || '';
-
-		const addressRef = firestoreDB.collection('addresses').doc(address);
+		const addressRef = firestoreDB.collection('addresses').doc(`${address}_${network}`);
 		const doc = await addressRef.get();
 
 		if (!doc.exists) return res.status(404).json({ error: responseMessages.address_not_in_db });
@@ -1344,46 +1376,6 @@ export const getMultisigQueue = functions.https.onRequest(async (req, res) => {
 	});
 });
 
-export const addTransaction = functions.https.onRequest(async (req, res) => {
-	corsHandler(req, res, async () => {
-		const signature = req.get('x-signature');
-		const address = req.get('x-address');
-		const network = String(req.get('x-network'));
-
-		const { isValid, error } = await isValidRequest(address, signature, network);
-		if (!isValid) return res.status(400).json({ error });
-
-		const { amount_token, block_number, callData, callHash, from, to, note, transactionFields } = req.body;
-		if (isNaN(amount_token) || !block_number || !callHash || !from || !network || !to) return res.status(400).json({ error: responseMessages.invalid_params });
-
-		try {
-			const usdValue = await fetchTokenUSDValue(network);
-			const newTransaction: ITransaction = {
-				callData,
-				callHash,
-				created_at: new Date(),
-				block_number: Number(block_number),
-				from,
-				to,
-				token: chainProperties[network].tokenSymbol,
-				amount_usd: usdValue ? `${Number(amount_token) * usdValue}` : '',
-				amount_token: String(amount_token),
-				network,
-				note: note || '',
-				transactionFields: transactionFields || {}
-			};
-
-			const transactionRef = firestoreDB.collection('transactions').doc(String(callHash));
-			await transactionRef.set(newTransaction);
-
-			return res.status(200).json({ data: responseMessages.success });
-		} catch (err: unknown) {
-			functions.logger.error('Error in addTransaction :', { err, stack: (err as any).stack });
-			return res.status(500).json({ error: responseMessages.internal });
-		}
-	});
-});
-
 export const renameMultisig = functions.https.onRequest(async (req, res) => {
 	corsHandler(req, res, async () => {
 		const signature = req.get('x-signature');
@@ -1568,9 +1560,6 @@ export const getTransactionNote = functions.https.onRequest(async (req, res) => 
 		const address = req.get('x-address');
 		const network = String(req.get('x-network'));
 
-		const { isValid, error } = await isValidRequest(address, signature, network);
-		if (!isValid) return res.status(400).json({ error });
-
 		const { callHash } = req.body;
 		if (!callHash) return res.status(400).json({ error: responseMessages.missing_params });
 
@@ -1578,7 +1567,7 @@ export const getTransactionNote = functions.https.onRequest(async (req, res) => 
 			const txRef = firestoreDB.collection('transactions').doc(callHash);
 			const txDoc = await txRef.get();
 
-			return res.status(200).json({ data: txDoc.exists ? (txDoc.data() as ITransaction).note || '' : '' });
+			return res.status(200).json({ data: txDoc.exists ? (txDoc.data() as ITransaction) || {} : {} });
 		} catch (err: unknown) {
 			functions.logger.error('Error in getTransactionNote :', { err, stack: (err as any).stack });
 			return res.status(500).json({ error: responseMessages.internal });
@@ -2941,14 +2930,155 @@ export const updateTransactionFields = functions.https.onRequest(async (req, res
 		if (!transactionFields || typeof transactionFields !== 'object') return res.status(400).json({ error: responseMessages.missing_params });
 
 		try {
-			const substrateAddress = getSubstrateAddress(String(address));
-
-			const addressRef = firestoreDB.collection('addresses').doc(substrateAddress);
+			const addressRef = firestoreDB.collection('addresses').doc(`${address}_${network}`);
 			addressRef.update({ ['transactionFields']: transactionFields });
 
 			return res.status(200).json({ data: responseMessages.success });
 		} catch (err: unknown) {
 			functions.logger.error('Error in updateTransactionFields :', { err, stack: (err as any).stack });
+			return res.status(500).json({ error: responseMessages.internal });
+		}
+	});
+});
+
+export const updateSharedAddressBook = functions.https.onRequest(async (req, res) => {
+	corsHandler(req, res, async () => {
+		const signature = req.get('x-signature');
+		const address = req.get('x-address');
+		const network = String(req.get('x-network'));
+
+		// const { isValid, error } = await isValidRequest(address, signature, network);
+		// if (!isValid) return res.status(400).json({ error });
+
+		const { name, address: addressToAdd, multisigAddress, email, discord, telegram, roles=[], nickName } = req.body;
+		if (!name || !addressToAdd || !multisigAddress) return res.status(400).json({ error: responseMessages.missing_params });
+
+		try {
+			const addressBookRef = firestoreDB.collection('addressBooks').doc(`${multisigAddress}_${network}`);
+			const addressBookDoc = await addressBookRef.get();
+			const addressBookData = addressBookDoc.data() as ISharedAddressBooks;
+			const existingRoles = addressBookData?.roles || [];
+			const newRoles = [...new Set([...existingRoles, ...roles])];
+			const updatedAddressEntry: ISharedAddressBooks = {
+				records: {
+					...addressBookData?.records,
+					[addressToAdd]: {
+						name,
+						address: addressToAdd,
+						email: email || '',
+						discord: discord || '',
+						telegram: telegram || '',
+						roles: roles || [],
+						updated_at: new Date(),
+						created_at: new Date(),
+						updatedBy: address
+					}
+				},
+				roles: newRoles,
+				multisig: multisigAddress
+			};
+
+			await addressBookRef.set({ ...updatedAddressEntry }, { merge: true });
+
+			const addressRef = firestoreDB.collection('addresses').doc(`${address}_${network}`);
+			const doc = await addressRef.get();
+			if (doc.exists) {
+				const addressDoc = {
+					...doc.data(),
+					created_at: doc.data()?.created_at.toDate()
+				} as IUser;
+				const addressBook = addressDoc.addressBook || [];
+
+				// check if address already exists in address book
+				const addressIndex = addressBook.findIndex((a) => a.address == addressToAdd);
+				if (addressIndex > -1) {
+					addressBook[addressIndex] = { ...addressBook[addressIndex], nickName };
+					await addressRef.set({ addressBook }, { merge: true });
+				} else {
+					const newAddressBook = [...addressBook, { name, address: addressToAdd, roles, email, discord, telegram, nickName }];
+					await addressRef.set({ addressBook: newAddressBook }, { merge: true });
+				}
+			}
+
+			return res.status(200).json({ data: updatedAddressEntry });
+		} catch (err:unknown) {
+			functions.logger.error('Error in updateSharedAddressBook :', { err, stack: (err as any).stack });
+			return res.status(500).json({ error: responseMessages.internal });
+		}
+	});
+});
+
+export const removeFromSharedAddressBook = functions.https.onRequest(async (req, res) => {
+	corsHandler(req, res, async () => {
+		const signature = req.get('x-signature');
+		const address = req.get('x-address');
+		const network = String(req.get('x-network'));
+
+		const { isValid, error } = await isValidRequest(address, signature, network);
+		if (!isValid) return res.status(400).json({ error });
+
+		const { address: addresssToRemove, multisigAddress } = req.body;
+		if (!addresssToRemove || !multisigAddress || !address) return res.status(400).json({ error: responseMessages.missing_params });
+
+		try {
+			const addressBookRef = firestoreDB.collection('addressBooks').doc(`${multisigAddress}_${network}`);
+			const addressBookDoc = await addressBookRef.get();
+			const addressBookData = addressBookDoc.data() as ISharedAddressBooks;
+			const updatedAddressEntry: ISharedAddressBooks = {
+				...addressBookData,
+				records: {
+					...addressBookData?.records
+				}
+			};
+
+			delete updatedAddressEntry.records[addresssToRemove];
+
+			await addressBookRef.update({ records: updatedAddressEntry.records });
+
+			const addressRef = firestoreDB.collection('addresses').doc(`${address}_${network}`);
+			const doc = await addressRef.get();
+			if (doc.exists) {
+				const addressDoc = {
+					...doc.data(),
+					created_at: doc.data()?.created_at.toDate()
+				} as IUser;
+				const addressBook = addressDoc.addressBook || [];
+
+				// check if address exists in address book
+				const addressIndex = addressBook.findIndex((a) => a.address == addresssToRemove);
+				if (addressIndex > -1) {
+					addressBook.splice(addressIndex, 1);
+					await addressRef.set({ addressBook }, { merge: true });
+				}
+			}
+
+			return res.status(200).json({ data: updatedAddressEntry });
+		} catch (err:unknown) {
+			functions.logger.error('Error in removeFromSharedAddressBook :', { err, stack: (err as any).stack });
+			return res.status(500).json({ error: responseMessages.internal });
+		}
+	});
+});
+
+export const getSharedAddressBook = functions.https.onRequest(async (req, res) => {
+	corsHandler(req, res, async () => {
+		const signature = req.get('x-signature');
+		const address = req.get('x-address');
+		const network = String(req.get('x-network'));
+
+		// const { isValid, error } = await isValidRequest(address, signature, network);
+		// if (!isValid) return res.status(400).json({ error });
+
+		const { multisigAddress } = req.body;
+		if (!multisigAddress ) return res.status(400).json({ error: responseMessages.missing_params });
+
+		try {
+			const addressBookRef = firestoreDB.collection('addressBooks').doc(`${multisigAddress}_${network}`);
+			const addressBookDoc = await addressBookRef.get();
+
+			return res.status(200).json({ data: addressBookDoc.exists ? (addressBookDoc.data() as ISharedAddressBooks) || {} : {} });
+		} catch (err:unknown) {
+			functions.logger.error('Error in getSharedAddressBook :', { err, stack: (err as any).stack });
 			return res.status(500).json({ error: responseMessages.internal });
 		}
 	});

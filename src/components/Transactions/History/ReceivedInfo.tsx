@@ -20,7 +20,7 @@ interface IReceivedInfoProps {
 	date: string;
 	// time: string;
 	from: string
-	to: string
+	to: string | string[]
 	callHash: string
 	note?: string
 	loading?: boolean
@@ -87,7 +87,7 @@ const ReceivedInfo: FC<IReceivedInfoProps> = ({ amount, to, date, from, callHash
 				>
 					To:
 				</span>
-				<AddressComponent address={to} />
+				<AddressComponent address={to.toString()} />
 			</div>
 			<div
 				className='w-full max-w-[418px] flex items-center gap-x-5'

@@ -106,8 +106,10 @@ const DashboardCard = ({ className, setNewTxn, transactionLoading, openTransacti
 				<div className='w-full'>
 					<div className='flex gap-x-3 items-center'>
 						<div className='relative'>
-							<MetaMaskAvatar address={currentMultisig?.address || ''} size={50} />
-							<div className={' bg-primary text-white text-sm rounded-lg absolute -bottom-0 left-[16px] px-2'}>
+							<div className='border-2 border-primary p-1.5 rounded-full flex justify-center items-center'>
+								<MetaMaskAvatar address={currentMultisig?.address || ''} size={50} />
+							</div>
+							<div className={' bg-primary text-white text-sm rounded-lg absolute -bottom-1 left-[16px] px-2'}>
 								{currentMultisig?.threshold}/{currentMultisig?.signatories.length}
 							</div>
 						</div>

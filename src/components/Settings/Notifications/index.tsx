@@ -23,9 +23,9 @@ const Notifications = () => {
 
 	const { network } = useGlobalApiContext();
 	const { pathname } = useLocation();
-	const { address, setUserDetailsContextState } = useGlobalUserDetailsContext();
+	const { notification_preferences, address, setUserDetailsContextState } = useGlobalUserDetailsContext();
 	const [notifyAfter, setNotifyAfter] = useState<number>(8);
-	const emailPreference = '' as any;
+	const emailPreference = notification_preferences?.channelPreferences?.[CHANNEL.EMAIL];
 	const [email, setEmail] = useState<string>(emailPreference?.handle || '');
 	const [emailValid, setEmailValid] = useState<boolean>(true);
 	const [newTxn, setNewTxn] = useState<boolean>(false);

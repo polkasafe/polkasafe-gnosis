@@ -49,7 +49,7 @@ const AddOwner = ({
   onCancel?: () => void;
   className?: string;
 }) => {
-	const { multisigAddresses, activeMultisig, addressBook, address, safeService } =
+	const { multisigAddresses, activeMultisig, addressBook, address, gnosisSafe } =
     useGlobalUserDetailsContext();
 	const { network } = useGlobalApiContext();
 	const multisig = multisigAddresses.find(
@@ -95,12 +95,12 @@ const AddOwner = ({
 	};
 
 	const handleAddOwner = async () => {
-		if(!safeService){
+		if(!gnosisSafe){
 			return;
 		}
 		setLoading(true);
 		try {
-			const safeTxHash = await safeService.createAddOwner(
+			const safeTxHash = await gnosisSafe.createAddOwner(
 				activeMultisig,
 				address,
 				signatoriesArray?.[0].address,

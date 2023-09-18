@@ -20,6 +20,7 @@ import { BrowserRouter } from 'react-router-dom';
 
 // import Ath from './auth/Ath';
 import AppLayout from './components/AppLayout';
+import { ActiveMultisigProvider } from './context/ActiveMultisigContext';
 import { ApiContextProvider } from './context/ApiContext';
 import { DAppContextProvider } from './context/DAppContext';
 import ModalContextProvider from './context/ModalContext';
@@ -42,12 +43,14 @@ function App() {
 						}}
 					>
 						<UserDetailsProvider>
-							<DAppContextProvider>
-								<GlobalStyle />
-								<ModalContextProvider>
-									<AppLayout />
-								</ModalContextProvider>
-							</DAppContextProvider>
+							<ActiveMultisigProvider>
+								<DAppContextProvider>
+									<GlobalStyle />
+									<ModalContextProvider>
+										<AppLayout />
+									</ModalContextProvider>
+								</DAppContextProvider>
+							</ActiveMultisigProvider>
 						</UserDetailsProvider>
 					</ThirdwebProvider>
 				</ApiContextProvider>

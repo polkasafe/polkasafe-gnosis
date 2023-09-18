@@ -26,7 +26,7 @@ import TopRightArrow from '../../assets/icons/top-right-arrow.svg';
 const DEFAULT_TXN_CARD_LIMIT = 8;
 
 const TxnCard = () => {
-	const { activeMultisig, address, safeService } = useGlobalUserDetailsContext();
+	const { activeMultisig, address, gnosisSafe } = useGlobalUserDetailsContext();
 	const [queuedTransactions, setQueuedTransactions] = useState<any>([]);
 	const [completedTransactions, setCompletedTransactions] = useState<any>([]);
 	const { network } = useGlobalApiContext();
@@ -35,7 +35,7 @@ const TxnCard = () => {
 	const handleTransactions = useCallback(async () => {
 		setLoading(true);
 		try {
-			const completedSafeData = await safeService.getAllTx(
+			const completedSafeData = await gnosisSafe.getAllTx(
 				activeMultisig,
 				{
 					executed: true,
@@ -43,7 +43,7 @@ const TxnCard = () => {
 					trusted: true
 				}
 			);
-			const safeData = await safeService.getPendingTx(activeMultisig);
+			const safeData = await gnosisSafe.getPendingTx(activeMultisig);
 			const convertedCompletedData = completedSafeData.results.map((safe: any) =>
 				convertSafeHistoryData({ ...safe, network })
 			);
@@ -64,14 +64,14 @@ const TxnCard = () => {
 			setLoading(false);
 			return;
 		}
-	},[activeMultisig, address, network, safeService]);
+	},[activeMultisig, address, network, gnosisSafe]);
 
 	useEffect(() => {
-		if (!activeMultisig || !safeService) {
+		if (!activeMultisig || !gnosisSafe) {
 			return;
 		}
 		handleTransactions();
-	}, [activeMultisig, handleTransactions, safeService]);
+	}, [activeMultisig, handleTransactions, gnosisSafe]);
 
 	return (
 		<div>

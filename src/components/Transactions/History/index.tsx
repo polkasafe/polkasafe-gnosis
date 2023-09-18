@@ -18,17 +18,16 @@ import NoTransactionsHistory from './NoTransactionsHistory';
 import Transaction from './Transaction';
 
 interface IHistory {
-  loading?: boolean;
-  setLoading?: React.Dispatch<React.SetStateAction<boolean>>;
-  refetch?: boolean;
+  loading: boolean;
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  refetch: boolean;
 }
 
-const History: FC<IHistory> = () => {
+const History: FC<IHistory> = ({ loading, setLoading, refetch }) => {
 	const location = useLocation();
 	const { currentPage, setPage, totalDocs } = usePagination();
 	const [transactions, setTransactions] = useState<any[]>([]);
-	const [loading, setLoading] = useState<boolean>(false);
-	const { activeMultisig, safeService } = useGlobalUserDetailsContext();
+	const { activeMultisig, gnosisSafe } = useGlobalUserDetailsContext();
 	const { network } = useGlobalApiContext();
 	const { address } = useGlobalUserDetailsContext();
 
@@ -41,19 +40,20 @@ const History: FC<IHistory> = () => {
 	}, [location.hash, transactions]);
 
 	useEffect(() => {
-		if(!safeService){
+		if(!gnosisSafe){
 			return;
 		}
 		(async () => {
 			setLoading(true);
 			try {
-				const safeData = await safeService.getAllTx(
+				const safeData = await gnosisSafe.getAllTx(
 					activeMultisig,
 					{
 						executed: true,
 						trusted: true
 					}
 				);
+				console.log(safeData);
 				const convertedData = safeData.results.map((safe:any) => convertSafeHistoryData({ ...safe, network }));
 				setTransactions(convertedData);
 				updateDB(UpdateDB.Update_History_Transaction, { transactions: convertedData }, address, network);
@@ -63,7 +63,8 @@ const History: FC<IHistory> = () => {
 				setLoading(false);
 			}
 		})();
-	}, [activeMultisig, address, network, safeService]);
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [activeMultisig, address, network, refetch, gnosisSafe]);
 
 	if (loading) {
 		return (

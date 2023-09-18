@@ -15,13 +15,13 @@ interface ITransactionSuccessScreen {
 	txnHash?: string
 	created_at: Date
 	sender: string
-	recipient: string
+	recipients: string[]
 	onDone?: () => void
 	successMessage: string
 	waitMessage?: string
 }
 
-const TransactionSuccessScreen = ({ amount, txnHash, created_at, sender, recipient, onDone, successMessage, waitMessage }: ITransactionSuccessScreen) => {
+const TransactionSuccessScreen = ({ amount, txnHash, created_at, sender, recipients, onDone, successMessage, waitMessage }: ITransactionSuccessScreen) => {
 	return (
 		<div className='flex flex-col items-center'>
 			<SuccessTransactionLottie message={successMessage} waitMessage={waitMessage} />
@@ -49,10 +49,14 @@ const TransactionSuccessScreen = ({ amount, txnHash, created_at, sender, recipie
 					<span>Created By:</span>
 					<span><AddressComponent address={sender} /></span>
 				</div>
-				<div className='flex justify-between items-center'>
-					<span>Recipient:</span>
-					<span><AddressComponent address={recipient} /></span>
-				</div>
+				{recipients.length > 0 &&
+					<div className='flex justify-between items-center'>
+						<span>Recipients: <span className='text-white'>{recipients.length}</span></span>
+						<div className='flex flex-col gap-y-1' >
+							{recipients.map((recipient) => <AddressComponent key={recipient} address={recipient} />)}
+						</div>
+					</div>
+				}
 			</div>
 			<div className='flex justify-center mt-2'>
 				<ModalBtn title='Done' onClick={onDone} />

@@ -31,7 +31,7 @@ const LinkMultisig = ({ onCancel }: { onCancel: () => void }) => {
 	const [nameAddress, setNameAddress] = useState(true);
 	const [viewOwners, setViewOwners] = useState(true);
 	const [viewReviews, setViewReviews] = useState(true);
-	const { address, addressBook, safeService } = useGlobalUserDetailsContext();
+	const { address, addressBook, gnosisSafe } = useGlobalUserDetailsContext();
 	const { network } = useGlobalApiContext();
 	const navigate = useNavigate();
 
@@ -64,7 +64,7 @@ const LinkMultisig = ({ onCancel }: { onCancel: () => void }) => {
 				return;
 			}
 			else {
-				const info = await safeService.getMultisigData(multisigAddress);
+				const info = await gnosisSafe.getMultisigData(multisigAddress);
 				setMultisigInfo(info);
 
 				// const getMultisigDataRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/getMultisigDataByMultisigAddress`, {

@@ -24,7 +24,7 @@ const RemoveOwner = ({ addressToRemove, oldThreshold, oldSignatoriesLength, onCa
 	const [loading, setLoading] = useState(false);
 	const [success, setSuccess] = useState<boolean>(false);
 	const [failure, setFailure] = useState<boolean>(false);
-	const { multisigAddresses, activeMultisig, address, safeService } =
+	const { multisigAddresses, activeMultisig, address, gnosisSafe } =
     useGlobalUserDetailsContext();
 	const { network } = useGlobalApiContext();
 	const [txnHash] = useState<string>('');
@@ -33,7 +33,7 @@ const RemoveOwner = ({ addressToRemove, oldThreshold, oldSignatoriesLength, onCa
 	const handleRemoveOwner = async () => {
 		setLoading(true);
 		try {
-			const safeTxHash = await safeService.createRemoveOwner(
+			const safeTxHash = await gnosisSafe.createRemoveOwner(
 				activeMultisig,
 				address,
 				addressToRemove,

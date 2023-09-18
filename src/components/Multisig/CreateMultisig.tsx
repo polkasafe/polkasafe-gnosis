@@ -47,7 +47,7 @@ const CreateMultisig: React.FC<IMultisigProps> = ({ onCancel, homepage = false }
 	const [threshold, setThreshold] = useState<number | null>(2);
 	const [signatories, setSignatories] = useState<string[]>([userAddress]);
 	const { openModal, toggleVisibility } = useModalContext();
-	const { safeService } = useGlobalUserDetailsContext();
+	const { gnosisSafe } = useGlobalUserDetailsContext();
 
 	const [loading, setLoading] = useState<boolean>(false);
 	const [success] = useState<boolean>(false);
@@ -87,13 +87,13 @@ const CreateMultisig: React.FC<IMultisigProps> = ({ onCancel, homepage = false }
 			const address = localStorage.getItem('address');
 			const signature = localStorage.getItem('signature');
 
-			if (!address || !signature || !safeService) {
+			if (!address || !signature || !gnosisSafe) {
 				console.log('CreateMultisig line 97');
 				return;
 			}
 			else {
-				console.log(safeService);
-				const safeAddress = await safeService.createSafe(
+				console.log(gnosisSafe);
+				const safeAddress = await gnosisSafe.createSafe(
 					signatories as [string],
 					threshold!);
 				// if (safeAddress) return;

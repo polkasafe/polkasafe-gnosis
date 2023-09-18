@@ -5,14 +5,15 @@ import { Collapse, Divider, Skeleton } from 'antd';
 import classNames from 'classnames';
 import dayjs from 'dayjs';
 import { ethers } from 'ethers';
-import React, { FC, useEffect, useState } from 'react';
+import React, { FC, useCallback, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { ParachainIcon } from 'src/components/NetworksDropdown';
 import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
+import { firebaseFunctionsHeader } from 'src/global/firebaseFunctionsHeader';
 import { FIREBASE_FUNCTIONS_URL } from 'src/global/firebaseFunctionsUrl';
 import { chainProperties } from 'src/global/networkConstants';
-import { IQueueItem, ITxNotification, NotificationStatus } from 'src/types';
+import { IQueueItem, ITransaction, ITxNotification, NotificationStatus } from 'src/types';
 import {
 	ArrowUpRightIcon,
 	CircleArrowDownIcon,
@@ -25,7 +26,7 @@ import SentInfo from './SentInfo';
 
 interface ITransactionProps {
   status: 'Approval' | 'Cancelled' | 'Executed';
-  date: string;
+  date: Date;
   approvals: string[];
   threshold: number;
   callData: string;
@@ -57,7 +58,7 @@ const Transaction: FC<ITransactionProps> = ({
 	txType,
 	recipientAddress
 }) => {
-	const { activeMultisig, address, safeService } = useGlobalUserDetailsContext();
+	const { activeMultisig, address, gnosisSafe } = useGlobalUserDetailsContext();
 	const [loading, setLoading] = useState(false);
 	const [success, setSuccess] = useState(false);
 	const [failure, setFailure] = useState(false);
@@ -66,24 +67,46 @@ const Transaction: FC<ITransactionProps> = ({
 	const [openLoadingModal, setOpenLoadingModal] = useState(false);
 	const { network } = useGlobalApiContext();
 
+	const [decodedCallData, setDecodedCallData] = useState<any>({});
+
 	const [transactionInfoVisible, toggleTransactionVisible] = useState(false);
 	const [callDataString, setCallDataString] = useState<string>(callData || '');
-	const [note, setNote] = useState('');
+	const [transactionDetails, setTransactionDetails] = useState<ITransaction>({} as any);
 	const token = chainProperties[network].ticker;
 	const location = useLocation();
 	const hash = location.hash.slice(1);
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	const [transactionDetailsLoading, setTransactionDetailsLoading] = useState<boolean>(false);
 
-	const getTransactionNote = () => {
-		setNote('Added Note');
-	};
+	const getTransactionNote = useCallback(async () => {
+
+		setTransactionDetailsLoading(true);
+		const getTransactionDetailsRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/getTransactionNote`, {
+			body: JSON.stringify({ callHash }),
+			headers: firebaseFunctionsHeader(network),
+			method: 'POST'
+		});
+
+		const { data: getTransactionData, error: getTransactionErr } = await getTransactionDetailsRes.json() as { data: ITransaction, error: string };
+		if(!getTransactionErr && getTransactionData) {
+			console.log(getTransactionData?.amount_token);
+			setTransactionDetails(getTransactionData);
+		}
+		setTransactionDetailsLoading(false);
+	}, [callHash, network]);
 	useEffect(() => {
 		getTransactionNote();
-	},[]);
+	},[getTransactionNote]);
+
+	useEffect(() => {
+		if(!callData) return;
+		gnosisSafe.safeService.decodeData(callData).then((res) => setDecodedCallData(res)).catch((e) => console.log(e));
+	}, [callData, gnosisSafe]);
 
 	const handleApproveTransaction = async () => {
 		setLoading(true);
 		try {
-			const response = await safeService.signAndConfirmTx(
+			const response = await gnosisSafe.signAndConfirmTx(
 				callHash,
 				activeMultisig
 			);
@@ -131,7 +154,7 @@ const Transaction: FC<ITransactionProps> = ({
 	const handleExecuteTransaction = async () => {
 		setLoading(true);
 		try {
-			const { data: response, error } = await safeService.executeTx(
+			const { data: response, error } = await gnosisSafe.executeTx(
 				callHash,
 				activeMultisig
 			);
@@ -240,7 +263,7 @@ const Transaction: FC<ITransactionProps> = ({
 											'font-normal text-xs leading-[13px] text-failure'
 										}
 									>
-										{ethers.utils.formatEther(value).toString()} {token}
+										{ethers.utils.formatEther(transactionDetails.amount_token || value).toString()} {token}
 									</span>
 								</p>}
 								<p className='col-span-2'>{dayjs(date).format('lll')}</p>
@@ -279,7 +302,7 @@ const Transaction: FC<ITransactionProps> = ({
 					<div>
 						<Divider className='bg-text_secondary my-5' />
 						<SentInfo
-							amount={value}
+							amount={decodedCallData.method === 'multiSend' ? decodedCallData?.parameters?.[0]?.valueDecoded?.map((item: any) => item.value) : value}
 							amountUSD={amountUSD}
 							callHash={callHash}
 							callDataString={callDataString}
@@ -289,18 +312,20 @@ const Transaction: FC<ITransactionProps> = ({
 							threshold={threshold}
 							loading={loading}
 							getMultiDataLoading={getMultiDataLoading}
-							recipientAddress={recipientAddress || ''}
+							recipientAddress={decodedCallData.method === 'multiSend' ? decodedCallData?.parameters?.[0]?.valueDecoded?.map((item: any) => item.to) : recipientAddress || ''}
 							setCallDataString={setCallDataString}
 							handleApproveTransaction={handleApproveTransaction}
 							handleExecuteTransaction={handleExecuteTransaction}
 							handleCancelTransaction={async () => {}}
-							note={note}
+							note={transactionDetails.note || ''}
 							isProxyApproval={false}
 							isProxyAddApproval={false}
 							delegate_id={''}
 							isProxyRemovalApproval={false}
 							notifications={notifications}
 							txType={txType}
+							transactionFields={transactionDetails.transactionFields}
+							transactionDetailsLoading={transactionDetailsLoading}
 						/>
 					</div>
 				</Collapse.Panel>
