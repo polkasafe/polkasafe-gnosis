@@ -11,11 +11,12 @@ import copyText from 'src/utils/copyText';
 const DiscordInfoModal = ({ getVerifyToken }: { getVerifyToken: (channel: CHANNEL) => Promise<string | void> }) => {
 
 	const [loading, setLoading] = React.useState(false);
-	const { address, setUserDetailsContextState } = useGlobalUserDetailsContext();
+	const { address, notification_preferences, setUserDetailsContextState } = useGlobalUserDetailsContext();
 
 	const handleGenerateToken = async () => {
 		setLoading(true);
 		const verifyToken = await getVerifyToken(CHANNEL.DISCORD);
+		console.log(verifyToken);
 		setUserDetailsContextState((prev: any) => ({
 			...prev,
 			notification_preferences: {
@@ -48,13 +49,13 @@ const DiscordInfoModal = ({ getVerifyToken }: { getVerifyToken: (channel: CHANNE
 						</span>
 						<PrimaryButton loading={loading} onClick={handleGenerateToken} className='bg-primary text-white font-normal'>Generate Token</PrimaryButton>
 					</div>
-					{/* {notification_preferences?.channelPreferences?.[`${CHANNEL.DISCORD}`]?.verification_token &&
+					{notification_preferences?.channelPreferences?.[`${CHANNEL.DISCORD}`]?.verification_token &&
 						<div className='flex items-center justify-between mt-3'>
 							<span>Verification Token: </span>
 							<span onClick={() => copyText(notification_preferences?.channelPreferences?.[`${CHANNEL.DISCORD}`]?.verification_token || '')} className='px-2 cursor-pointer mx-2 rounded-md bg-bg-secondary text-primary border border-solid border-text_secondary'>
 								<CopyIcon /> {notification_preferences?.channelPreferences?.[`${CHANNEL.DISCORD}`]?.verification_token}
 							</span>
-						</div>} */}
+						</div>}
 				</li>
 			</ol>
 		</div>

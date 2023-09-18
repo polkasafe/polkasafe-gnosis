@@ -1650,17 +1650,15 @@ export const updateNotificationTriggerPreferences = functions.https.onRequest(as
 		const address = req.get('x-address');
 		const network = String(req.get('x-network'));
 
-		const { isValid, error } = await isValidRequest(address, signature, network);
-		if (!isValid) return res.status(400).json({ error });
+		// const { isValid, error } = await isValidRequest(address, signature, network);
+		// if (!isValid) return res.status(400).json({ error });
 
 		const { triggerPreferences } = req.body as { triggerPreferences: { [index: string]: IUserNotificationTriggerPreferences } };
 		if (!triggerPreferences ||
 			typeof triggerPreferences !== 'object') return res.status(400).json({ error: responseMessages.missing_params });
 
 		try {
-			const substrateAddress = getSubstrateAddress(String(address));
-
-			const addressRef = firestoreDB.collection('addresses').doc(substrateAddress);
+			const addressRef = firestoreDB.collection('addresses').doc(`${address}_${network}`);
 			addressRef.update({ ['notification_preferences.triggerPreferences']: triggerPreferences });
 
 			return res.status(200).json({ data: responseMessages.success });
@@ -1677,16 +1675,14 @@ export const updateNotificationChannelPreferences = functions.https.onRequest(as
 		const address = req.get('x-address');
 		const network = String(req.get('x-network'));
 
-		const { isValid, error } = await isValidRequest(address, signature, network);
-		if (!isValid) return res.status(400).json({ error });
+		// const { isValid, error } = await isValidRequest(address, signature, network);
+		// if (!isValid) return res.status(400).json({ error });
 
 		const { channelPreferences } = req.body as { channelPreferences: { [index: string]: IUserNotificationChannelPreferences } };
 		if (!channelPreferences || typeof channelPreferences !== 'object') return res.status(400).json({ error: responseMessages.missing_params });
 
 		try {
-			const substrateAddress = getSubstrateAddress(String(address));
-
-			const addressRef = firestoreDB.collection('addresses').doc(substrateAddress);
+			const addressRef = firestoreDB.collection('addresses').doc(`${address}_${network}`);
 			addressRef.update({ ['notification_preferences.channelPreferences']: channelPreferences });
 
 			return res.status(200).json({ data: responseMessages.success });
@@ -2338,6 +2334,7 @@ export const polkasafeSlackBotCommands = functions.https.onRequest(async (req, r
 export const getChannelVerifyToken = functions.https.onRequest(async (req, res) => {
 	corsHandler(req, res, async () => {
 		const address = req.get('x-address');
+		const network = req.get('x-network');
 		const apiKey = req.get('x-api-key');
 		const source = req.get('x-source');
 
@@ -2354,8 +2351,7 @@ export const getChannelVerifyToken = functions.https.onRequest(async (req, res) 
 			const token = uuidv4();
 
 			if (source === NOTIFICATION_SOURCE.POLKASAFE) {
-				const substrateAddress = getSubstrateAddress(String(address));
-				const addressRef = firestoreDB.collection('addresses').doc(substrateAddress);
+				const addressRef = firestoreDB.collection('addresses').doc(`${address}_${network}`);
 				await addressRef.update({ [`notification_preferences.channelPreferences.${channel}.verification_token`]: token });
 			} else if (source === NOTIFICATION_SOURCE.POLKASSEMBLY) {
 				if (isNaN(Number(userId))) return res.status(400).json({ error: responseMessages.missing_params });
