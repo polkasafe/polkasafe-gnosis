@@ -1516,32 +1516,28 @@ export const updateTransactionNote = functions.https.onRequest(async (req, res) 
 		const address = req.get('x-address');
 		const network = String(req.get('x-network'));
 
-		const { isValid, error } = await isValidRequest(address, signature, network);
-		if (!isValid) return res.status(400).json({ error });
+		// const { isValid, error } = await isValidRequest(address, signature, network);
+		// if (!isValid) return res.status(400).json({ error });
 
 		const { callHash, multisigAddress, note } = req.body;
 		if (!callHash || !note) return res.status(400).json({ error: responseMessages.missing_params });
 
 		try {
-			const substrateAddress = getSubstrateAddress(String(address));
-
 			const txRef = firestoreDB.collection('transactions').doc(callHash);
 			const txDoc = await txRef.get();
 			const txDocData = txDoc.data() as ITransaction;
 
-			if (txDoc.exists && txDocData.from === substrateAddress) {
+			if (txDoc.exists && txDocData.from === address) {
 				txRef.update({ note: String(note) });
 				return res.status(200).json({ data: responseMessages.success });
 			}
 
-			const encodedMultisigAddress = encodeAddress(multisigAddress, chainProperties[network].ss58Format);
-
-			if (!encodedMultisigAddress && !txDoc.exists) return res.status(400).json({ error: responseMessages.missing_params });
+			if (!multisigAddress && !txDoc.exists) return res.status(400).json({ error: responseMessages.missing_params });
 
 			// get signatories for multisig
-			const multisigAddressDoc = await firestoreDB.collection('multisigAddresses').doc(txDoc.exists && txDocData.from ? txDocData.from : encodedMultisigAddress).get();
+			const multisigAddressDoc = await firestoreDB.collection('multisigAddresses').doc(txDoc.exists && txDocData.from ? txDocData.from : multisigAddress).get();
 
-			if (multisigAddressDoc.exists && (multisigAddressDoc.data() as IMultisigAddress).signatories.includes(substrateAddress)) {
+			if (multisigAddressDoc.exists && (multisigAddressDoc.data() as IMultisigAddress).signatories.includes(address || '')) {
 				txRef.set({ callHash, note: String(note) }, { merge: true });
 				return res.status(200).json({ data: responseMessages.success });
 			}

@@ -87,7 +87,10 @@ const History: FC<IHistory> = ({ loading, setLoading, refetch }) => {
 						.map((transaction, index) => {
 							return (
 								<section id={transaction.callHash} key={index}>
-									<Transaction {...transaction} />
+									<Transaction
+										approvals={transaction.signatures ? transaction.signatures.map((item: any) => item.address) : []}
+										{...transaction}
+									/>
 								</section>
 							);
 						})}

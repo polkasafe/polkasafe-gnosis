@@ -22,15 +22,17 @@ import SentInfo from './SentInfo';
 const LocalizedFormat = require('dayjs/plugin/localizedFormat');
 dayjs.extend(LocalizedFormat);
 
-const Transaction: FC<ITransaction> = ({ amount_token, token, created_at, to, from, txHash, amount_usd, type, executor }) => {
+const Transaction: FC<ITransaction & { approvals: string[] }> = ({ approvals, amount_token, created_at, to, from, txHash, amount_usd, type, executor }) => {
 	const { network } = useGlobalApiContext();
+	const token = chainProperties[network].ticker;
 	const [transactionInfoVisible, toggleTransactionVisible] = useState(false);
 	const [loading, setLoading] = useState(false);
-	const [note, setNote] = useState<string>('');
 	const location = useLocation();
 	const hash = location.hash.slice(1);
 	const isSentType =  type === 'Sent' || type === 'MULTISIG_TRANSACTION';
 	const isFundType = type === 'ETHEREUM_TRANSACTION';
+
+	const [transactionDetails, setTransactionDetails] = useState<ITransaction>({} as any);
 
 	const handleGetHistoryNote = async () => {
 		try {
@@ -43,23 +45,21 @@ const Transaction: FC<ITransaction> = ({ amount_token, token, created_at, to, fr
 			}
 			else {
 				setLoading(true);
-				const noteRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/getTransactionNote`, {
-					body: JSON.stringify({
-						txHash
-					}),
+				const getTransactionDetailsRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/getTransactionNote`, {
+					body: JSON.stringify({ callHash: txHash }),
 					headers: firebaseFunctionsHeader(network),
 					method: 'POST'
 				});
 
-				const { data: noteData, error: noteError } = await noteRes.json() as { data: string, error: string };
+				const { data: getTransactionData, error: getTransactionErr } = await getTransactionDetailsRes.json() as { data: ITransaction, error: string };
 
-				if (noteError) {
-					console.log('error', noteError);
+				if (getTransactionErr) {
+					console.log('error', getTransactionErr);
 					setLoading(false);
 					return;
 				} else {
 					setLoading(false);
-					setNote(noteData);
+					setTransactionDetails(getTransactionData);
 				}
 
 			}
@@ -155,7 +155,7 @@ const Transaction: FC<ITransaction> = ({ amount_token, token, created_at, to, fr
 									date={created_at}
 									from={from}
 									callHash={txHash||''}
-									note={note}
+									note={transactionDetails?.note || ''}
 									loading={loading}
 									amount_usd={amount_usd}
 									to={to}
@@ -163,11 +163,12 @@ const Transaction: FC<ITransaction> = ({ amount_token, token, created_at, to, fr
 								:
 								<SentInfo
 									amount={String(amount_token)}
+									approvals={approvals}
 									amountType={token}
 									date={created_at}
 									recipient={to.toString()}
 									callHash={txHash || ''}
-									note={note}
+									note={transactionDetails?.note || ''}
 									from={executor || ''}
 									loading={loading}
 									amount_usd={amount_usd}

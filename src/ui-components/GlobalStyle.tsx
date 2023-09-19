@@ -192,7 +192,6 @@ input {
 	border: 1px solid #1573FE !important;
 	border-radius: 12px !important;
 	padding-bottom: 10px !important;
-	transform: scale(0.9) !important;
 	transform-origin: center !important;
 }
 .ant-select-item-option-content {

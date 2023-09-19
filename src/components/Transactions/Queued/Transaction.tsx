@@ -32,7 +32,6 @@ interface ITransactionProps {
   callData: string;
   callHash: string;
   note: string;
-  amountUSD: string;
   refetch?: () => void;
   setQueuedTransactions?: React.Dispatch<React.SetStateAction<IQueueItem[]>>;
   numberOfTransactions: number;
@@ -46,7 +45,6 @@ interface ITransactionProps {
 
 const Transaction: FC<ITransactionProps> = ({
 	approvals,
-	amountUSD,
 	callData,
 	callHash,
 	date,
@@ -89,7 +87,6 @@ const Transaction: FC<ITransactionProps> = ({
 
 		const { data: getTransactionData, error: getTransactionErr } = await getTransactionDetailsRes.json() as { data: ITransaction, error: string };
 		if(!getTransactionErr && getTransactionData) {
-			console.log(getTransactionData?.amount_token);
 			setTransactionDetails(getTransactionData);
 		}
 		setTransactionDetailsLoading(false);
@@ -303,7 +300,6 @@ const Transaction: FC<ITransactionProps> = ({
 						<Divider className='bg-text_secondary my-5' />
 						<SentInfo
 							amount={decodedCallData.method === 'multiSend' ? decodedCallData?.parameters?.[0]?.valueDecoded?.map((item: any) => item.value) : value}
-							amountUSD={amountUSD}
 							callHash={callHash}
 							callDataString={callDataString}
 							callData={callData}

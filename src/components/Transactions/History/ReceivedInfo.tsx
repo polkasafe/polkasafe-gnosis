@@ -4,11 +4,8 @@
 import { Divider, Spin } from 'antd';
 import { ethers } from 'ethers';
 import React, { FC } from 'react';
-import { MetaMaskAvatar } from 'react-metamask-avatar';
-import { useGlobalApiContext } from 'src/context/ApiContext';
-import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import AddressComponent from 'src/ui-components/AddressComponent';
-import { CopyIcon, ExternalLinkIcon } from 'src/ui-components/CustomIcons';
+import { CopyIcon } from 'src/ui-components/CustomIcons';
 import copyText from 'src/utils/copyText';
 import shortenAddress from 'src/utils/shortenAddress';
 
@@ -27,8 +24,6 @@ interface IReceivedInfoProps {
 }
 
 const ReceivedInfo: FC<IReceivedInfoProps> = ({ amount, to, date, from, callHash, note, loading }) => {
-	const { addressBook } = useGlobalUserDetailsContext();
-	const { network } = useGlobalApiContext();
 
 	return (
 		<article
@@ -50,33 +45,9 @@ const ReceivedInfo: FC<IReceivedInfoProps> = ({ amount, to, date, from, callHash
 				</span>
 			</p>
 			<div
-				className='mt-3 flex items-center gap-x-4'
+				className='mt-3'
 			>
-				<MetaMaskAvatar address={from }size={30} />
-				<div
-					className='flex flex-col gap-y-[6px]'
-				>
-					<p
-						className='font-medium text-sm leading-[15px] text-white'
-					>
-						{addressBook?.find((item: any) => item.address === from)?.name || from}
-					</p>
-					<p
-						className='flex items-center gap-x-3 font-normal text-xs leading-[13px] text-text_secondary'
-					>
-						<span>
-							{from}
-						</span>
-						<span
-							className='flex items-center gap-x-2 text-sm'
-						>
-							<button onClick={() => copyText(from)}><CopyIcon className='hover:text-primary' /></button>
-							<a href={`https://${network}.subscan.io/account/${from}`} target='_blank' rel="noreferrer" >
-								<ExternalLinkIcon />
-							</a>
-						</span>
-					</p>
-				</div>
+				<AddressComponent address={from} />
 			</div>
 			<Divider className='bg-text_secondary my-5' />
 			<div

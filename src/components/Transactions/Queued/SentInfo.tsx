@@ -5,12 +5,11 @@ import { Button, Collapse, Divider, Modal, Timeline } from 'antd';
 import classNames from 'classnames';
 import dayjs from 'dayjs';
 import React, { FC, useState } from 'react';
-import { MetaMaskAvatar } from 'react-metamask-avatar';
 import CancelBtn from 'src/components/Multisig/CancelBtn';
 import RemoveBtn from 'src/components/Settings/RemoveBtn';
 import { useGlobalApiContext } from 'src/context/ApiContext';
+import { useModalContext } from 'src/context/ModalContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
-import { DEFAULT_ADDRESS_NAME } from 'src/global/default';
 import { chainProperties } from 'src/global/networkConstants';
 import { ITxNotification } from 'src/types';
 import AddressComponent from 'src/ui-components/AddressComponent';
@@ -20,7 +19,7 @@ import {
 	CirclePlusIcon,
 	CircleWatchIcon,
 	CopyIcon,
-	ExternalLinkIcon,
+	EditIcon,
 	OutlineCloseIcon
 } from 'src/ui-components/CustomIcons';
 import Loader from 'src/ui-components/Loader';
@@ -29,9 +28,10 @@ import parseDecodedValue from 'src/utils/parseDecodedValue';
 import shortenAddress from 'src/utils/shortenAddress';
 import styled from 'styled-components';
 
+import EditNote from './EditNote';
+
 interface ISentInfoProps {
 	amount: string | string[];
-	amountUSD: string;
 	transactionFields?: {category: string, subfields: {[subfield: string]: { name: string, value: string }}}
 	date: Date;
 	// time: string;
@@ -61,7 +61,6 @@ interface ISentInfoProps {
 const SentInfo: FC<ISentInfoProps> = ({
 	handleExecuteTransaction,
 	amount,
-	amountUSD,
 	transactionFields,
 	className,
 	callData,
@@ -82,15 +81,19 @@ const SentInfo: FC<ISentInfoProps> = ({
 
 	const {
 		address: userAddress,
-		addressBook,
 		multisigAddresses,
 		activeMultisig
 	} = useGlobalUserDetailsContext();
 	const [showDetails, setShowDetails] = useState<boolean>(false);
 	const [openCancelModal, setOpenCancelModal] = useState<boolean>(false);
+	const [updatedNote, setUpdatedNote] = useState(note);
+	const { openModal } = useModalContext();
+
+	const depositor = approvals[0];
+
 	const activeMultisigObject = multisigAddresses?.find(
 		(item: any) =>
-			item.address === activeMultisig || item.proxy === activeMultisig
+			item.address === activeMultisig
 	);
 
 	const CancelTransaction: FC = () => {
@@ -152,41 +155,11 @@ const SentInfo: FC<ISentInfoProps> = ({
 												withUnit: true
 											})
 											: `? ${chainProperties[network].ticker}`}{' '}
-										{!isNaN(Number(amountUSD)) && amount && (
-											<span>
-										( {(Number(amountUSD) * Number(parseDecodedValue({ network, value: String(amount), withUnit: false }))).toFixed(2)} USD )
-											</span>
-										)}
 									</span>
 									<span>To:</span>
 								</p>
-								<div className='mt-3 flex items-center gap-x-4'>
-									<MetaMaskAvatar address={recipientAddress} size={30} />
-									<div className='flex flex-col gap-y-[6px]'>
-										<p className='font-medium text-sm leading-[15px] text-white'>
-											{recipientAddress
-												? addressBook?.find(
-													(item: any) => item.address === recipientAddress
-												)?.name || DEFAULT_ADDRESS_NAME
-												: '?'}
-										</p>
-										<p className='flex items-center gap-x-3 font-normal text-xs leading-[13px] text-text_secondary'>
-											<span>{recipientAddress}</span>
-											<span className='flex items-center gap-x-2 text-sm'>
-												<button onClick={() => copyText(recipientAddress)}>
-													<CopyIcon className='hover:text-primary' />
-												</button>
-												<a
-													href={`https://${network}.subscan.io/account/${recipientAddress}`}
-													target='_blank'
-													rel='noreferrer'
-												>
-													<ExternalLinkIcon />
-												</a>
-											</span>
-										</p>
-
-									</div>
+								<div className='mt-3'>
+									<AddressComponent address={recipientAddress} />
 								</div>
 							</>
 							:
@@ -203,41 +176,11 @@ const SentInfo: FC<ISentInfoProps> = ({
 														withUnit: true
 													})
 													: `? ${chainProperties[network].ticker}`}{' '}
-												{!isNaN(Number(amountUSD)) && amount[i] && (
-													<span>
-										( {(Number(amountUSD) * Number(parseDecodedValue({ network, value: String(amount[i]), withUnit: false }))).toFixed(2)} USD )
-													</span>
-												)}
 											</span>
 											<span>To:</span>
 										</p>
-										<div className='mt-3 flex items-center gap-x-4'>
-											<MetaMaskAvatar address={item} size={30} />
-											<div className='flex flex-col gap-y-[6px]'>
-												<p className='font-medium text-sm leading-[15px] text-white'>
-													{item
-														? addressBook?.find(
-															(item: any) => item.address === item
-														)?.name || DEFAULT_ADDRESS_NAME
-														: '?'}
-												</p>
-												<p className='flex items-center gap-x-3 font-normal text-xs leading-[13px] text-text_secondary'>
-													<span>{item}</span>
-													<span className='flex items-center gap-x-2 text-sm'>
-														<button onClick={() => copyText(item)}>
-															<CopyIcon className='hover:text-primary' />
-														</button>
-														<a
-															href={`https://${network}.subscan.io/account/${item}`}
-															target='_blank'
-															rel='noreferrer'
-														>
-															<ExternalLinkIcon />
-														</a>
-													</span>
-												</p>
-
-											</div>
+										<div className='mt-3'>
+											<AddressComponent address={item} />
 										</div>
 										{recipientAddress.length - 1 !== i && <Divider className='bg-text_secondary mt-1' />}
 									</>
@@ -262,39 +205,68 @@ const SentInfo: FC<ISentInfoProps> = ({
 						</span>
 					</p>
 				</div>
-				<div className='flex items-center gap-x-5 mt-3 justify-between'>
-					<span className='text-text_secondary font-normal text-sm leading-[15px]'>
-						Txn Hash:
-					</span>
-					<p className='flex items-center gap-x-3 font-normal text-xs leading-[13px] text-text_secondary'>
-						<span className='text-white font-normal text-sm leading-[15px]'>
-							{shortenAddress(callHash, 10)}
-						</span>
-						<span className='flex items-center gap-x-2 text-sm'>
-							<button onClick={() => copyText(callHash)}>
-								<CopyIcon className='hover:text-primary' />
-							</button>
-							{/* <ExternalLinkIcon /> */}
-						</span>
-					</p>
-				</div>
-				{callData && (
-					<div className='flex items-center gap-x-5 mt-3 justify-between'>
-						<span className='text-text_secondary font-normal text-sm leading-[15px]'>
-							Call Data:
-						</span>
-						<p className='flex items-center gap-x-3 font-normal text-xs leading-[13px] text-text_secondary'>
-							<span className='text-white font-normal text-sm leading-[15px]'>
-								{shortenAddress(callData, 10)}
+				{transactionDetailsLoading ? <Loader size='small' /> :
+					<>
+						<div
+							className='flex items-center gap-x-5 justify-between mt-3'
+						>
+							<span
+								className='text-text_secondary font-normal text-sm leading-[15px]'
+							>
+							Note:
 							</span>
-							<span className='flex items-center gap-x-2 text-sm'>
-								<button onClick={() => copyText(callData)}>
-									<CopyIcon className='hover:text-primary' />
-								</button>
+							<span
+								className='flex items-center gap-x-3 font-normal text-xs leading-[13px] text-text_secondary'
+							>
+								{updatedNote ?
+									<span className='text-white font-normal flex items-center flex-wrap gap-x-3'>
+										<p className='whitespace-pre'>
+											{updatedNote}
+										</p>
+										{!!depositor && depositor === userAddress &&
+								<button onClick={() => openModal('Edit Note', <EditNote note={updatedNote} callHash={callHash} setUpdatedNote={setUpdatedNote} />)}>
+									<EditIcon className='text-primary cursor-pointer' />
+								</button>}
+									</span> :
+									depositor === userAddress &&
+							<button onClick={() => openModal('Add Note', <EditNote note={''} callHash={callHash} setUpdatedNote={setUpdatedNote} />)}>
+								<EditIcon className='text-primary cursor-pointer' />
+							</button>}
 							</span>
-						</p>
+						</div>
+						{!!transactionFields && Object.keys(transactionFields).length !== 0 && transactionFields.category !== 'none' &&
+				<>
+					<div
+						className='flex items-center justify-between mt-3'
+					>
+						<span
+							className='text-text_secondary font-normal text-sm leading-[15px]'
+						>
+							Category:
+						</span>
+						<span className='text-primary border border-solid border-primary rounded-xl px-[6px] py-1'>
+							{transactionFields?.category}
+						</span>
 					</div>
-				)}
+					{transactionFields && transactionFields.subfields && Object.keys(transactionFields?.subfields).map((key) => {
+						const subfield = transactionFields.subfields[key];
+						return (
+							<div
+								key={key}
+								className='flex items-center justify-between mt-3'
+							>
+								<span
+									className='text-text_secondary font-normal text-sm leading-[15px]'
+								>
+									{subfield.name}:
+								</span>
+								<span className='text-waiting bg-waiting bg-opacity-5 border border-solid border-waiting rounded-lg px-[6px] py-[3px]'>
+									{subfield.value}
+								</span>
+							</div>
+						);})}
+				</>}
+					</>}
 				{showDetails && (
 					<>
 						{/* <div className='flex items-center gap-x-5 mt-3 justify-between'>
@@ -337,51 +309,39 @@ const SentInfo: FC<ISentInfoProps> = ({
 								</span>
 							</p>
 						</div> */}
-						{transactionDetailsLoading ? <Loader size='small' /> :
-							<>
-								<div className='flex items-center gap-x-5 mt-3 justify-between'>
-									<span className='text-text_secondary font-normal text-sm leading-[15px]'>
-								Note:
+						<div className='flex items-center gap-x-5 mt-3 justify-between'>
+							<span className='text-text_secondary font-normal text-sm leading-[15px]'>
+						Txn Hash:
+							</span>
+							<p className='flex items-center gap-x-3 font-normal text-xs leading-[13px] text-text_secondary'>
+								<span className='text-white font-normal text-sm leading-[15px]'>
+									{shortenAddress(callHash, 10)}
+								</span>
+								<span className='flex items-center gap-x-2 text-sm'>
+									<button onClick={() => copyText(callHash)}>
+										<CopyIcon className='hover:text-primary' />
+									</button>
+									{/* <ExternalLinkIcon /> */}
+								</span>
+							</p>
+						</div>
+						{callData && (
+							<div className='flex items-center gap-x-5 mt-3 justify-between'>
+								<span className='text-text_secondary font-normal text-sm leading-[15px]'>
+							Call Data:
+								</span>
+								<p className='flex items-center gap-x-3 font-normal text-xs leading-[13px] text-text_secondary'>
+									<span className='text-white font-normal text-sm leading-[15px]'>
+										{shortenAddress(callData, 10)}
 									</span>
-									<p className='flex items-center gap-x-3 font-normal text-xs leading-[13px] text-text_secondary'>
-										<span className='text-white font-normal text-sm leading-[15px]'>
-											{note}
-										</span>
-									</p>
-								</div>
-								{!!transactionFields && Object.keys(transactionFields).length !== 0 && transactionFields.category !== 'none' &&
-				<>
-					<div
-						className='flex items-center justify-between mt-3'
-					>
-						<span
-							className='text-text_secondary font-normal text-sm leading-[15px]'
-						>
-							Category:
-						</span>
-						<span className='text-primary border border-solid border-primary rounded-xl px-[6px] py-1'>
-							{transactionFields?.category}
-						</span>
-					</div>
-					{transactionFields && transactionFields.subfields && Object.keys(transactionFields?.subfields).map((key) => {
-						const subfield = transactionFields.subfields[key];
-						return (
-							<div
-								key={key}
-								className='flex items-center justify-between mt-3'
-							>
-								<span
-									className='text-text_secondary font-normal text-sm leading-[15px]'
-								>
-									{subfield.name}:
-								</span>
-								<span className='text-waiting bg-waiting bg-opacity-5 border border-solid border-waiting rounded-lg px-[6px] py-[3px]'>
-									{subfield.value}
-								</span>
+									<span className='flex items-center gap-x-2 text-sm'>
+										<button onClick={() => copyText(callData)}>
+											<CopyIcon className='hover:text-primary' />
+										</button>
+									</span>
+								</p>
 							</div>
-						);})}
-				</>}
-							</>}
+						)}
 					</>
 				)}
 				<p

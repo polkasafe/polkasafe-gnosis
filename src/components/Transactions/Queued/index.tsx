@@ -90,7 +90,6 @@ const Queued: FC<IQueued> = ({ loading, setLoading, refetch, setRefetch }) => {
 					activeMultisig
 				);
 				const convertedData = safeData.results.map((safe:any) => convertSafePendingData({ ...safe, network }));
-				console.log(convertedData);
 				setQueuedTransactions(convertedData);
 				if(convertedData?.length > 0)
 					updateDB(UpdateDB.Update_Pending_Transaction, { transactions: convertedData }, address, network);
@@ -129,7 +128,6 @@ const Queued: FC<IQueued> = ({ loading, setLoading, refetch, setRefetch }) => {
 							refetch={() => setRefetch(prev => !prev)}
 							onAfterApprove={handleAfterApprove}
 							onAfterExecute={handleAfterExecute}
-							amountUSD={'0'}
 							numberOfTransactions={queuedTransactions.length || 0}
 							notifications={transaction?.notifications || {}}
 							txType={transaction.type}

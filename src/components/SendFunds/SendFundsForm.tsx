@@ -11,6 +11,7 @@ import React, { useEffect, useState } from 'react';
 import LoadingLottie from 'src/assets/lottie-graphics/Loading';
 import CancelBtn from 'src/components/Settings/CancelBtn';
 import ModalBtn from 'src/components/Settings/ModalBtn';
+import { useActiveMultisigContext } from 'src/context/ActiveMultisigContext';
 import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { EFieldType, NotificationStatus } from 'src/types';
@@ -44,6 +45,7 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 
 	const { activeMultisig, addressBook, address, gnosisSafe, multisigAddresses, transactionFields } = useGlobalUserDetailsContext();
 	const { network } = useGlobalApiContext();
+	const { records } = useActiveMultisigContext();
 
 	const [note, setNote] = useState<string>('');
 	const [loading, setLoading] = useState(false);
@@ -106,6 +108,26 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 		copyOptionsArray.splice(i, 1);
 		setRecipientAndAmount(copyOptionsArray);
 	};
+
+	// Set address options for recipient
+	useEffect(() => {
+		const allAddresses: string[] = [];
+		if(records){
+			Object.keys(records).forEach((address) => {
+				allAddresses.push(address);
+			});
+		}
+		addressBook.forEach(item => {
+			if(!allAddresses.includes(item.address)){
+				allAddresses.push(item.address);
+			}
+		});
+		setAutoCompleteAddresses(allAddresses.map(address => ({
+			label: <AddressComponent address={address} />,
+			value: address
+		})));
+
+	}, [address, addressBook, network, records]);
 
 	useEffect(() => {
 		setTransactionFieldsObject({ category, subfields: {} });
@@ -579,39 +601,44 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 };
 
 export default styled(SendFundsForm)`
-	.ant-select input {
-		font-size: 14px !important;
-		font-style: normal !important;
-		line-height: 15px !important;
-		border: 0 !important;
-		outline: 0 !important;
-		background-color: #24272E !important;
-		border-radius: 8px !important;
-		color: white !important;
-		padding: 12px !important;
-		display: block !important;
-		height: auto !important;
-	}
-	.ant-select-selector {
-		border: none !important;
-		height: 40px !important; 
-		box-shadow: none !important;
-	}
+.ant-select input {
+	font-size: 14px !important;
+	font-style: normal !important;
+	line-height: 15px !important;
+	border: 0 !important;
+	outline: 0 !important;
+	background-color: #24272E !important;
+	border-radius: 8px !important;
+	color: white !important;
+	padding: 12px !important;
+	display: block !important;
+	height: 100% !important;
+}
+.ant-select-selector {
+	border: none !important;
+	height: 50px !important; 
+	box-shadow: none !important;
+}
 
-	.ant-select {
-		height: 40px !important;
-	}
-	.ant-select-selection-search {
-		inset: 0 !important;
-	}
-	.ant-select-selection-placeholder{
-		color: #505050 !important;
-		z-index: 100;
-		display: flex !important;
-		align-items: center !important;
-	}
+.ant-select {
+	height: 50px !important;
+}
+.ant-select-selection-search {
+	inset: 0 !important;
+}
+.ant-select-selection-placeholder{
+	color: #505050 !important;
+	z-index: 100;
+	display: flex !important;
+	align-items: center !important;
+}
 
-	.ant-skeleton .ant-skeleton-content .ant-skeleton-title +.ant-skeleton-paragraph{
-		margin-block-start: 8px !important;
-	}
+.ant-skeleton .ant-skeleton-content .ant-skeleton-title +.ant-skeleton-paragraph{
+	margin-block-start: 8px !important;
+}
+
+.ant-dropdown {
+	transform: scale(0.9) !important;
+	transform-origin: center !important;
+}
 `;

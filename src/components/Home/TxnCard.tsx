@@ -43,6 +43,7 @@ const TxnCard = () => {
 					trusted: true
 				}
 			);
+			console.log(completedSafeData);
 			const safeData = await gnosisSafe.getPendingTx(activeMultisig);
 			const convertedCompletedData = completedSafeData.results.map((safe: any) =>
 				convertSafeHistoryData({ ...safe, network })
@@ -189,7 +190,7 @@ const TxnCard = () => {
 									.filter((_: any, i: number) => i < 10)
 									.map((transaction: any, i: React.Key | null | undefined) => {
 										const from = transaction?.receipt?.options?.from;
-										const sent = transaction.type === 'sent';
+										const sent = transaction.type === 'sent' || transaction.type === 'MULTISIG_TRANSACTION';
 
 										return (
 											<Link
