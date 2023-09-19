@@ -21,6 +21,8 @@ import { CircleArrowDownIcon, DeleteIcon, LineIcon, OutlineCloseIcon, SquareDown
 import queueNotification from 'src/ui-components/QueueNotification';
 import { addNewTransaction } from 'src/utils/addNewTransaction';
 import { addToAddressBook } from 'src/utils/addToAddressBook';
+import getOtherSignatories from 'src/utils/getOtherSignatories';
+import { notify } from 'src/utils/notify';
 import styled from 'styled-components';
 
 import TransactionFailedScreen from './TransactionFailedScreen';
@@ -40,7 +42,7 @@ interface ISendFundsFormProps {
 
 const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn }: ISendFundsFormProps) => {
 
-	const { activeMultisig, addressBook, address, gnosisSafe, transactionFields } = useGlobalUserDetailsContext();
+	const { activeMultisig, addressBook, address, gnosisSafe, multisigAddresses, transactionFields } = useGlobalUserDetailsContext();
 	const { network } = useGlobalApiContext();
 
 	const [note, setNote] = useState<string>('');
@@ -161,6 +163,17 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 					status: NotificationStatus.SUCCESS
 				});
 				setSuccess(true);
+				notify({
+					args: {
+						address: address,
+						addresses: getOtherSignatories(address, activeMultisig, multisigAddresses),
+						callHash: safeTxHash,
+						multisigAddress: activeMultisig,
+						network
+					},
+					network,
+					triggerName: 'initMultisigTransfer'
+				});
 			}
 			else {
 				queueNotification({

@@ -16,7 +16,6 @@ const DiscordInfoModal = ({ getVerifyToken }: { getVerifyToken: (channel: CHANNE
 	const handleGenerateToken = async () => {
 		setLoading(true);
 		const verifyToken = await getVerifyToken(CHANNEL.DISCORD);
-		console.log(verifyToken);
 		setUserDetailsContextState((prev: any) => ({
 			...prev,
 			notification_preferences: {
