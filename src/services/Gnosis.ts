@@ -178,7 +178,6 @@ export class GnosisSafeService {
 				isL1SafeMasterCopy: true,
 				safeAddress: multisigAddress
 			});
-			console.log(safeSdk);
 			const signer = await this.ethAdapter.getSignerAddress();
 			const safeTransaction = await safeSdk.createAddOwnerTx({
 				ownerAddress,

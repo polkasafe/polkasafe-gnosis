@@ -137,6 +137,14 @@ const AddOwner = ({
 					status: NotificationStatus.SUCCESS
 				});
 			}
+			else {
+				setLoading(false);
+				queueNotification({
+					header: 'Failed',
+					message: 'Something went wrong.',
+					status: NotificationStatus.ERROR
+				});
+			}
 		} catch (err) {
 			console.log(err);
 			onCancel?.();
@@ -198,10 +206,10 @@ const AddOwner = ({
 										<div className='flex-1 flex items-start gap-x-4'>
 											<Form.Item>
 												<label className='text-primary text-xs leading-[13px] font-normal'>
-													Name {i + 1}
+													Name
 												</label>
 												<Input
-													placeholder={`Name ${i + 1}`}
+													placeholder={'Name'}
 													className=' text-sm font-normal m-0 leading-[15px] border-0 outline-0 p-3 placeholder:text-[#505050] bg-bg-secondary rounded-lg text-white'
 													value={signatory.name}
 													onChange={(e) => onNameChange(e, i)}
@@ -209,11 +217,11 @@ const AddOwner = ({
 											</Form.Item>
 											<Form.Item
 												className='w-full'
-												name={`Address-${i + 1}`}
+												name={'Address'}
 												rules={[{ required: true }]}
 											>
 												<label className='text-primary text-xs leading-[13px] font-normal'>
-													Address {i + 1}
+													Address
 												</label>
 												<AutoComplete
 													onClick={addRecipientHeading}
@@ -228,8 +236,8 @@ const AddOwner = ({
 															label: item.name,
 															value: item.address
 														}))}
-													id={`Address-${i + 1}`}
-													placeholder={`Address ${i + 1}`}
+													id={'Address'}
+													placeholder={'Address'}
 													onChange={(value) => onSignatoryChange(value, i)}
 												/>
 											</Form.Item>
@@ -298,7 +306,7 @@ const AddOwner = ({
 								</p>
 								<p className='text-text_secondary font-normal text-sm leading-[15px]'>
 									out of
-									<span className='text-white font-medium'>
+									<span className='text-white mx-1 font-medium'>
 										{(multisig?.signatories.length || 0) + signatoriesArray.length}
 									</span>
 									owners

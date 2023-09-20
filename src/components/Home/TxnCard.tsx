@@ -189,7 +189,7 @@ const TxnCard = () => {
 								completedTransactions
 									.filter((_: any, i: number) => i < 10)
 									.map((transaction: any, i: React.Key | null | undefined) => {
-										const from = transaction?.receipt?.options?.from;
+										// const from = transaction?.receipt?.options?.from;
 										const sent = transaction.type === 'sent' || transaction.type === 'MULTISIG_TRANSACTION';
 
 										return (
@@ -210,22 +210,9 @@ const TxnCard = () => {
 														/>
 													</div>
 													<div>
-														{sent ? (
-															<>
-																<h1 className='text-md text-white'>
-																	From: {shortenAddress(String(from))}
-																</h1>
-																<h1 className='text-md text-white'>
-																	To: {shortenAddress(String(transaction.to) || '')}
-																</h1>
-															</>
-														) : (
-															<>
-																<h1 className='text-md text-white'>
-																	To: {shortenAddress(String(transaction.to) || '')}
-																</h1>
-															</>
-														)}
+														<h1 className='text-md text-white'>
+															<span>Txn: {shortenAddress(transaction?.txHash)}</span>
+														</h1>
 
 														{/* <p className='text-text_secondary text-xs'>{dayjs(transaction.created_at).format('D-MM-YY [at] HH:mm')}</p> */}
 													</div>
