@@ -12,7 +12,8 @@ import SafeApiKit, {
 } from '@safe-global/api-kit';
 import Safe, { SafeAccountConfig, SafeFactory } from '@safe-global/protocol-kit';
 import {
-	SafeTransactionDataPartial,
+	MetaTransactionData,
+	// SafeTransactionDataPartial,
 	TransactionResult
 } from '@safe-global/safe-core-sdk-types';
 import { createTokenTransferParams } from 'src/utils/createTokenTransaferParams';
@@ -111,24 +112,33 @@ export class GnosisSafeService {
 
 	createSafeTx = async (
 		multisigAddress: string,
-		to: string,
-		value: string,
-		senderAddress: string
+		to: string[],
+		value: string[],
+		senderAddress: string,
+		note?: string
 	): Promise<string | null> => {
 		try {
+			console.log('in create safe tx');
 			const safeSdk = await Safe.create({
 				ethAdapter: this.ethAdapter,
 				isL1SafeMasterCopy: true,
 				safeAddress: multisigAddress
 			});
+			console.log('after safe sdk');
 			const signer = await this.ethAdapter.getSignerAddress();
+			console.log('after signer');
 
-			const safeTransactionData: SafeTransactionDataPartial = createTokenTransferParams(to, value);
+			console.log('after signer', signer);
+
+			const safeTransactionData: MetaTransactionData[] = createTokenTransferParams(to, value);
+
+			console.log('safe tx', safeTransactionData);
+			if(note) console.log(note);
 
 			const safeTransaction = await safeSdk.createTransaction({
 				safeTransactionData
 			});
-			console.log(safeTransaction.data);
+			console.log(safeTransaction);
 			const safeTxHash = await safeSdk.getTransactionHash(safeTransaction);
 			let signature = (await safeSdk.signTransaction(safeTransaction)) as any;
 

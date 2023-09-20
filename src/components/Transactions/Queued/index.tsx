@@ -24,12 +24,10 @@ interface IQueued {
 	setRefetch: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-const Queued: FC<IQueued> = () => {
-	const { address, activeMultisig, setActiveMultisigData, activeMultisigData, safeService } = useGlobalUserDetailsContext();
+const Queued: FC<IQueued> = ({ loading, setLoading, refetch, setRefetch }) => {
+	const { address, activeMultisig, setActiveMultisigData, activeMultisigData, gnosisSafe } = useGlobalUserDetailsContext();
 	const [queuedTransactions, setQueuedTransactions] = useState<any[]>([]);
-	const [loading, setLoading] = useState<boolean>(false);
 	const location = useLocation();
-	const [refetch, setRefetch] = useState<boolean>(false);
 	const { network } = useGlobalApiContext();
 
 	const handleAfterApprove = (callHash:string) => {
@@ -81,14 +79,14 @@ const Queued: FC<IQueued> = () => {
 	}, [location.hash, queuedTransactions]);
 
 	useEffect(() => {
-		if(!safeService){
+		if(!gnosisSafe){
 			console.log('retiring');
 			return;
 		}
 		(async () => {
 			setLoading(true);
 			try {
-				const safeData = await safeService.getPendingTx(
+				const safeData = await gnosisSafe.getPendingTx(
 					activeMultisig
 				);
 				const convertedData = safeData.results.map((safe:any) => convertSafePendingData({ ...safe, network }));
@@ -101,7 +99,8 @@ const Queued: FC<IQueued> = () => {
 				setLoading(false);
 			}
 		})();
-	}, [activeMultisig, address, network, refetch, safeService]);
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [activeMultisig, address, network, refetch, gnosisSafe]);
 
 	if (loading) {
 		return (
@@ -119,7 +118,7 @@ const Queued: FC<IQueued> = () => {
 						<Transaction
 							value={transaction.amount_token}
 							setQueuedTransactions={setQueuedTransactions}
-							date={new Date(transaction.created_at).toLocaleString()}
+							date={transaction.created_at}
 							status={transaction.isExecuted ? 'Executed' : 'Approval'}
 							approvals={transaction.signatures ? transaction.signatures.map((item: any) => item.address) : []}
 							threshold={activeMultisigData?.threshold || 0}
@@ -129,7 +128,6 @@ const Queued: FC<IQueued> = () => {
 							refetch={() => setRefetch(prev => !prev)}
 							onAfterApprove={handleAfterApprove}
 							onAfterExecute={handleAfterExecute}
-							amountUSD={'0'}
 							numberOfTransactions={queuedTransactions.length || 0}
 							notifications={transaction?.notifications || {}}
 							txType={transaction.type}

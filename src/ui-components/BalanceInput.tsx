@@ -21,7 +21,7 @@ const BalanceInput = ({ className, label = '', onChange, placeholder = '', defau
 	const { network } = useGlobalApiContext();
 
 	return <section className={`${className}`}>
-		<label className='text-primary font-normal text-xs leading-[13px] block mb-2'>{label}</label>
+		<label className='text-primary font-normal text-xs leading-[13px] block mb-[5px]'>{label}</label>
 		<div className='flex items-center gap-x-[10px]'>
 			<article className='w-full'>
 				<Form.Item
@@ -29,7 +29,7 @@ const BalanceInput = ({ className, label = '', onChange, placeholder = '', defau
 					name="balance"
 					rules={[{ required: true }]}
 				>
-					<div className='flex items-center h-[40px]'>
+					<div className='flex items-center h-[50px]'>
 						<Input
 							id="balance"
 							onChange={(e) => onChange(e.target.value)}

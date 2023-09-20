@@ -1,48 +1,55 @@
 // Copyright 2022-2023 @Polkasafe/polkaSafe-ui authors & contributors
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
-import { Form, Input } from 'antd';
-import classNames from 'classnames';
-import React, { useEffect, useRef, useState } from 'react';
-import NetworkCard from 'src/components/NetworksDropdown/NetworkCard';
+import { AutoComplete, Form, Input } from 'antd';
+import { DefaultOptionType } from 'antd/es/select';
+import React, { useEffect, useState } from 'react';
+import LoadingLottie from 'src/assets/lottie-graphics/Loading';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
-import { CheckOutlined, CircleArrowDownIcon } from 'src/ui-components/CustomIcons';
+import AddressComponent from 'src/ui-components/AddressComponent';
+import { CheckOutlined, OutlineCloseIcon } from 'src/ui-components/CustomIcons';
+import styled from 'styled-components';
 
 import Loader from '../../UserFlow/Loader';
 
 interface Props {
+	className?: string,
 	multisigAddress: string,
 	setMultisigAddress: React.Dispatch<React.SetStateAction<string>>
 	multisigName: string
 	setMultisigName: React.Dispatch<React.SetStateAction<string>>
 }
 
-const NameAddress = ({ multisigAddress, setMultisigAddress, multisigName, setMultisigName }: Props) => {
-	const { address, safeService } = useGlobalUserDetailsContext();
+const NameAddress = ({ className, multisigAddress, setMultisigAddress, multisigName, setMultisigName }: Props) => {
+	const { address, gnosisSafe } = useGlobalUserDetailsContext();
 	const { multisigAddresses } = useGlobalUserDetailsContext();
-	const [isVisible, toggleVisibility] = useState(false);
-	const isMouseEnter = useRef(false);
 
-	const [allSafes, setAllSafes] = useState<string[]>([]);
-
-	console.log('multisigAddress', multisigAddress);
+	const [allSafes, setAllSafes] = useState<DefaultOptionType[]>([]);
+	const [loading, setLoading] = useState<boolean>(false);
 
 	useEffect(() => {
-		if(!safeService){
+		if(!gnosisSafe){
 			return;
 		}
 		const getAllSafes = async () => {
-			const safes = await safeService.getAllSafesByOwner(address);
+			setLoading(true);
+			const safes = await gnosisSafe.getAllSafesByOwner(address);
 			const multiSigs = multisigAddresses.map(item => item.address);
 			const filteredSafes = safes?.safes.filter((item:any) => !multiSigs.includes(item)) || [];
 			setMultisigAddress(filteredSafes[0]);
-			setAllSafes(filteredSafes!);
+			if(filteredSafes?.length > 0){
+				setAllSafes(filteredSafes.map((address) => ({
+					label: <AddressComponent onlyAddress address={address} />,
+					value: address
+				})));
+			}
+			setLoading(false);
 		};
 		getAllSafes();
-	}, [address, multisigAddresses, safeService, setMultisigAddress]);
+	}, [address, multisigAddresses, gnosisSafe, setMultisigAddress]);
 
 	return (
-		<div>
+		<div className={className}>
 			<div className='flex flex-col items-center w-[800px] h-[400px]'>
 				<div className="flex justify-around items-center mb-10 w-full">
 					<div className='flex flex-col items-center text-white justify-center'>
@@ -66,94 +73,97 @@ const NameAddress = ({ multisigAddress, setMultisigAddress, multisigName, setMul
 					</div>
 				</div>
 				<div>
-					<Form
-						className='my-0 w-[560px] mt-10'
-					>
-						<div className="flex flex-col gap-y-3">
-							<label
-								className="text-primary text-xs leading-[13px] font-normal"
-								htmlFor="name"
-							>
-								Safe Name
-							</label>
-							<Form.Item
-								name="name"
-								rules={[]}
-								className='border-0 outline-0 my-0 p-0'
-							>
-								<Input
-									placeholder="my-polka-safe"
-									className="text-sm font-normal m-0 leading-[15px] border-0 outline-0 p-3 text-white placeholder:text-[#505050] bg-bg-secondary rounded-lg"
-									id="name"
-									value={multisigName}
-									onChange={(e) => setMultisigName(e.target.value)}
-								/>
-							</Form.Item>
-						</div>
-						<div className="flex flex-col gap-y-3 mt-5">
-							<label
-								className="text-primary text-xs leading-[13px] font-normal"
-								htmlFor="address"
-							>
-								Safe Address*
-							</label>
-							<Form.Item
-								name="Address"
-								//rules={[{ required: true }]}
-								className='border-0 outline-0 my-0 p-0'
-							//validateStatus={!multisigAddress ? 'error' : 'success'}
-							>
-								<div
-									className='relative'
-									onBlur={() => {
-										if (!isMouseEnter.current) {
-											(isVisible ? toggleVisibility(false) : null);
-										}
-									}}
+					{loading ? <LoadingLottie message='Fetching Your Multisigs' width={250} /> :
+						<Form
+							className='my-0 w-[560px] mt-10'
+						>
+							<div className="flex flex-col gap-y-3">
+								<label
+									className="text-primary text-xs leading-[13px] font-normal"
+									htmlFor="name"
 								>
-									<button
-										onClick={() => isVisible ? toggleVisibility(false) : toggleVisibility(true)}
-										className={classNames(
-											'flex items-center justify-center gap-x-4 outline-none border-none text-white bg-highlight rounded-lg p-2.5 shadow-none text-xs'
-										)}
-									>
-										{multisigAddress}
-										<CircleArrowDownIcon className='hidden md:inline-flex text-sm text-primary' />
-									</button>
-									<div
-										className={classNames(
-											'absolute scale-90 top-[45px] left-[-50px] rounded-xl border border-primary bg-bg-secondary py-[13.5px] px-3 z-50 min-w-[214px]',
-											{
-												'opacity-0 h-0 pointer-events-none hidden': !isVisible,
-												'opacity-100 h-auto': isVisible
-											}
-										)}
-										onMouseEnter={() => {
-											isMouseEnter.current = true;
-										}}
-										onMouseLeave={() => {
-											isMouseEnter.current = false;
-										}}
-									>
-										{
-											allSafes.map((address) => {
-												return <NetworkCard
-													onClick={() => setMultisigAddress(address)}
-													selectedNetwork={multisigAddress}
-													key={address}
-													network={address}
-												/>;
-											})
-										}
-									</div>
-								</div>
-							</Form.Item>
-						</div>
-					</Form>
+								Safe Name
+								</label>
+								<Form.Item
+									name="name"
+									rules={[]}
+									className='border-0 outline-0 my-0 p-0'
+								>
+									<Input
+										placeholder="my-polka-safe"
+										className="text-sm font-normal m-0 leading-[15px] border-0 outline-0 p-3 text-white placeholder:text-[#505050] bg-bg-secondary rounded-lg"
+										id="name"
+										value={multisigName}
+										onChange={(e) => setMultisigName(e.target.value)}
+									/>
+								</Form.Item>
+							</div>
+							<div className="flex flex-col gap-y-3 mt-5">
+								<label
+									className="text-primary text-xs leading-[13px] font-normal"
+									htmlFor="address"
+								>
+				Safe Address*
+								</label>
+								<Form.Item
+									name="Address"
+									rules={[{ required: true }]}
+									className='border-0 outline-0 my-0 p-0'
+									help={!(multisigAddress) && 'Please enter a Valid Address'}
+									validateStatus={!multisigAddress || !(multisigAddress) ? 'error' : 'success'}
+								>
+									<AutoComplete
+										onChange={(value) => setMultisigAddress(value)}
+										value={multisigAddress}
+										allowClear
+										clearIcon={<OutlineCloseIcon className='text-primary w-2 h-2' />}
+										notFoundContent={!multisigAddress && <span className='text-white'>We can&apos;t find your multisigs, please enter multisig address.</span>}
+										placeholder="Unique Safe Address"
+										id="Address"
+										options={allSafes}
+									/>
+								</Form.Item>
+							</div>
+						</Form>
+					}
 				</div>
 			</div>
 		</div>
 	);
 };
 
-export default NameAddress;
+export default styled(NameAddress)`
+
+.ant-select input {
+	font-size: 14px !important;
+	font-style: normal !important;
+	line-height: 15px !important;
+	border: 0 !important;
+	outline: 0 !important;
+	background-color: #24272E !important;
+	border-radius: 8px !important;
+	color: white !important;
+	padding: 12px !important;
+	display: block !important;
+	height: auto !important;
+}
+.ant-select-selector {
+	border: none !important;
+	height: 40px !important; 
+	box-shadow: none !important;
+}
+
+.ant-select {
+	height: 40px !important;
+}
+.ant-select-selection-search {
+	inset: 0 !important;
+}
+.ant-select-selection-placeholder{
+	color: #505050 !important;
+	z-index: 100;
+	display: flex !important;
+	align-items: center !important;
+}
+
+`;

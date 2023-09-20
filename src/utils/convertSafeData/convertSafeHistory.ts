@@ -14,14 +14,16 @@ export interface IHistoryTransactions {
     txHash: string
     type: string
 	executor: string
+	from: string
 }
 export const convertSafeHistoryData = (data:any) => {
 	const convertedData:IHistoryTransactions = {
-		amount_token: data?.value || '0',
+		amount_token: data?.value || data?.transfers?.[0]?.value || '0',
 		created_at: data?.executionDate || '',
 		data: data.data,
 		executed: data.isExecuted,
 		executor: data?.executor || data?.from,
+		from: data?.from || '',
 		network: data.network,
 		safeAddress:data.safe,
 		signatures:data?.confirmations?.map((user:any) => ({ address:user?.owner || '', signature:user?.signature|| '' })) || [],

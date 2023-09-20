@@ -7,14 +7,15 @@ import { MetaTransactionData } from '@safe-global/safe-core-sdk-types';
 
 // of the Apache-2.0 license. See the LICENSE file for details.
 export const createTokenTransferParams = (
-	recipient: string,
-	value:string
-): MetaTransactionData => {
-	return {
-		data: encodeERC20TransferData(recipient, value),
-		to: recipient,
-		value: value
-	};
+	recipient: string[],
+	value:string[]
+): MetaTransactionData[] => {
+	console.log(recipient);
+	return recipient.map((r, i) => ({
+		data: encodeERC20TransferData(r, value[i]),
+		to: r,
+		value: value[i]
+	}));
 };
 
 const encodeERC20TransferData = (to: string, value: string): string => {

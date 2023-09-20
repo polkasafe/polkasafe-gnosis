@@ -16,7 +16,6 @@ export interface IQueuedTransactions {
 	dataDecoded:any
 }
 export const convertSafePendingData = (data:any) => {
-	console.log(data);
 	const convertedData:IQueuedTransactions = {
 		amount_token: data?.value || '0',
 		created_at: data.submissionDate,

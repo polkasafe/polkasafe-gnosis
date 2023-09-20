@@ -48,6 +48,38 @@ export enum Triggers {
 	APPROVAL_REMINDER = 'approvalReminder'
 }
 
+export interface IDropdownOptions{
+	optionName: string,
+	archieved?: boolean
+}
+
+export enum EFieldType{
+	ATTACHMENT = 'Attachment',
+	SINGLE_SELECT = 'Single-select',
+	// MULTI_SELECT = 'Multi-select',
+	TEXT = 'Text'
+	// NUMBER = 'Number',
+	// DATE = 'Date/Date-range',
+	// LINK = 'link',
+}
+
+export interface ITransactionCategorySubfields{
+	[subfield: string]: {
+		subfieldName: string;
+		subfieldType: EFieldType;
+		required: boolean;
+		dropdownOptions?: IDropdownOptions[]
+	}
+}
+
+export interface ITransactionFields{
+	[field: string]: {
+		fieldName: string,
+		fieldDesc: string,
+		subfields: ITransactionCategorySubfields
+	}
+}
+
 export interface UserDetailsContextType {
 	loggedInWallet: any;
 	activeMultisig: string;
@@ -66,9 +98,10 @@ export interface UserDetailsContextType {
 	updateCurrentMultisigData:any,
 	login?:()=>any
 	notification_preferences?: any,
-	connectAddress?:any
-	safeService: GnosisSafeService
-	setSafeService?:any
+	connectAddress?:any,
+	gnosisSafe: GnosisSafeService,
+	setGnosisSafe:any,
+	transactionFields: ITransactionFields
 }
 
 export enum Wallet {
@@ -116,6 +149,11 @@ export type ChainPropType = {
 export interface IAddressBookItem {
 	name: string;
 	address: string;
+	email?: string;
+	discord?: string;
+	telegram?: string;
+	roles?: string[];
+	nickName?: string;
 }
 
 interface IMultisigSettings {
@@ -131,6 +169,7 @@ export interface IUser {
 	multisigAddresses: IMultisigAddress[];
 	multisigSettings: { [multisigAddress: string]: IMultisigSettings };
 	notification_preferences: IUserNotificationPreferences;
+	transactionFields?: ITransactionFields;
 }
 
 export interface IMultisigAddress {
@@ -182,7 +221,7 @@ export interface ITransaction {
 	created_at: any;
 	block_number: number;
 	from: string;
-	to: string;
+	to: string | string[];
 	id: string;
 	token: string;
 	amount_usd: number;
@@ -197,6 +236,7 @@ export interface ITransaction {
 	type?: string;
 	txHash?:string;
 	executor?:string
+	transactionFields?: {category: string, subfields: {[subfield: string]: { name: string, value: string }}}
 }
 
 export interface INotification {
@@ -214,4 +254,34 @@ export enum NotificationStatus {
 	ERROR = 'error',
 	WARNING = 'warning',
 	INFO = 'info'
+}
+
+export interface ISharedAddressBookRecord {
+	name: string,
+	address: string,
+	email?: string,
+	discord?: string,
+	telegram?: string,
+	roles?: string[]
+}
+
+export interface ISharedAddressBooks {
+	records: {
+		[address: string]: ISharedAddressBookRecord
+	},
+	roles?: string[],
+	multisig: string
+}
+
+export interface IAllAddresses {
+	[address: string]: {
+		name: string,
+		address: string,
+		shared?: boolean,
+		nickName?: string,
+		email?: string,
+		discord?: string,
+		telegram?: string,
+		roles?: string[]
+	}
 }

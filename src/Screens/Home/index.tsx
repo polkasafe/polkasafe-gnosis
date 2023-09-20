@@ -18,7 +18,7 @@ import Spinner from 'src/ui-components/Loader';
 import styled from 'styled-components';
 
 const Home = () => {
-	const { address, multisigAddresses, createdAt, addressBook, activeMultisig, loading, safeService } = useGlobalUserDetailsContext();
+	const { address, multisigAddresses, createdAt, addressBook, activeMultisig, loading, gnosisSafe } = useGlobalUserDetailsContext();
 	const [openNewUserModal, setOpenNewUserModal] = useState(false);
 	const [hasProxy] = useState<boolean>(true);
 
@@ -36,8 +36,8 @@ const Home = () => {
 
 	useEffect(() => {
 		const handleNewTransaction = async () => {
-			if (!activeMultisig || Boolean(!Object.keys(safeService).length)) return;
-			const safeData = await safeService.getSafeCreationInfo(activeMultisig);
+			if (!activeMultisig || Boolean(!Object.keys(gnosisSafe).length)) return;
+			const safeData = await gnosisSafe.getSafeCreationInfo(activeMultisig);
 			if (safeData) {
 				setIsOnchain(true);
 			} else {
@@ -46,7 +46,7 @@ const Home = () => {
 
 		};
 		handleNewTransaction();
-	}, [activeMultisig, safeService]);
+	}, [activeMultisig, gnosisSafe]);
 
 	return (
 		<>

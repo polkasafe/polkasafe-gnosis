@@ -1,6 +1,7 @@
 // Copyright 2022-2023 @Polkasafe/polkaSafe-ui authors & contributors
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
+/* eslint-disable sort-keys */
 
 import { EthersAdapter } from '@safe-global/protocol-kit';
 import { useAddress, useMetamask, useNetworkMismatch, useSigner } from '@thirdweb-dev/react';
@@ -18,7 +19,7 @@ import { firebaseFunctionsHeader } from 'src/global/firebaseFunctionsHeader';
 import { FIREBASE_FUNCTIONS_URL } from 'src/global/firebaseFunctionsUrl';
 import { returnTxUrl } from 'src/global/gnosisService';
 import { GnosisSafeService } from 'src/services';
-import { UserDetailsContextType } from 'src/types';
+import { EFieldType, IUser, UserDetailsContextType } from 'src/types';
 import { convertSafeMultisig } from 'src/utils/convertSafeData/convertSafeMultisig';
 
 import { useGlobalApiContext } from './ApiContext';
@@ -28,18 +29,253 @@ const initialUserDetailsContext: UserDetailsContextType = {
 	address: localStorage.getItem('address') || '',
 	addressBook: [],
 	createdAt: new Date(),
+	gnosisSafe: {} as any,
 	loggedInWallet: localStorage.getItem('logged_in_wallet') || '',
 	multisigAddresses: [],
 	notification_preferences: {},
-	safeService:{} as any,
 	setActiveMultisigData: (): void => {
 		throw new Error('setUserDetailsContextState function must be overridden');
 	},
+	setGnosisSafe: (): void => {},
 	setUserDetailsContextState: (): void => {
 		throw new Error('setUserDetailsContextState function must be overridden');
 	},
 	updateCurrentMultisigData: (): void => {
 		throw new Error('updateCurrentMultisigData function must be overridden');
+	},
+	transactionFields: {
+		['expense_reimbursement']: {
+			fieldDesc: '',
+			fieldName: 'Expense Reimbursement',
+			subfields: {
+				['department']: {
+					subfieldName: 'Department',
+					subfieldType: EFieldType.SINGLE_SELECT,
+					required: true,
+					dropdownOptions: [
+						{
+							optionName: 'Engineering'
+						},
+						{
+							optionName: 'Finance'
+						},
+						{
+							optionName: 'Marketing'
+						},
+						{
+							optionName: 'Operations'
+						},
+						{
+							optionName: 'Legal'
+						},
+						{
+							optionName: 'Content'
+						},
+						{
+							optionName: 'Other'
+						}
+					]
+				},
+				['project']: {
+					subfieldName: 'Project',
+					subfieldType: EFieldType.TEXT,
+					required: true
+				},
+				['description']: {
+					subfieldName: 'Description',
+					subfieldType: EFieldType.TEXT,
+					required: true
+				},
+				['expense_type']: {
+					subfieldName: 'Expense Type',
+					subfieldType: EFieldType.SINGLE_SELECT,
+					required: true,
+					dropdownOptions: [
+						{
+							optionName: 'Legal'
+						},
+						{
+							optionName: 'Gas Fees'
+						},
+						{
+							optionName: 'Events'
+						},
+						{
+							optionName: 'Other'
+						},
+						{
+							optionName: 'Software'
+						}
+					]
+				},
+				['invoice']: {
+					subfieldName: 'Invoice',
+					subfieldType: EFieldType.TEXT,
+					required: true
+				}
+			}
+		},
+		['contributor_compensation']: {
+			fieldName: 'Contributor Compensation',
+			fieldDesc: '',
+			subfields: {
+				['department']: {
+					subfieldName: 'Department',
+					subfieldType: EFieldType.SINGLE_SELECT,
+					required: true,
+					dropdownOptions: [
+						{
+							optionName: 'Engineering'
+						},
+						{
+							optionName: 'Finance'
+						},
+						{
+							optionName: 'Marketing'
+						},
+						{
+							optionName: 'Operations'
+						},
+						{
+							optionName: 'Legal'
+						},
+						{
+							optionName: 'Content'
+						},
+						{
+							optionName: 'Other'
+						}
+					]
+				},
+				['project']: {
+					subfieldName: 'Project',
+					subfieldType: EFieldType.TEXT,
+					required: true
+				},
+				['description']: {
+					subfieldName: 'Description',
+					subfieldType: EFieldType.TEXT,
+					required: true
+				},
+				['compensation_type']: {
+					subfieldName: 'Compensation Type',
+					subfieldType: EFieldType.SINGLE_SELECT,
+					required: true,
+					dropdownOptions: [
+						{
+							optionName: 'Bounty'
+						},
+						{
+							optionName: 'Contractor'
+						},
+						{
+							optionName: 'Full-Time'
+						},
+						{
+							optionName: 'Part-Time'
+						}
+					]
+				},
+				['invoice']: {
+					subfieldName: 'Invoice',
+					subfieldType: EFieldType.TEXT,
+					required: true
+				}
+			}
+		},
+		['grants']: {
+			fieldName: 'Grants',
+			fieldDesc: '',
+			subfields: {
+				['department']: {
+					subfieldName: 'Department',
+					subfieldType: EFieldType.SINGLE_SELECT,
+					required: true,
+					dropdownOptions: [
+						{
+							optionName: 'Engineering'
+						},
+						{
+							optionName: 'Finance'
+						},
+						{
+							optionName: 'Marketing'
+						},
+						{
+							optionName: 'Operations'
+						},
+						{
+							optionName: 'Legal'
+						},
+						{
+							optionName: 'Content'
+						},
+						{
+							optionName: 'Other'
+						}
+					]
+				},
+				['project']: {
+					subfieldName: 'Project',
+					subfieldType: EFieldType.TEXT,
+					required: true
+				},
+				['description']: {
+					subfieldName: 'Description',
+					subfieldType: EFieldType.TEXT,
+					required: true
+				}
+			}
+		},
+		['airdrop']: {
+			fieldName: 'Airdrop',
+			fieldDesc: '',
+			subfields: {
+				['department']: {
+					subfieldName: 'Department',
+					subfieldType: EFieldType.SINGLE_SELECT,
+					required: true,
+					dropdownOptions: [
+						{
+							optionName: 'Engineering'
+						},
+						{
+							optionName: 'Finance'
+						},
+						{
+							optionName: 'Marketing'
+						},
+						{
+							optionName: 'Operations'
+						},
+						{
+							optionName: 'Legal'
+						},
+						{
+							optionName: 'Content'
+						},
+						{
+							optionName: 'Other'
+						}
+					]
+				},
+				['project']: {
+					subfieldName: 'Project',
+					subfieldType: EFieldType.TEXT,
+					required: true
+				},
+				['description']: {
+					subfieldName: 'Description',
+					subfieldType: EFieldType.TEXT,
+					required: true
+				}
+			}
+		},
+		['none']: {
+			fieldDesc: 'N/A',
+			fieldName: 'Other',
+			subfields: {}
+		}
 	}
 };
 
@@ -61,22 +297,20 @@ export const UserDetailsProvider = ({
 	const [activeMultisigData, setActiveMultisigData] = useState<any>({});
 	const { network } = useGlobalApiContext();
 	const navigate = useNavigate();
-	const [safeService, setSafeService] = useState<GnosisSafeService>(
-		{} as any
-	);
-	const signer =useSigner();
-	const connect = useMetamask();
+	const [gnosisSafe, setGnosisSafe] = useState<GnosisSafeService>({} as any);
+	const signer = useSigner();
 
 	const [loading, setLoading] = useState(false);
+	const connect  = useMetamask();
 
 	const connectAddress = useCallback(async (passedNetwork:string = network, address?:string, signature?:string) => {
 		console.log(address);
 		setLoading(true);
-		const user = await fetch(`${FIREBASE_FUNCTIONS_URL}/connectAddress`, {
+		const user = await fetch(`${FIREBASE_FUNCTIONS_URL}/connectAddressEth`, {
 			headers: firebaseFunctionsHeader(passedNetwork, address, signature),
 			method: 'POST'
 		});
-		const { data: userData, error: connectAddressErr } = await user.json();
+		const { data: userData, error: connectAddressErr } = await user.json() as { data: IUser, error: string };
 		if (!connectAddressErr && userData) {
 			setUserDetailsContextState((prevState) => {
 				return {
@@ -87,11 +321,10 @@ export const UserDetailsProvider = ({
 					createdAt: userData?.created_at,
 					multisigAddresses: userData?.multisigAddresses?.filter((address:any) => address.network === network),
 					multisigSettings: userData?.multisigSettings || {},
-					notification_preferences: userData?.notification_preferences
-					|| initialUserDetailsContext.notification_preferences
+					notification_preferences: userData?.notification_preferences || initialUserDetailsContext.notification_preferences,
+					transactionFields: userData?.transactionFields || initialUserDetailsContext.transactionFields
 				};
 			});
-			console.log(signer);
 			if(!signer){
 				await connect();
 				console.log('enter');
@@ -103,7 +336,7 @@ export const UserDetailsProvider = ({
 					signerOrProvider: signer
 				});
 				const gnosisService = new GnosisSafeService(web3Adapter, signer, txUrl);
-				setSafeService(gnosisService);
+				setGnosisSafe(gnosisService);
 			}
 		} else {
 			localStorage.clear();
@@ -118,13 +351,13 @@ export const UserDetailsProvider = ({
 	const updateCurrentMultisigData = useCallback(async () => {
 		if (
 			!userDetailsContextState.activeMultisig
-			|| Boolean(!Object.keys(safeService).length)
+			|| Boolean(!Object.keys(gnosisSafe).length)
 			|| !userDetailsContextState.multisigAddresses
 			|| !userDetailsContextState.address
 		) {
 			console.log(
 				userDetailsContextState.activeMultisig,
-				safeService,
+				gnosisSafe,
 				userDetailsContextState.multisigAddresses,
 				userDetailsContextState.address
 			);
@@ -141,7 +374,7 @@ export const UserDetailsProvider = ({
 			if (!userDetailsContextState.activeMultisig) {
 				return;
 			}
-			const multiData = await safeService.getMultisigData(
+			const multiData = await gnosisSafe.getMultisigData(
 				userDetailsContextState.activeMultisig
 			);
 			if (multiData) {
@@ -159,7 +392,7 @@ export const UserDetailsProvider = ({
 		} catch (err) {
 			console.log('err from update current multisig data', err);
 		}
-	}, [network, safeService, signer?.provider, userDetailsContextState.activeMultisig, userDetailsContextState.address, userDetailsContextState.multisigAddresses]);
+	}, [network, gnosisSafe, signer?.provider, userDetailsContextState.activeMultisig, userDetailsContextState.address, userDetailsContextState.multisigAddresses]);
 
 	useEffect(() => {
 		if (localStorage.getItem('signature')) {
@@ -181,6 +414,10 @@ export const UserDetailsProvider = ({
 		updateCurrentMultisigData();
 	}, [updateCurrentMultisigData, userDetailsContextState.activeMultisig]);
 
+	useEffect(() => {
+		if(!gnosisSafe) return;
+	}, [gnosisSafe]);
+
 	return (
 		<UserDetailsContext.Provider
 			value={{
@@ -188,10 +425,10 @@ export const UserDetailsProvider = ({
 				connectAddress,
 				loading,
 				...userDetailsContextState,
-				safeService,
+				gnosisSafe,
 				setActiveMultisigData,
+				setGnosisSafe,
 				setLoading,
-				setSafeService,
 				setUserDetailsContextState,
 				updateCurrentMultisigData
 			}}

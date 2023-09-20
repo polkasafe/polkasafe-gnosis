@@ -1,23 +1,26 @@
 // Copyright 2022-2023 @Polkasafe/polkaSafe-ui authors & contributors
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
-import { Divider, Spin, Timeline } from 'antd';
+import { Collapse, Divider, Spin, Timeline } from 'antd';
 import classNames from 'classnames';
-import { ethers } from 'ethers';
+// import { ethers } from 'ethers';
 import React, { FC } from 'react';
 import { MetaMaskAvatar } from 'react-metamask-avatar';
 import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { DEFAULT_ADDRESS_NAME } from 'src/global/default';
+import { chainProperties } from 'src/global/networkConstants';
 import AddressComponent from 'src/ui-components/AddressComponent';
 import { CircleCheckIcon, CirclePlusIcon, CircleWatchIcon, CopyIcon, ExternalLinkIcon } from 'src/ui-components/CustomIcons';
 import copyText from 'src/utils/copyText';
+import parseDecodedValue from 'src/utils/parseDecodedValue';
 import shortenAddress from 'src/utils/shortenAddress';
 import styled from 'styled-components';
 
 interface ISentInfoProps {
 	amount: string;
 	amountType: string;
+	approvals: string[];
 	date: string;
 	// time: string;
 	className?: string;
@@ -30,7 +33,7 @@ interface ISentInfoProps {
 	txType?:string
 }
 
-const SentInfo: FC<ISentInfoProps> = ({ amount, from, className, date, recipient, callHash, note, loading, txType }) => {
+const SentInfo: FC<ISentInfoProps> = ({ approvals, amount, from, className, date, recipient, callHash, note, loading, txType }) => {
 	const { addressBook, activeMultisig, multisigAddresses } = useGlobalUserDetailsContext();
 	const { network } = useGlobalApiContext();
 	const threshold = multisigAddresses?.find((item: any) => item.address === activeMultisig || item.proxy === activeMultisig)?.threshold || 0;
@@ -52,7 +55,13 @@ const SentInfo: FC<ISentInfoProps> = ({ amount, from, className, date, recipient
 						<span
 							className='text-failure'
 						>
-							{ethers.utils.formatEther(amount)}
+							{amount
+								? parseDecodedValue({
+									network,
+									value: String(amount),
+									withUnit: true
+								})
+								: `? ${chainProperties[network].ticker}`}{' '}
 						</span>
 						<span>
 						to:
@@ -197,6 +206,45 @@ const SentInfo: FC<ISentInfoProps> = ({ amount, from, className, date, recipient
 								Confirmations <span className='text-text_secondary'>{threshold} of {threshold}</span>
 							</div>
 						</Timeline.Item>
+						{!!approvals?.length &&
+						<Timeline.Item
+							dot={
+								<span className='bg-success bg-opacity-10 flex items-center justify-center p-1 rounded-md h-6 w-6'>
+									<CircleCheckIcon className='text-success text-sm' />
+								</span>
+							}
+							className='success'
+						>
+							<Collapse bordered={false}>
+								<Collapse.Panel
+									showArrow={false}
+									key={1}
+									header={<span className='text-primary font-normal text-sm leading-[15px] px-3 py-2 rounded-md bg-highlight'>Show All Confirmations</span>}
+								>
+									<Timeline>
+										{approvals.map((address, i) => (
+											<Timeline.Item
+												key={i}
+												dot={
+													<span className='bg-success bg-opacity-10 flex items-center justify-center p-1 rounded-md h-6 w-6'>
+														<CircleCheckIcon className='text-success text-sm' />
+													</span>
+												}
+												className={`${i == 0 && 'mt-4'} success bg-transaparent`}
+											>
+												<div
+													className='mb-3 flex items-center gap-x-4'
+												>
+													<AddressComponent address={address} />
+												</div>
+											</Timeline.Item>
+										))}
+
+									</Timeline>
+								</Collapse.Panel>
+							</Collapse>
+						</Timeline.Item>
+						}
 						<Timeline.Item
 							dot={
 								<span className='bg-success bg-opacity-10 flex items-center justify-center p-1 rounded-md h-6 w-6'>
