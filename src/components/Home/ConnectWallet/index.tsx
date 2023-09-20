@@ -1,7 +1,7 @@
 // Copyright 2022-2023 @Polkasafe/polkaSafe-ui authors & contributors
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
-import { ConnectWallet as ThirdConnectWallet, useAddress,useAuth } from '@thirdweb-dev/react';
+import { ConnectWallet as ThirdConnectWallet, useAddress, useSDK } from '@thirdweb-dev/react';
 import { Button } from 'antd';
 import React, {  useCallback, useState } from 'react';
 import ConnectWalletImg from 'src/assets/connect-wallet.svg';
@@ -9,33 +9,32 @@ import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { FIREBASE_FUNCTIONS_URL } from 'src/global/firebaseFunctionsUrl';
 import { WalletIcon } from 'src/ui-components/CustomIcons';
+
 const ConnectWallet = () => {
 	const { network } = useGlobalApiContext();
 	const address = useAddress();
 	const [loading, setLoading] = useState<boolean>(false);
 	const { connectAddress } = useGlobalUserDetailsContext();
-	const thirdwebAuth = useAuth();
+	const sdk = useSDK();
 
 	const handleLogin = useCallback( async () => {
 		try {
 			setLoading(true);
-			const payload = await thirdwebAuth?.login({
-				domain: FIREBASE_FUNCTIONS_URL
-			});
-
+			if(!address){
+				setLoading(false);
+				return;
+			}
 			// Make a request to the API with the payload.
 			const res = await fetch(`${FIREBASE_FUNCTIONS_URL}/login`, {
-				body: JSON.stringify({ payload }),
+				body: JSON.stringify({ address }),
 				headers: {
 					'Content-Type': 'application/json',
 					'x-network': network
 				},
 				method: 'POST'
 			});
-			const { address, signature } = await res.json();
-			if(!address){
-				return;
-			}
+			const { token } = await res.json();
+			const signature = await sdk?.wallet?.sign(token) || '';
 			localStorage.setItem('signature', signature);
 			localStorage.setItem('address', address);
 			await connectAddress(network, address, signature);
@@ -43,7 +42,7 @@ const ConnectWallet = () => {
 			console.log(err);
 		}
 		setLoading(false);
-	},[connectAddress, network, thirdwebAuth]
+	},[address, connectAddress, network, sdk?.wallet]
 	);
 	return (
 		<div className='rounded-xl flex flex-col items-center justify-center min-h-[400px] bg-bg-main'>

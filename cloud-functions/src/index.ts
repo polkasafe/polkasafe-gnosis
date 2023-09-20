@@ -32,7 +32,6 @@ import { responseMessages } from './constants/response_messages';
 import getMultisigQueueByAddress from './utlils/getMultisigQueueByAddress';
 import decodeCallData from './utlils/decodeCallData';
 import { ApiPromise, WsProvider } from '@polkadot/api';
-import fetchTokenUSDValue from './utlils/fetchTokenUSDValue';
 
 import { CHANNEL, DISCORD_BOT_SECRETS, IUserNotificationPreferences, NOTIFICATION_ENGINE_API_KEY, NOTIFICATION_SOURCE, TELEGRAM_BOT_TOKEN } from './notification-engine/notification_engine_constants';
 import callNotificationTrigger from './notification-engine/global-utils/callNotificationTrigger';
@@ -52,8 +51,6 @@ import { IPAUser } from './notification-engine/polkassembly/_utils/types';
 import scheduledApprovalReminder from './notification-engine/polkasafe/scheduledApprovalReminder';
 import { ethers } from 'ethers';
 import _createMultisig from './utlils/_createMultisig';
-import { verifyLogin } from '@thirdweb-dev/auth/evm';
-import sigUtil from 'eth-sig-util';
 
 admin.initializeApp();
 const firestoreDB = admin.firestore();
@@ -82,14 +79,12 @@ const isValidSignature = async (signature: string, address: string) => {
 	}
 };
 
-export const verifyMetamaskSignature = (message: string, address: string, signature: string): boolean => {
-	const msgParams = {
-		data: message,
-		sig: signature
-	};
-	const recovered = sigUtil.recoverPersonalSignature(msgParams);
-
-	return `${recovered}`.toLowerCase() === `${address}`.toLowerCase();
+// Verify signature function for eth
+const verifyEthSignature = async (address: string, signature: string, message: string): Promise<boolean> => {
+	const messageBytes = ethers.toUtf8Bytes(message);
+	const recoveredAddress = ethers.verifyMessage(messageBytes, signature);
+	const isValid = recoveredAddress.toLowerCase() === address.toLowerCase();
+	return isValid;
 };
 
 export const connectAddress = functions.https.onRequest(async (req, res) => {
@@ -97,12 +92,23 @@ export const connectAddress = functions.https.onRequest(async (req, res) => {
 		const signature = req.get('x-signature');
 		const address = req.get('x-address');
 		const network = String(req.get('x-network'));
+
 		if (!address) {
 			return res.status(500).json({ error: responseMessages.internal });
 		}
-
-		const { isValid, error } = await isValidRequest(address, signature, network);
-		if (!isValid) return res.status(400).json({ error });
+		if (!signature) {
+			return res.status(500).json({ error: responseMessages.missing_headers });
+		}
+		const docId =`${address}_${network}`;
+		const addressRef = firestoreDB.collection('addresses').doc(docId);
+		const doc = await addressRef.get();
+		let token= '';
+		if (doc.exists) {
+			const data = doc.data();
+			token = data?.token;
+		}
+		const isValid = await verifyEthSignature(address, signature, token);
+		if (!isValid) return res.status(400).json({ error: responseMessages.invalid_signature });
 
 		try {
 			const DEFAULT_NOTIFICATION_PREFERENCES: IUserNotificationPreferences = {
@@ -120,9 +126,6 @@ export const connectAddress = functions.https.onRequest(async (req, res) => {
 			const multisigAddresses = await getMultisigAddressesByAddress(address);
 
 			// check if address doc already exists
-			const docId =`${address}_${network}`;
-			const addressRef = firestoreDB.collection('addresses').doc(docId);
-			const doc = await addressRef.get();
 			if (doc.exists) {
 				const data = doc.data();
 				if (data && data.created_at) {
@@ -187,21 +190,17 @@ export const connectAddress = functions.https.onRequest(async (req, res) => {
 export const login = functions.https.onRequest(async (req, res) => {
 	corsHandler(req, res, async () => {
 		const network = req.get('x-network');
-		const { payload } = req.body;
+		const { address } = req.body;
 		try {
-			const { address, error } = await verifyLogin(
-			process.env.NEXT_PUBLIC_THIRDWEB_AUTH_DOMAIN as string,
-			payload,
-			);
-
 			if (!address) {
-				return res.status(401).json({ error });
+				return res.status(401).json({ error: responseMessages.invalid_params });
 			}
-			const token = `<Bytes>polkasafe-login-${uuidv4()}</Bytes>`;
+			const token =`Login with polkasafe ${uuidv4()}`;
 			const docId = `${address}_${network}`;
 			const addressRef = firestoreDB.collection('addresses').doc(docId);
 			await addressRef.set({ address, token }, { merge: true });
-			return res.status(200).json({ token, signature: payload.signature, address });
+			console.log();
+			return res.status(200).json({ token });
 		} catch (err: unknown) {
 			functions.logger.error('Error in getConnectAddressToken :', { err, stack: (err as any).stack });
 			return res.status(500).json({ error: responseMessages.internal });
@@ -800,14 +799,6 @@ export const removeFromAddressBookEth = functions.https.onRequest(async (req, re
 		}
 	});
 });
-
-const verifyEthSignature = async (address: string, signature: string, message: string): Promise<boolean> => {
-	const messageBytes = ethers.toUtf8Bytes(message);
-
-	const recoveredAddress = ethers.verifyMessage(messageBytes, signature);
-	const isValid = recoveredAddress.toLowerCase() === address.toLowerCase();
-	return isValid;
-};
 
 const corsHandler = cors({ origin: true });
 
