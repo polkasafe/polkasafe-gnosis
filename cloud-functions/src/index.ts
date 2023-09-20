@@ -51,21 +51,56 @@ import scheduledApprovalReminder from './notification-engine/polkasafe/scheduled
 import { ethers } from 'ethers';
 import _createMultisig from './utlils/_createMultisig';
 import { verifyLogin } from '@thirdweb-dev/auth/evm';
+import sigUtil from 'eth-sig-util';
 
 admin.initializeApp();
 const firestoreDB = admin.firestore();
 
+const isValidRequest = async (address?: string, signature?: string, network?: string): Promise<{ isValid: boolean, error: string }> => {
+	if (!address || !signature || !network) return { isValid: false, error: responseMessages.missing_headers };
+	if (!Object.values(networks).includes(network)) return { isValid: false, error: responseMessages.invalid_network };
+
+	const isValid = await isValidSignature(signature, address);
+	if (!isValid) return { isValid: false, error: responseMessages.invalid_signature };
+	return { isValid: true, error: '' };
+};
+
+const isValidSignature = async (signature: string, address: string) => {
+	try {
+		await cryptoWaitReady();
+		const hexPublicKey = u8aToHex(decodeAddress(address));
+
+		const addressDoc = await firestoreDB.collection('addresses').doc(address).get();
+		const addressData = addressDoc.data();
+		if (!addressData?.token) return false;
+
+		return signatureVerify(addressData?.token, signature, hexPublicKey).isValid;
+	} catch (e) {
+		return false;
+	}
+};
+
+export const verifyMetamaskSignature = (message: string, address: string, signature: string): boolean => {
+	const msgParams = {
+		data: message,
+		sig: signature
+	};
+	const recovered = sigUtil.recoverPersonalSignature(msgParams);
+
+	return `${recovered}`.toLowerCase() === `${address}`.toLowerCase();
+};
+
 export const connectAddress = functions.https.onRequest(async (req, res) => {
 	corsHandler(req, res, async () => {
-		// const signature = req.get('x-signature');
+		const signature = req.get('x-signature');
 		const address = req.get('x-address');
 		const network = String(req.get('x-network'));
 		if (!address) {
 			return res.status(500).json({ error: responseMessages.internal });
 		}
 
-		// const { isValid, error } = await isValidRequest(address, signature, network);
-		// if (!isValid) return res.status(400).json({ error });
+		const { isValid, error } = await isValidRequest(address, signature, network);
+		if (!isValid) return res.status(400).json({ error });
 
 		try {
 			const DEFAULT_NOTIFICATION_PREFERENCES: IUserNotificationPreferences = {
@@ -150,7 +185,7 @@ export const connectAddress = functions.https.onRequest(async (req, res) => {
 export const login = functions.https.onRequest(async (req, res) => {
 	corsHandler(req, res, async () => {
 		const network = req.get('x-network');
-		const { payload, signature } = req.body;
+		const { payload } = req.body;
 		try {
 			const { address, error } = await verifyLogin(
 			process.env.NEXT_PUBLIC_THIRDWEB_AUTH_DOMAIN as string,
@@ -164,7 +199,8 @@ export const login = functions.https.onRequest(async (req, res) => {
 			const docId = `${address}_${network}`;
 			const addressRef = firestoreDB.collection('addresses').doc(docId);
 			await addressRef.set({ address, token }, { merge: true });
-			return res.status(200).json({ token, signature, address });
+			console.log(payload.signature);
+			return res.status(200).json({ token, signature: payload.signature, address });
 		} catch (err: unknown) {
 			functions.logger.error('Error in getConnectAddressToken :', { err, stack: (err as any).stack });
 			return res.status(500).json({ error: responseMessages.internal });
@@ -743,30 +779,6 @@ const verifyEthSignature = async (address: string, signature: string, message: s
 };
 
 const corsHandler = cors({ origin: true });
-
-const isValidRequest = async (address?: string, signature?: string, network?: string): Promise<{ isValid: boolean, error: string }> => {
-	if (!address || !signature || !network) return { isValid: false, error: responseMessages.missing_headers };
-	if (!Object.values(networks).includes(network)) return { isValid: false, error: responseMessages.invalid_network };
-
-	const isValid = await isValidSignature(signature, address);
-	if (!isValid) return { isValid: false, error: responseMessages.invalid_signature };
-	return { isValid: true, error: '' };
-};
-
-const isValidSignature = async (signature: string, address: string) => {
-	try {
-		await cryptoWaitReady();
-		const hexPublicKey = u8aToHex(decodeAddress(address));
-
-		const addressDoc = await firestoreDB.collection('addresses').doc(address).get();
-		const addressData = addressDoc.data();
-		if (!addressData?.token) return false;
-
-		return signatureVerify(addressData?.token, signature, hexPublicKey).isValid;
-	} catch (e) {
-		return false;
-	}
-};
 
 const getMultisigAddressesByAddress = async (address: string) => {
 	const multisigAddresses = await admin
@@ -1463,9 +1475,9 @@ export const sendNotification = functions.https.onRequest(async (req, res) => {
 
 export const getNotifications = functions.https.onRequest(async (req, res) => {
 	corsHandler(req, res, async () => {
-		const signature = req.get('x-signature');
+		// const signature = req.get('x-signature');
 		const address = req.get('x-address');
-		const network = String(req.get('x-network'));
+		// const network = String(req.get('x-network'));
 
 		// const { isValid, error } = await isValidRequest(address, signature, network);
 		// if (!isValid) return res.status(400).json({ error });

@@ -87,7 +87,7 @@ const CreateMultisig: React.FC<IMultisigProps> = ({ onCancel, homepage = false }
 			const address = localStorage.getItem('address');
 			const signature = localStorage.getItem('signature');
 
-			if (!address || !signature || !safeService) {
+			if (!address || !signature || Boolean(!Object.keys(safeService).length)) {
 				console.log('CreateMultisig line 97');
 				return;
 			}

@@ -11,6 +11,7 @@ import { MetaMaskAvatar } from 'react-metamask-avatar';
 import { Link, useLocation } from 'react-router-dom';
 import polkasafeLogo from 'src/assets/icons/polkasafe.svg';
 import AddMultisig from 'src/components/Multisig/AddMultisig';
+import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { AddressBookIcon, AppsIcon, AssetsIcon, HomeIcon, NotificationIcon, OutlineCloseIcon, SettingsIcon, TransactionIcon, UserPlusIcon } from 'src/ui-components/CustomIcons';
 
@@ -23,7 +24,7 @@ const Menu: FC<Props> = ({ className }) => {
 	const [selectedMultisigAddress, setSelectedMultisigAddress] = useState(activeMultisig ||localStorage.getItem('active_multisig') || '');
 	const location = useLocation();
 	const userAddress = localStorage.getItem('address');
-
+	const { network } = useGlobalApiContext();
 	useEffect(() => {
 		if(activeMultisig){
 			setSelectedMultisigAddress(activeMultisig);
@@ -137,7 +138,7 @@ const Menu: FC<Props> = ({ className }) => {
 			<section className='overflow-y-auto max-h-full [&::-webkit-scrollbar]:hidden flex-1 mb-3'>
 				{multisigAddresses &&
 					<ul className='flex flex-col gap-y-2 py-3 text-white list-none'>
-						{multisigAddresses.map((multisig: any) => {
+						{multisigAddresses.filter(a => a.network === network).map((multisig: any) => {
 							return (<li className='w-full' key={multisig.address}>
 								<button className={classNames('w-full flex items-center gap-x-2 flex-1 rounded-lg p-3 font-medium text-[13px]', {
 									'bg-highlight text-primary': multisig.address === selectedMultisigAddress

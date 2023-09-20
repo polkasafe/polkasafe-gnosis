@@ -6,6 +6,7 @@ import { ChainNamespaceType } from '@web3auth/base';
 import { Dispatch, SetStateAction } from 'react';
 
 import { tokenSymbol } from './global/networkConstants';
+import { GnosisSafeService } from './services';
 
 export enum CHANNEL {
 	EMAIL = 'email',
@@ -66,7 +67,7 @@ export interface UserDetailsContextType {
 	login?:()=>any
 	notification_preferences?: any,
 	connectAddress?:any
-	safeService?:any
+	safeService: GnosisSafeService
 	setSafeService?:any
 }
 

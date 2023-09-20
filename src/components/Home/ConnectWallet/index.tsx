@@ -38,7 +38,7 @@ const ConnectWallet = () => {
 			}
 			localStorage.setItem('signature', signature);
 			localStorage.setItem('address', address);
-			connectAddress(network, address, signature);
+			await connectAddress(network, address, signature);
 		} catch (err) {
 			console.log(err);
 		}

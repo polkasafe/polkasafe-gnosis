@@ -12,6 +12,7 @@ import DashboardCard from 'src/components/Home/DashboardCard';
 import TxnCard from 'src/components/Home/TxnCard';
 import AddMultisig from 'src/components/Multisig/AddMultisig';
 import Loader from 'src/components/UserFlow/Loader';
+import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import Spinner from 'src/ui-components/Loader';
 import styled from 'styled-components';
@@ -24,6 +25,7 @@ const Home = () => {
 	const [transactionLoading] = useState(false);
 	const [isOnchain, setIsOnchain] = useState(true);
 	const [openTransactionModal, setOpenTransactionModal] = useState(false);
+	const { network } = useGlobalApiContext();
 
 	useEffect(() => {
 		if ((dayjs(createdAt) > dayjs().subtract(15, 'seconds')) && addressBook?.length === 1) {
@@ -34,7 +36,7 @@ const Home = () => {
 
 	useEffect(() => {
 		const handleNewTransaction = async () => {
-			if (!activeMultisig || !safeService) return;
+			if (!activeMultisig || Boolean(!Object.keys(safeService).length)) return;
 			const safeData = await safeService.getSafeCreationInfo(activeMultisig);
 			if (safeData) {
 				setIsOnchain(true);
@@ -52,7 +54,7 @@ const Home = () => {
 				address ?
 					<>
 						<NewUserModal open={openNewUserModal} onCancel={() => setOpenNewUserModal(false)} />
-						{ loading ? <Spinner size='large' /> :multisigAddresses.length > 0
+						{ loading ? <Spinner size='large' /> :multisigAddresses.filter((address:any) => address.network === network).length > 0
 							?
 							<section>
 								<div className="mb-0 grid grid-cols-16 gap-4 grid-row-2 lg:grid-row-1 h-auto">

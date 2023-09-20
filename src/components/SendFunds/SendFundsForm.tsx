@@ -65,7 +65,7 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 	const handleSubmit = async () => {
 		setLoading(true);
 		try {
-			const safeTxHash = await safeService.createSafeTx(activeMultisig, recipientAddress, ethers.utils.parseUnits(amount, 'ether').toString(), address, note);
+			const safeTxHash = await safeService.createSafeTx(activeMultisig, recipientAddress, ethers.utils.parseUnits(amount, 'ether').toString(), address);
 
 			if (safeTxHash) {
 				const txBody = {

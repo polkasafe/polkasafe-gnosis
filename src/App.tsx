@@ -12,7 +12,7 @@
 // import ModalContextProvider from './context/ModalContext';
 // import { UserDetailsProvider } from './context/UserDetailsContext';
 // import { GlobalStyle } from './ui-components/GlobalStyle';
-import { Astar } from '@thirdweb-dev/chains';
+import { Astar, Goerli,Polygon } from '@thirdweb-dev/chains';
 import { ThirdwebProvider } from '@thirdweb-dev/react';
 import { ConfigProvider } from 'antd';
 import React from 'react';
@@ -20,22 +20,28 @@ import { BrowserRouter } from 'react-router-dom';
 
 // import Ath from './auth/Ath';
 import AppLayout from './components/AppLayout';
-import { ApiContextProvider } from './context/ApiContext';
+import { ApiContextProvider, useGlobalApiContext } from './context/ApiContext';
 import { DAppContextProvider } from './context/DAppContext';
 import ModalContextProvider from './context/ModalContext';
 import { UserDetailsProvider } from './context/UserDetailsContext';
 import { FIREBASE_FUNCTIONS_URL } from './global/firebaseFunctionsUrl';
 import { antdTheme } from './themes/antdTheme';
 import { GlobalStyle } from './ui-components/GlobalStyle';
-const activeChain = Astar;
+
+const chains:any = {
+	astar: Astar,
+	goerli: Goerli,
+	polygon: Polygon
+};
 
 function App() {
+	const { network } = useGlobalApiContext();
 	return (
 		<BrowserRouter>
 			<ConfigProvider theme={antdTheme}>
 				<ApiContextProvider>
 					<ThirdwebProvider
-						activeChain={activeChain}
+						activeChain={chains?.[network] || Astar}
 						clientId="b2c09dab179152e7936744fa00899dfa"
 						authConfig={{
 							domain: FIREBASE_FUNCTIONS_URL as string
