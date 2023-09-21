@@ -12,6 +12,7 @@ import shortenAddress from 'src/utils/shortenAddress';
 interface IReceivedInfoProps {
 	className?: string;
 	amount: string;
+	addedOwner?: string;
 	amountType: string;
 	amount_usd: number;
 	date: string;
@@ -23,7 +24,7 @@ interface IReceivedInfoProps {
 	loading?: boolean
 }
 
-const ReceivedInfo: FC<IReceivedInfoProps> = ({ amount, to, date, from, callHash, note, loading }) => {
+const ReceivedInfo: FC<IReceivedInfoProps> = ({ amount, to, date, from, callHash, note, loading, addedOwner }) => {
 
 	return (
 		<article
@@ -103,6 +104,22 @@ const ReceivedInfo: FC<IReceivedInfoProps> = ({ amount, to, date, from, callHash
 						</span>
 					</p>
 				</div>}
+			{addedOwner &&
+				<div
+					className='w-full max-w-[418px] flex items-center  gap-x-5 mt-3'
+				>
+					<span
+						className='text-text_secondary font-normal text-sm leading-[15px]'
+					>
+					Added Owner:
+					</span>
+					<p
+						className='flex items-center gap-x-3 font-normal text-xs leading-[13px] text-text_secondary'
+					>
+						<AddressComponent address={addedOwner} />
+					</p>
+				</div>
+			}
 			{loading ? <Spin className='mt-3' /> : note &&
 				<div
 					className='w-full max-w-[418px] flex items-center gap-x-5 mt-3'

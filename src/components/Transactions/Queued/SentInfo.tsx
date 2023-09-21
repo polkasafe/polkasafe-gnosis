@@ -36,6 +36,7 @@ interface ISentInfoProps {
 	date: Date;
 	// time: string;
 	loading: boolean;
+	addressAddOrRemove?: string;
 	approvals: string[];
 	threshold: number;
 	className?: string;
@@ -61,6 +62,7 @@ interface ISentInfoProps {
 const SentInfo: FC<ISentInfoProps> = ({
 	handleExecuteTransaction,
 	amount,
+	addressAddOrRemove,
 	transactionFields,
 	className,
 	callData,
@@ -205,6 +207,16 @@ const SentInfo: FC<ISentInfoProps> = ({
 						</span>
 					</p>
 				</div>
+				{addressAddOrRemove &&
+					<div className='flex items-center gap-x-5 mt-3 justify-between'>
+						<span className='text-text_secondary font-normal text-sm leading-[15px]'>
+							{txType === 'addOwnerWithThreshold' ? 'Adding Owner' : 'Removing Owner'}:
+						</span>
+						<p className='flex items-center gap-x-3 font-normal text-xs leading-[13px] text-text_secondary'>
+							<AddressComponent address={addressAddOrRemove} />
+						</p>
+					</div>
+				}
 				{transactionDetailsLoading ? <Loader size='small' /> :
 					<>
 						<div

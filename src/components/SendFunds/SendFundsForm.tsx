@@ -43,7 +43,7 @@ interface ISendFundsFormProps {
 
 const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn }: ISendFundsFormProps) => {
 
-	const { activeMultisig, addressBook, address, gnosisSafe, multisigAddresses, transactionFields } = useGlobalUserDetailsContext();
+	const { activeMultisig, addressBook, address, gnosisSafe, multisigAddresses, transactionFields, activeMultisigData } = useGlobalUserDetailsContext();
 	const { network } = useGlobalApiContext();
 	const { records } = useActiveMultisigContext();
 
@@ -136,7 +136,8 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 	useEffect(() => {
 		const total = recipientAndAmount.reduce((sum,item) => sum + Number(item.amount), 0);
 		setAmount(total.toString());
-	}, [recipientAndAmount]);
+		console.log(ethers.utils.formatEther(activeMultisigData.safeBalance.toString()));
+	}, [activeMultisigData, recipientAndAmount]);
 
 	useEffect(() => {
 		if(!recipientAndAmount) return;
@@ -590,9 +591,12 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 						</Form>
 						<section className='flex items-center gap-x-5 justify-center mt-10'>
 							<CancelBtn className='w-[250px]' onClick={onCancel} />
-							<ModalBtn disabled={recipientAndAmount.some((item) => item.recipient === '' || item.amount === '0' || !item.amount)}
-								// !recipientAddress || !validRecipient || amount.isZero() || amount.gte(new BN(multisigBalance)) || initiatorBalance.lt(totalDeposit.add(totalGas))
-								loading={loading} onClick={handleSubmit} className='w-[250px]' title='Make Transaction' />
+							<ModalBtn disabled={
+								recipientAndAmount.some((item) => item.recipient === '' || item.amount === '0' || !item.amount)
+								|| Number(amount) > Number(ethers.utils.formatEther(activeMultisigData?.safeBalance?.toString()))
+								|| Object.keys(transactionFields[category].subfields).some((key) =>  (!transactionFieldsObject.subfields[key]?.value && transactionFields[category].subfields[key].required))
+							}
+							loading={loading} onClick={handleSubmit} className='w-[250px]' title='Make Transaction' />
 						</section>
 					</Spin>
 			}

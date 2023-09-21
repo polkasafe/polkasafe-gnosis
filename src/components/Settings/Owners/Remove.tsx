@@ -17,7 +17,7 @@ import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import {  NotificationStatus } from 'src/types';
 import { WarningCircleIcon } from 'src/ui-components/CustomIcons';
 import queueNotification from 'src/ui-components/QueueNotification';
-import addTransactionEth from 'src/utils/addTransactionEth';
+import { addNewTransaction } from 'src/utils/addNewTransaction';
 
 const RemoveOwner = ({ addressToRemove, oldThreshold, oldSignatoriesLength, onCancel }: { addressToRemove: string, oldThreshold: number, oldSignatoriesLength: number, onCancel: () => void }) => {
 	const [newThreshold, setNewThreshold] = useState(oldThreshold === oldSignatoriesLength ? oldThreshold - 1 : oldThreshold);
@@ -40,35 +40,32 @@ const RemoveOwner = ({ addressToRemove, oldThreshold, oldSignatoriesLength, onCa
 				newThreshold
 			);
 			if (safeTxHash) {
-				const txBody = {
-					amount_token: 0,
-					data: '0x00',
-					note: 'Owner Added',
-					safeAddress: activeMultisig,
-					to: address,
-					txHash: safeTxHash,
-					type: 'sent'
-				};
-				const { error: multisigError } = await addTransactionEth({
-					address: address,
+				addNewTransaction({
+					amount: '0',
+					callData: safeTxHash,
+					callHash: safeTxHash,
+					executed: false,
 					network,
-					txBody
+					note: 'Removing Owner',
+					safeAddress: activeMultisig,
+					to: '',
+					type: 'sent'
 				});
-				if (multisigError) {
-					queueNotification({
-						header: 'Error.',
-						message: 'Please try again.',
-						status: NotificationStatus.ERROR
-					});
-					setFailure(true);
-					return;
-				}
 				onCancel?.();
 				setLoading(false);
 				queueNotification({
 					header: 'Success',
 					message: 'New Transaction Created.',
 					status: NotificationStatus.SUCCESS
+				});
+			}
+			else {
+				setLoading(false);
+				setFailure(true);
+				queueNotification({
+					header: 'Error.',
+					message: 'Please try again.',
+					status: NotificationStatus.ERROR
 				});
 			}
 		} catch (err) {

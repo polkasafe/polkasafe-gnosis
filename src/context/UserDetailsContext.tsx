@@ -6,6 +6,7 @@
 import { EthersAdapter } from '@safe-global/protocol-kit';
 import { useAddress, useMetamask, useNetworkMismatch, useSigner } from '@thirdweb-dev/react';
 import { Modal } from 'antd';
+import { ethers } from 'ethers';
 import React, {
 	createContext,
 	useCallback,
@@ -332,7 +333,7 @@ export const UserDetailsProvider = ({
 			if(signer){
 				const txUrl = returnTxUrl(network);
 				const web3Adapter = new EthersAdapter({
-					ethers: signer.provider as any,
+					ethers,
 					signerOrProvider: signer
 				});
 				const gnosisService = new GnosisSafeService(web3Adapter, signer, txUrl);

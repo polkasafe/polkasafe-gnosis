@@ -190,7 +190,7 @@ const TxnCard = () => {
 									.filter((_: any, i: number) => i < 10)
 									.map((transaction: any, i: React.Key | null | undefined) => {
 										// const from = transaction?.receipt?.options?.from;
-										const sent = transaction.type === 'sent' || transaction.type === 'MULTISIG_TRANSACTION';
+										const sent = transaction.type === 'sent' || transaction.type === 'MULTISIG_TRANSACTION' || transaction.type === 'removeOwner';
 
 										return (
 											<Link
@@ -218,7 +218,7 @@ const TxnCard = () => {
 													</div>
 												</div>
 												<div>
-													{sent ? (
+													{transaction.type !== 'addOwnerWithThreshold' || transaction.type !== 'removeOwner' ? <span className='text-md text-white' >-?</span> : sent ? (
 														<h1 className='text-md text-failure'>
                               -
 															{formatBnBalance(

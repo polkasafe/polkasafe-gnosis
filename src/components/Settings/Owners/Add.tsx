@@ -17,7 +17,7 @@ import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { NotificationStatus } from 'src/types';
 import { WarningCircleIcon } from 'src/ui-components/CustomIcons';
 import queueNotification from 'src/ui-components/QueueNotification';
-import addTransactionEth from 'src/utils/addTransactionEth';
+import { addNewTransaction } from 'src/utils/addNewTransaction';
 import styled from 'styled-components';
 
 interface ISignatory {
@@ -107,28 +107,17 @@ const AddOwner = ({
 				newThreshold
 			);
 			if (safeTxHash) {
-				const txBody = {
-					amount_token: 0,
-					data: '0x00',
-					note: 'Owner Added',
-					safeAddress: activeMultisig,
-					to: address,
-					txHash: safeTxHash,
-					type: 'sent'
-				};
-				const { error: multisigError } = await addTransactionEth({
-					address: address,
+				addNewTransaction({
+					amount: '0',
+					callData: safeTxHash,
+					callHash: safeTxHash,
+					executed: false,
 					network,
-					txBody
+					note: 'Adding New Owner',
+					safeAddress: activeMultisig,
+					to: '',
+					type: 'sent'
 				});
-				if (multisigError) {
-					queueNotification({
-						header: 'Error.',
-						message: 'Please try again.',
-						status: NotificationStatus.ERROR
-					});
-					return;
-				}
 				onCancel?.();
 				setLoading(false);
 				queueNotification({

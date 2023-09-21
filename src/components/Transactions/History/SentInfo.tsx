@@ -21,6 +21,7 @@ interface ISentInfoProps {
 	amount: string;
 	amountType: string;
 	approvals: string[];
+	addressAddOrRemove?: string;
 	date: string;
 	// time: string;
 	className?: string;
@@ -33,7 +34,7 @@ interface ISentInfoProps {
 	txType?:string
 }
 
-const SentInfo: FC<ISentInfoProps> = ({ approvals, amount, from, className, date, recipient, callHash, note, loading, txType }) => {
+const SentInfo: FC<ISentInfoProps> = ({ approvals, amount, from, className, date, recipient, callHash, note, loading, txType, addressAddOrRemove }) => {
 	const { addressBook, activeMultisig, multisigAddresses } = useGlobalUserDetailsContext();
 	const { network } = useGlobalApiContext();
 	const threshold = multisigAddresses?.find((item: any) => item.address === activeMultisig || item.proxy === activeMultisig)?.threshold || 0;
@@ -150,6 +151,22 @@ const SentInfo: FC<ISentInfoProps> = ({ approvals, amount, from, className, date
 						</span>
 					</p>
 				</div>
+				{addressAddOrRemove &&
+					<div
+						className='flex items-center gap-x-5 mt-3'
+					>
+						<span
+							className='text-text_secondary font-normal text-sm leading-[15px]'
+						>
+							{txType === 'addOwnerWithThreshold' ? 'Added Owner' : 'Removed Owner'}:
+						</span>
+						<p
+							className='flex items-center gap-x-3 font-normal text-xs leading-[13px] text-text_secondary'
+						>
+							<AddressComponent address={addressAddOrRemove} />
+						</p>
+					</div>
+				}
 				{loading ? <Spin className='mt-3' /> : note &&
 					<div
 						className='flex items-center gap-x-5 mt-3'

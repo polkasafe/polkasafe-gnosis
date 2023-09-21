@@ -108,7 +108,7 @@ const ListOwners = ({ className, disabled }: { className?: string, disabled?: bo
 			</article>
 			<article>
 				<div className='grid grid-cols-4 gap-x-5 py-6 px-4 text-white'>
-					<p className='max-w-[100px] sm:w-auto overflow-hidden text-ellipsis col-span-1 flex items-center text-base'>
+					<p className=' sm:w-auto overflow-hidden text-ellipsis col-span-1 flex items-center text-base'>
 						{addressBook.find((item: any) => item.address === userAddress)?.name || DEFAULT_ADDRESS_NAME}
 					</p>
 					<div className='col-span-2 flex items-center'>
@@ -136,7 +136,7 @@ const ListOwners = ({ className, disabled }: { className?: string, disabled?: bo
 					return (
 						<article key={index}>
 							<div className='grid grid-cols-4 gap-x-5 py-6 px-4 text-white'>
-								<p className='max-w-[100px] sm:w-auto overflow-hidden text-ellipsis col-span-1 flex items-center text-base'>
+								<p className='sm:w-auto overflow-hidden text-ellipsis col-span-1 flex items-center text-base'>
 									{addressObject?.nickName || records?.[address]?.name || addressObject?.name || DEFAULT_ADDRESS_NAME}
 								</p>
 								<div className='col-span-2 flex items-center'>

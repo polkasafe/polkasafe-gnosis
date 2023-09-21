@@ -36,7 +36,7 @@ const DashboardCard = ({ className, setNewTxn, transactionLoading, openTransacti
 	const { openModal } = useModalContext();
 
 	const [openFundMultisigModal, setOpenFundMultisigModal] = useState(false);
-	const currentMultisig = multisigAddresses?.find((item: any) => item.address === activeMultisig);
+	const currentMultisig = multisigAddresses?.find((item) => item.address === activeMultisig);
 	const TransactionModal: FC = () => {
 		return (
 			<>
@@ -110,7 +110,7 @@ const DashboardCard = ({ className, setNewTxn, transactionLoading, openTransacti
 								<MetaMaskAvatar address={currentMultisig?.address || ''} size={50} />
 							</div>
 							<div className={' bg-primary text-white text-sm rounded-lg absolute -bottom-1 left-[16px] px-2'}>
-								{currentMultisig?.threshold}/{currentMultisig?.signatories.length}
+								{activeMultisigData?.threshold ? activeMultisigData.threshold : currentMultisig?.threshold}/{activeMultisigData?.signatories?.length ? activeMultisigData?.signatories?.length : currentMultisig?.signatories.length}
 							</div>
 						</div>
 						<div>
@@ -133,19 +133,19 @@ const DashboardCard = ({ className, setNewTxn, transactionLoading, openTransacti
 					<div>
 						<div className='text-white'>Signatories</div>
 						<div className='font-bold text-lg text-primary'>
-							{currentMultisig?.signatories.length || 0}
+							{activeMultisigData?.signatories?.length ? activeMultisigData?.signatories?.length : currentMultisig?.signatories.length || 0}
 						</div>
 					</div>
 					<div>
 						<div className='text-white'>ASTR</div>
 						<div className='font-bold text-lg text-primary'>{!activeMultisigData?.safeBalance ? <Spin size='default' /> : ethers.utils.formatEther(activeMultisigData.safeBalance.toString()).split('').slice(0, 5).join('')}</div>
 					</div>
-					<div>
+					{/* <div>
 						<div className='text-white'>USD Amount</div>
 						<div className='font-bold text-lg text-primary'>
 							{0}
 						</div>
-					</div>
+					</div> */}
 				</div>
 				<div className="flex justify-around w-full mt-5">
 					<TransactionModal />

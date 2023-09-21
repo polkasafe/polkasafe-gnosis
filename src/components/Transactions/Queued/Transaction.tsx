@@ -6,6 +6,7 @@ import classNames from 'classnames';
 import dayjs from 'dayjs';
 import { ethers } from 'ethers';
 import React, { FC, useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import { ParachainIcon } from 'src/components/NetworksDropdown';
 import { useGlobalApiContext } from 'src/context/ApiContext';
@@ -67,13 +68,14 @@ const Transaction: FC<ITransactionProps> = ({
 
 	const [decodedCallData, setDecodedCallData] = useState<any>({});
 
+	const navigate = useNavigate();
+
 	const [transactionInfoVisible, toggleTransactionVisible] = useState(false);
 	const [callDataString, setCallDataString] = useState<string>(callData || '');
 	const [transactionDetails, setTransactionDetails] = useState<ITransaction>({} as any);
 	const token = chainProperties[network].ticker;
 	const location = useLocation();
 	const hash = location.hash.slice(1);
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const [transactionDetailsLoading, setTransactionDetailsLoading] = useState<boolean>(false);
 
 	const getTransactionNote = useCallback(async () => {
@@ -115,15 +117,7 @@ const Transaction: FC<ITransactionProps> = ({
 				};
 				fetch(`${FIREBASE_FUNCTIONS_URL}/updateTransaction`, {
 					body: JSON.stringify(updateTx),
-					headers: {
-						Accept: 'application/json',
-						'Acess-Control-Allow-Origin': '*',
-						'Content-Type': 'application/json',
-						'x-address': address,
-						'x-api-key': '47c058d8-2ddc-421e-aeb5-e2aa99001949',
-						'x-signature': localStorage.getItem('signature')!,
-						'x-source': 'polkasafe'
-					},
+					headers: firebaseFunctionsHeader(network),
 					method: 'POST'
 				});
 				onAfterApprove(callHash);
@@ -158,7 +152,7 @@ const Transaction: FC<ITransactionProps> = ({
 			if (error) {
 				queueNotification({
 					header: 'Execution Failed',
-					message: error,
+					message: 'Please try Again',
 					status: NotificationStatus.ERROR
 				});
 			}
@@ -175,16 +169,7 @@ const Transaction: FC<ITransactionProps> = ({
 				};
 				fetch(`${FIREBASE_FUNCTIONS_URL}/completeTransaction`, {
 					body: JSON.stringify(completeTx),
-					headers: {
-						Accept: 'application/json',
-						'Acess-Control-Allow-Origin': '*',
-						'Content-Type': 'application/json',
-						'x-address': address,
-						'x-api-key': '47c058d8-2ddc-421e-aeb5-e2aa99001949',
-						'x-network': network,
-						'x-signature': localStorage.getItem('signature')!,
-						'x-source': 'polkasafe'
-					},
+					headers: firebaseFunctionsHeader(network),
 					method: 'POST'
 				});
 				onAfterExecute(callHash);
@@ -194,6 +179,7 @@ const Transaction: FC<ITransactionProps> = ({
 					status: NotificationStatus.SUCCESS
 				});
 				setSuccess(true);
+				if(txType === 'addOwnerWithThreshold' || txType === 'removeOwner') navigate('/');
 			}
 		} catch (error) {
 			console.log(error);
@@ -244,9 +230,9 @@ const Transaction: FC<ITransactionProps> = ({
 
 									<span>
 										{txType === 'addOwnerWithThreshold'
-											? 'Adding new owner'
+											? 'Adding New Owner'
 											: txType === 'removeOwner'
-												? 'Removing new owner'
+												? 'Removing Owner'
 												: txType === 'Sent' || txType === 'transfer'
 													? 'Sent'
 													: 'Custom Transaction'}
@@ -300,6 +286,7 @@ const Transaction: FC<ITransactionProps> = ({
 						<Divider className='bg-text_secondary my-5' />
 						<SentInfo
 							amount={decodedCallData.method === 'multiSend' ? decodedCallData?.parameters?.[0]?.valueDecoded?.map((item: any) => item.value) : value}
+							addressAddOrRemove={txType === 'addOwnerWithThreshold' ? decodedCallData.parameters?.[0]?.value : txType === 'removeOwner' ? decodedCallData.parameters?.[1]?.value : ''}
 							callHash={callHash}
 							callDataString={callDataString}
 							callData={callData}

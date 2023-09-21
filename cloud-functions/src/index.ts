@@ -51,6 +51,8 @@ import { IPAUser } from './notification-engine/polkassembly/_utils/types';
 import scheduledApprovalReminder from './notification-engine/polkasafe/scheduledApprovalReminder';
 import { ethers } from 'ethers';
 import _createMultisig from './utlils/_createMultisig';
+import { verifyLogin } from '@thirdweb-dev/auth/evm';
+import sigUtil from '@metamask/eth-sig-util';
 
 admin.initializeApp();
 const firestoreDB = admin.firestore();
@@ -79,12 +81,14 @@ const isValidSignature = async (signature: string, address: string) => {
 	}
 };
 
-// Verify signature function for eth
-const verifyEthSignature = async (address: string, signature: string, message: string): Promise<boolean> => {
-	const messageBytes = ethers.toUtf8Bytes(message);
-	const recoveredAddress = ethers.verifyMessage(messageBytes, signature);
-	const isValid = recoveredAddress.toLowerCase() === address.toLowerCase();
-	return isValid;
+export const verifyMetamaskSignature = (message: string, address: string, signature: string): boolean => {
+	const msgParams = {
+		data: message,
+		signature: signature
+	};
+	const recovered = sigUtil.recoverPersonalSignature(msgParams);
+
+	return `${recovered}`.toLowerCase() === `${address}`.toLowerCase();
 };
 
 export const connectAddress = functions.https.onRequest(async (req, res) => {
@@ -553,36 +557,36 @@ export const getMultisigsByNetworkEth = functions.https.onRequest(async (req, re
 
 export const addSignatoriesEth = functions.https.onRequest(async (req, res) => {
 	corsHandler(req, res, async () => {
-		const signature = req.get('x-signature');
-		const multisig = String(req.get('x-multisig'));
+		const signature = req.get('x-signature') || '';
+		const network = req.get('x-network');
+		const address = String(req.get('x-address')) || '';
 
-		const substrateAddress = getSubstrateAddress(String(req.get('x-address')));
-
-		const address: string = substrateAddress !== '' ? substrateAddress : req.get('x-address') || '';
-
-		const addressRef = firestoreDB.collection('addresses').doc(address);
+		const addressRef = firestoreDB.collection('addresses').doc(`${address}_${network}`);
 		const doc = await addressRef.get();
 
+		const { multisigAddress, newSignatory, newThreshold } = req.body;
+
 		const multisigColl = firestoreDB.collection('multisigAddresses');
-		const multisigDoc = await multisigColl.doc(multisig).get();
+		const multisigDoc = await multisigColl.doc(multisigAddress).get();
 
 		if (multisigDoc.exists) return res.status(400).json({ error: responseMessages.invalid_params });
 
 		if (!doc.exists) return res.status(404).json({ error: responseMessages.address_not_in_db });
 		const addressData = doc.data();
 
-		const { newSignatory } = req.body;
 		const signatories = multisigDoc.data()?.signatories || [];
 
-		const isValid = await verifyEthSignature(address, signature!, addressData?.token);
-		if (!isValid) return res.status(400).json({ error: 'something went wrong' });
+		// const isValid = await verifyEthSignature(address, signature, addressData?.token);
+		// if (!isValid) return res.status(400).json({ error: 'something went wrong' });
 
-		await multisigColl.doc(multisig).update({
+		await multisigColl.doc(multisigAddress).update({
+			threshold: newThreshold,
 			signatories: [
 				...signatories,
 				newSignatory
 			]
 		});
+		return res.status(200).json({ data: responseMessages.success });
 	});
 });
 
@@ -1192,8 +1196,8 @@ export const getAssetsForAddress = functions.https.onRequest(async (req, res) =>
 		const address = req.get('x-address');
 		const network = String(req.get('x-network'));
 
-		const { isValid, error } = await isValidRequest(address, signature, network);
-		if (!isValid) return res.status(400).json({ error });
+		// const { isValid, error } = await isValidRequest(address, signature, network);
+		// if (!isValid) return res.status(400).json({ error });
 
 		const { address: addressToFetch } = req.body;
 		if (!addressToFetch || !network) return res.status(400).json({ error: responseMessages.missing_params });
@@ -1258,8 +1262,8 @@ export const addFeedback = functions.https.onRequest(async (req, res) => {
 		const address = req.get('x-address');
 		const network = String(req.get('x-network'));
 
-		const { isValid, error } = await isValidRequest(address, signature, network);
-		if (!isValid) return res.status(400).json({ error });
+		// const { isValid, error } = await isValidRequest(address, signature, network);
+		// if (!isValid) return res.status(400).json({ error });
 
 		const { review, rating } = req.body;
 		if (isNaN(rating) || Number(rating) <= 0 || Number(rating) > 5) return res.status(400).json({ error: responseMessages.invalid_params });
@@ -2917,8 +2921,8 @@ export const updateTransactionFields = functions.https.onRequest(async (req, res
 		const address = req.get('x-address');
 		const network = String(req.get('x-network'));
 
-		const { isValid, error } = await isValidRequest(address, signature, network);
-		if (!isValid) return res.status(400).json({ error });
+		// const { isValid, error } = await isValidRequest(address, signature, network);
+		// if (!isValid) return res.status(400).json({ error });
 
 		const { transactionFields } = req.body as { transactionFields: ITransactionFields };
 		if (!transactionFields || typeof transactionFields !== 'object') return res.status(400).json({ error: responseMessages.missing_params });

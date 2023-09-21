@@ -138,6 +138,8 @@ export class GnosisSafeService {
 			const safeTransaction = await safeSdk.createTransaction({
 				safeTransactionData
 			});
+			const ownerAddresses = await safeSdk.getOwners();
+			console.log(ownerAddresses);
 			console.log(safeTransaction);
 			const safeTxHash = await safeSdk.getTransactionHash(safeTransaction);
 			let signature = (await safeSdk.signTransaction(safeTransaction)) as any;

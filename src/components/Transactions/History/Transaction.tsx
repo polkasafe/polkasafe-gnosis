@@ -15,6 +15,7 @@ import { FIREBASE_FUNCTIONS_URL } from 'src/global/firebaseFunctionsUrl';
 import { chainProperties } from 'src/global/networkConstants';
 import { ITransaction } from 'src/types';
 import { ArrowDownLeftIcon, ArrowUpRightIcon, CircleArrowDownIcon, CircleArrowUpIcon } from 'src/ui-components/CustomIcons';
+import { IHistoryTransactions } from 'src/utils/convertSafeData/convertSafeHistory';
 
 import ReceivedInfo from './ReceivedInfo';
 import SentInfo from './SentInfo';
@@ -22,7 +23,7 @@ import SentInfo from './SentInfo';
 const LocalizedFormat = require('dayjs/plugin/localizedFormat');
 dayjs.extend(LocalizedFormat);
 
-const Transaction: FC<ITransaction & { approvals: string[] }> = ({ approvals, amount_token, created_at, to, from, txHash, amount_usd, type, executor }) => {
+const Transaction: FC<IHistoryTransactions> = ({ approvals, amount_token, created_at, to, from, txHash, type, executor, decodedData }) => {
 	const { network } = useGlobalApiContext();
 	const token = chainProperties[network].ticker;
 	const [transactionInfoVisible, toggleTransactionVisible] = useState(false);
@@ -152,12 +153,12 @@ const Transaction: FC<ITransaction & { approvals: string[] }> = ({ approvals, am
 								<ReceivedInfo
 									amount={String(amount_token)}
 									amountType={token}
-									date={created_at}
+									date={dayjs(created_at).format('lll')}
 									from={from}
 									callHash={txHash||''}
 									note={transactionDetails?.note || ''}
 									loading={loading}
-									amount_usd={amount_usd}
+									amount_usd={0}
 									to={to}
 								/>
 								:
@@ -165,14 +166,15 @@ const Transaction: FC<ITransaction & { approvals: string[] }> = ({ approvals, am
 									amount={String(amount_token)}
 									approvals={approvals}
 									amountType={token}
-									date={created_at}
+									date={dayjs(created_at).format('lll')}
 									recipient={to.toString()}
 									callHash={txHash || ''}
 									note={transactionDetails?.note || ''}
 									from={executor || ''}
 									loading={loading}
-									amount_usd={amount_usd}
+									amount_usd={0}
 									txType={type}
+									addressAddOrRemove={type === 'addOwnerWithThreshold' ? decodedData.parameters?.[0]?.value : type === 'removeOwner' ? decodedData.parameters?.[1]?.value : ''}
 								/>
 						}
 					</div>
