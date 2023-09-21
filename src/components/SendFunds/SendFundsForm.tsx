@@ -51,12 +51,7 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 	const [loading, setLoading] = useState(false);
 	const [amount, setAmount] = useState('0');
 	const [recipientAndAmount, setRecipientAndAmount] = useState<IRecipientAndAmount[]>([{ amount: '0', recipient: defaultSelectedAddress ? defaultSelectedAddress || '' : address || '' }]);
-	const [autocompleteAddresses, setAutoCompleteAddresses] = useState<DefaultOptionType[]>(
-		addressBook?.map((account: any) => ({
-			label: <AddressComponent address={account.address} />,
-			value: account.address
-		}))
-	);
+	const [autocompleteAddresses, setAutoCompleteAddresses] = useState<DefaultOptionType[]>([]);
 	const [success, setSuccess] = useState(false);
 	const [failure, setFailure] = useState(false);
 
@@ -123,7 +118,7 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 			}
 		});
 		setAutoCompleteAddresses(allAddresses.map(address => ({
-			label: <AddressComponent address={address} />,
+			label: <AddressComponent withBadge={false} address={address} />,
 			value: address
 		})));
 
@@ -136,7 +131,6 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 	useEffect(() => {
 		const total = recipientAndAmount.reduce((sum,item) => sum + Number(item.amount), 0);
 		setAmount(total.toString());
-		console.log(ethers.utils.formatEther(activeMultisigData.safeBalance.toString()));
 	}, [activeMultisigData, recipientAndAmount]);
 
 	useEffect(() => {

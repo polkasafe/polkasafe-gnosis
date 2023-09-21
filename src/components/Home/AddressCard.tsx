@@ -50,7 +50,7 @@ const AddressCard = ({ className }: { className?: string }) => {
 				<div className='flex flex-col px-5 h-[18rem] overflow-auto w-[full]'>
 					{addresses.map((item, i) => (
 						<div key={i}>
-							<AddressComponent iconSize={25} address={item} />
+							<AddressComponent withBadge={false} iconSize={25} address={item} />
 							{addresses.length - 1 !== i ? <Divider className='bg-text_secondary mt-2 mb-3' /> : null}
 						</div>
 					))}

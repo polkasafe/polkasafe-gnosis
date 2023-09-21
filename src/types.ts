@@ -88,6 +88,7 @@ export interface UserDetailsContextType {
 	fetchUserData?: any;
 	fetchMultisigTransactionData?: any;
 	multisigAddresses: IMultisigAddress[];
+	multisigSettings: { [multisigAddress: string]: IMultisigSettings};
 	addressBook: IAddressBookItem[];
 	setUserDetailsContextState: Dispatch<SetStateAction<UserDetailsContextType>>;
 	activeMultisigData?: any;

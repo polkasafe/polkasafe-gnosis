@@ -102,7 +102,6 @@ export class GnosisSafeService {
 		safeAddress: string
 	): Promise<SafeCreationInfoResponse | null> => {
 		try {
-			console.log(this.safeService, safeAddress);
 			return await this.safeService.getSafeCreationInfo(safeAddress);
 		} catch (err) {
 			console.log('error from getSafeCreationInfo', err);

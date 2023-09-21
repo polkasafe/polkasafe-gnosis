@@ -33,6 +33,7 @@ const initialUserDetailsContext: UserDetailsContextType = {
 	gnosisSafe: {} as any,
 	loggedInWallet: localStorage.getItem('logged_in_wallet') || '',
 	multisigAddresses: [],
+	multisigSettings: {},
 	notification_preferences: {},
 	setActiveMultisigData: (): void => {
 		throw new Error('setUserDetailsContextState function must be overridden');
@@ -305,7 +306,6 @@ export const UserDetailsProvider = ({
 	const connect  = useMetamask();
 
 	const connectAddress = useCallback(async (passedNetwork:string = network, address?:string, signature?:string) => {
-		console.log(address);
 		setLoading(true);
 		const user = await fetch(`${FIREBASE_FUNCTIONS_URL}/connectAddress`, {
 			headers: firebaseFunctionsHeader(passedNetwork, address, signature),
@@ -388,7 +388,6 @@ export const UserDetailsProvider = ({
 			const safeBalance = await signer?.provider?.getBalance(
 				userDetailsContextState.activeMultisig
 			);
-			console.log(userDetailsContextState.activeMultisig, safeBalance?.toString(), 'safe balance');
 			setActiveMultisigData({ ...activeData, safeBalance });
 		} catch (err) {
 			console.log('err from update current multisig data', err);
@@ -397,8 +396,6 @@ export const UserDetailsProvider = ({
 
 	useEffect(() => {
 		if (localStorage.getItem('signature')) {
-			console.log('enter');
-			console.log(address);
 			connectAddress(network, address);
 		} else {
 			localStorage.clear();

@@ -61,7 +61,7 @@ const ConnectWallet = () => {
 						loading={loading}
 						className={'mt-[25px] text-sm border-none outline-none flex items-center justify-center bg-primary text-white'}
 					>
-					Sign In
+                    Sign In
 					</Button>
 				}
 			</>

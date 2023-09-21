@@ -43,7 +43,6 @@ const TxnCard = () => {
 					trusted: true
 				}
 			);
-			console.log(completedSafeData);
 			const safeData = await gnosisSafe.getPendingTx(activeMultisig);
 			const convertedCompletedData = completedSafeData.results.map((safe: any) =>
 				convertSafeHistoryData({ ...safe, network })
@@ -194,7 +193,7 @@ const TxnCard = () => {
 
 										return (
 											<Link
-												to={`/transactions?tab=History#${transaction.callHash}`}
+												to={`/transactions?tab=History#${transaction?.txHash || ''}`}
 												key={i}
 												className='flex items-center justify-between pb-2 mb-2'
 											>
