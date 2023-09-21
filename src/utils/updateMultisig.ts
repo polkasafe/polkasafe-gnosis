@@ -6,16 +6,20 @@
 import { FIREBASE_FUNCTIONS_URL } from 'src/global/firebaseFunctionsUrl';
 
 interface IUpdateMultisig {
-    address: string;
-    txBody: any;
-    network: string;
+  address: string;
+  txBody: any;
+  network: string;
 }
 
-export default async function updateMultisig({ address, txBody, network }:IUpdateMultisig) {
+export default async function updateMultisig({
+	address,
+	txBody,
+	network
+}: IUpdateMultisig) {
 	return await fetch(`${FIREBASE_FUNCTIONS_URL}/addMultisig`, {
 		body: JSON.stringify(txBody),
 		headers: {
-			'Accept': 'application/json',
+			Accept: 'application/json',
 			'Acess-Control-Allow-Origin': '*',
 			'Content-Type': 'application/json',
 			'x-address': address,
@@ -25,5 +29,7 @@ export default async function updateMultisig({ address, txBody, network }:IUpdat
 			'x-source': 'polkasafe'
 		},
 		method: 'POST'
-	}).then(res => res.json()).catch(err => err.message);
+	})
+		.then((res) => res.json())
+		.catch((err) => err.message);
 }

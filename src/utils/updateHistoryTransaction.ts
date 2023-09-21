@@ -12,18 +12,25 @@ interface IUpdateMultisigSignatory {
 }
 
 export default async function updateMultisigTransactions({ address, txBody, network }:IUpdateMultisigSignatory) {
-	return await fetch(`${FIREBASE_FUNCTIONS_URL}/updateTransactions`, {
-		body: JSON.stringify(txBody),
-		headers: {
-			'Accept': 'application/json',
-			'Acess-Control-Allow-Origin': '*',
-			'Content-Type': 'application/json',
-			'x-address': address,
-			'x-api-key': '47c058d8-2ddc-421e-aeb5-e2aa99001949',
-			'x-network': network,
-			'x-signature': localStorage.getItem('signature')!,
-			'x-source': 'polkasafe'
-		},
-		method: 'POST'
-	}).then(res => res.json());
+
+	try {
+		const res = await fetch(`${FIREBASE_FUNCTIONS_URL}/updateTransactions`, {
+			body: JSON.stringify(txBody),
+			headers: {
+				'Accept': 'application/json',
+				'Acess-Control-Allow-Origin': '*',
+				'Content-Type': 'application/json',
+				'x-address': address,
+				'x-api-key': '47c058d8-2ddc-421e-aeb5-e2aa99001949',
+				'x-network': network,
+				'x-signature': localStorage.getItem('signature')!,
+				'x-source': 'polkasafe'
+			},
+			method: 'POST'
+		});
+		const data = await res.json();
+		return { data };
+	} catch (error) {
+		return { error };
+	}
 }

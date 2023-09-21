@@ -219,7 +219,7 @@ const TxnCard = () => {
 												<div>
 													{transaction.type !== 'addOwnerWithThreshold' || transaction.type !== 'removeOwner' ? <span className='text-md text-white' >-?</span> : sent ? (
 														<h1 className='text-md text-failure'>
-                              -
+															-
 															{formatBnBalance(
 																transaction.amount_token,
 																{
@@ -231,7 +231,7 @@ const TxnCard = () => {
 														</h1>
 													) : (
 														<h1 className='text-md text-success'>
-                              +
+															+
 															{formatBnBalance(
 																transaction.amount_token,
 																{

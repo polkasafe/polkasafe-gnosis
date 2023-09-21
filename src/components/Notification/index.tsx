@@ -9,7 +9,7 @@ import noNotification from 'src/assets/icons/no-notification.svg';
 import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { firebaseFunctionsHeader } from 'src/global/firebaseFunctionsHeader';
-import { FIREBASE_FUNCTIONS_URL } from 'src/global/firebaseFunctionsUrl';
+import { NOTIFICATION_FUNCTION_URL } from 'src/global/firebaseFunctionsUrl';
 import { INotification } from 'src/types';
 import { NotificationIcon } from 'src/ui-components/CustomIcons';
 import Loader from 'src/ui-components/Loader';
@@ -35,7 +35,7 @@ const Notification = () => {
 		if (!address) return;
 
 		setLoading(true);
-		const getNotificationsRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/getNotifications`, {
+		const getNotificationsRes = await fetch(`${NOTIFICATION_FUNCTION_URL}/getNotifications`, {
 			headers: firebaseFunctionsHeader(network),
 			method: 'POST'
 		});
