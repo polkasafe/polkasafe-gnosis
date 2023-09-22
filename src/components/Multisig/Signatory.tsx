@@ -12,8 +12,6 @@ import { IAddressBookItem } from 'src/types';
 import { WarningCircleIcon } from 'src/ui-components/CustomIcons';
 import { inputToBn } from 'src/utils/inputToBn';
 
-import NewUserModal from '../Home/ConnectWallet/NewUserModal';
-
 interface ISignature {
 	name: string
 	address: string
@@ -33,8 +31,6 @@ const Signatory = ({ filterAddress, setSignatories, signatories, homepage }: ISi
 
 	const { address, addressBook } = useGlobalUserDetailsContext();
 	const { network } = useGlobalApiContext();
-
-	const [addWalletAddress, setAddWalletAddress] = useState<boolean>(false);
 
 	const [addresses, setAddresses] = useState<ISignature[]>([]);
 
@@ -161,7 +157,6 @@ const Signatory = ({ filterAddress, setSignatories, signatories, homepage }: ISi
 
 	return (
 		<div className="flex w-[45vw]">
-			<NewUserModal open={addWalletAddress} onCancel={() => setAddWalletAddress(false)} />
 			<div className="flex w-[100%] items-center justify-center">
 				<div id='div1' className="flex flex-col my-2 w-1/2 mr-1 cursor-grab" onDrop={dropReturn} onDragOver={dragOver}>
 					<h1 className='text-primary mt-3 mb-2'>Available Signatory</h1>

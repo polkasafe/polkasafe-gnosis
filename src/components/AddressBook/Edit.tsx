@@ -177,7 +177,7 @@ const EditAddress = ({ className, onCancel, addressToEdit, nameToEdit, nickNameT
 			}
 			else{
 
-				const addAddressRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/updateSharedAddressBook`, {
+				const addAddressRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/updateSharedAddressBookEth`, {
 					body: JSON.stringify({
 						address: addressToEdit,
 						discord,

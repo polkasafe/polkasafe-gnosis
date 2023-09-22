@@ -35,7 +35,7 @@ const AddCustomField = ({ className, onCancel, setCatgory }: { className?: strin
 			else{
 				setLoading(true);
 
-				const updateTransactionFieldsRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/updateTransactionFields`, {
+				const updateTransactionFieldsRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/updateTransactionFieldsEth`, {
 					body: JSON.stringify({
 						transactionFields:{
 							...transactionFields,

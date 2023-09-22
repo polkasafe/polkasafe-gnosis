@@ -6,10 +6,11 @@ import { Collapse, Divider } from 'antd';
 import classNames from 'classnames';
 import dayjs from 'dayjs';
 import { ethers } from 'ethers';
-import React, { FC, useState } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { ParachainIcon } from 'src/components/NetworksDropdown';
 import { useGlobalApiContext } from 'src/context/ApiContext';
+import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { firebaseFunctionsHeader } from 'src/global/firebaseFunctionsHeader';
 import { FIREBASE_FUNCTIONS_URL } from 'src/global/firebaseFunctionsUrl';
 import { chainProperties } from 'src/global/networkConstants';
@@ -23,8 +24,9 @@ import SentInfo from './SentInfo';
 const LocalizedFormat = require('dayjs/plugin/localizedFormat');
 dayjs.extend(LocalizedFormat);
 
-const Transaction: FC<IHistoryTransactions> = ({ approvals, amount_token, created_at, to, from, txHash, type, executor, decodedData }) => {
+const Transaction: FC<IHistoryTransactions> = ({ approvals, amount_token, created_at, to, from, txHash, type, executor, decodedData, data: callData }) => {
 	const { network } = useGlobalApiContext();
+	const { gnosisSafe } = useGlobalUserDetailsContext();
 	const token = chainProperties[network].ticker;
 	const [transactionInfoVisible, toggleTransactionVisible] = useState(false);
 	const [loading, setLoading] = useState(false);
@@ -34,6 +36,22 @@ const Transaction: FC<IHistoryTransactions> = ({ approvals, amount_token, create
 	const isFundType = type === 'ETHEREUM_TRANSACTION';
 
 	const [transactionDetails, setTransactionDetails] = useState<ITransaction>({} as any);
+
+	const [totalAmount, setTotalAmount] = useState<number>(0);
+
+	const [decodedCallData, setDecodedCallData] = useState<any>({});
+
+	useEffect(() => {
+		if(!callData) return;
+		gnosisSafe.safeService.decodeData(callData).then((res) => setDecodedCallData(res)).catch((e) => console.log(e));
+	}, [callData, gnosisSafe.safeService]);
+
+	useEffect(() => {
+		if(decodedCallData.method !== 'multiSend') return;
+
+		const total = decodedCallData?.parameters?.[0]?.valueDecoded?.reduce((t: number,item: any) => t + Number(item.value), 0);
+		setTotalAmount(total);
+	}, [decodedCallData]);
 
 	const handleGetHistoryNote = async () => {
 		try {
@@ -46,7 +64,7 @@ const Transaction: FC<IHistoryTransactions> = ({ approvals, amount_token, create
 			}
 			else {
 				setLoading(true);
-				const getTransactionDetailsRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/getTransactionNote`, {
+				const getTransactionDetailsRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/getTransactionDetailsEth`, {
 					body: JSON.stringify({ callHash: txHash }),
 					headers: firebaseFunctionsHeader(network),
 					method: 'POST'
@@ -117,7 +135,7 @@ const Transaction: FC<IHistoryTransactions> = ({ approvals, amount_token, create
 												: type}
 							</span>
 						</p>
-						{(isFundType || isSentType) && <p className='col-span-2 flex items-center gap-x-[6px]'>
+						{(isFundType || isSentType) ? <p className='col-span-2 flex items-center gap-x-[6px]'>
 							<ParachainIcon src={chainProperties[network].logo} />
 							<span
 								className={classNames(
@@ -127,9 +145,9 @@ const Transaction: FC<IHistoryTransactions> = ({ approvals, amount_token, create
 									}
 								)}
 							>
-								{isSentType ? '-' : '+'} {ethers?.utils?.formatEther(amount_token?.toString())?.toString()} {token}
+								{isSentType ? '-' : '+'} {ethers?.utils?.formatEther(totalAmount? totalAmount.toString() : amount_token?.toString())?.toString()} {token}
 							</span>
-						</p>}
+						</p> : <p className='col-span-2'>-</p>}
 						{created_at && <p className='col-span-2'>{new Date(created_at).toLocaleString()}</p>}
 						<p className='col-span-2 flex items-center justify-end gap-x-4'>
 							<span className='text-success'>
@@ -163,11 +181,11 @@ const Transaction: FC<IHistoryTransactions> = ({ approvals, amount_token, create
 								/>
 								:
 								<SentInfo
-									amount={String(amount_token)}
+									amount={decodedCallData.method === 'multiSend' ? decodedCallData?.parameters?.[0]?.valueDecoded?.map((item: any) => item.value) : String(amount_token)}
 									approvals={approvals}
 									amountType={token}
 									date={dayjs(created_at).format('lll')}
-									recipient={to.toString()}
+									recipientAddress={decodedCallData.method === 'multiSend' ? decodedCallData?.parameters?.[0]?.valueDecoded?.map((item: any) => item.to) : to.toString() || ''}
 									callHash={txHash || ''}
 									note={transactionDetails?.note || ''}
 									from={executor || ''}

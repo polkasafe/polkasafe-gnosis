@@ -166,7 +166,7 @@ const Notifications = () => {
 				};
 				setLoading(true);
 
-				const updateNotificationTriggerRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/updateNotificationTriggerPreferences`, {
+				const updateNotificationTriggerRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/updateNotificationTriggerPreferencesEth`, {
 					body: JSON.stringify({
 						triggerPreferences: newPreferences
 					}),

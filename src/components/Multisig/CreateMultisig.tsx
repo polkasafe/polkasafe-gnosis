@@ -117,7 +117,8 @@ const CreateMultisig: React.FC<IMultisigProps> = ({ onCancel, homepage = false }
 						signatories: signatories,
 						threshold,
 						multisigName,
-						safeAddress: safeAddress
+						safeAddress: safeAddress,
+						addressBook
 					}),
 					headers: firebaseFunctionsHeader(network, address, signature),
 					method: 'POST'

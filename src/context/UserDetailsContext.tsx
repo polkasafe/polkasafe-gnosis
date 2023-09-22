@@ -312,7 +312,7 @@ export const UserDetailsProvider = ({
 			return;
 		}
 		setLoading(true);
-		const user = await fetch(`${FIREBASE_FUNCTIONS_URL}/connectAddress`, {
+		const user = await fetch(`${FIREBASE_FUNCTIONS_URL}/connectAddressEth`, {
 			headers: firebaseFunctionsHeader(passedNetwork, address, signature),
 			method: 'POST'
 		});

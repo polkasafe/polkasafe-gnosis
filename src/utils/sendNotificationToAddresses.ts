@@ -15,7 +15,7 @@ export default async function sendNotificationToAddresses({ addresses, link = ''
 		type
 	};
 
-	await fetch(`${FIREBASE_FUNCTIONS_URL}/sendNotification`, {
+	await fetch(`${FIREBASE_FUNCTIONS_URL}/sendNotificationEth`, {
 		body: JSON.stringify(newNotificationData),
 		headers: firebaseFunctionsHeader(network),
 		method: 'POST'

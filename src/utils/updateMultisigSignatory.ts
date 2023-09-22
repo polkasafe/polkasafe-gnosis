@@ -3,6 +3,7 @@
 // of the Apache-2.0 license. See the LICENSE file for details.
 // of the Apache-2.0 license. See the LICENSE file for details.
 
+import { firebaseFunctionsHeader } from 'src/global/firebaseFunctionsHeader';
 import { FIREBASE_FUNCTIONS_URL } from 'src/global/firebaseFunctionsUrl';
 
 interface IUpdateMultisigSignatory {
@@ -15,16 +16,7 @@ export default async function updateMultisigSignatory({ address, txBody, network
 	try {
 		const res = await fetch(`${FIREBASE_FUNCTIONS_URL}/updateMultisigSignatory`, {
 			body: JSON.stringify(txBody),
-			headers: {
-				'Accept': 'application/json',
-				'Acess-Control-Allow-Origin': '*',
-				'Content-Type': 'application/json',
-				'x-address': address,
-				'x-api-key': '47c058d8-2ddc-421e-aeb5-e2aa99001949',
-				'x-network': network,
-				'x-signature': localStorage.getItem('signature')!,
-				'x-source': 'polkasafe'
-			},
+			headers: firebaseFunctionsHeader(network, address),
 			method: 'POST'
 		});
 		const data = await res.json();
