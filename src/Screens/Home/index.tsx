@@ -2,6 +2,7 @@
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
 /* eslint-disable sort-keys */
+import { useAddress } from '@thirdweb-dev/react';
 import dayjs from 'dayjs';
 import React, { useEffect, useState } from 'react';
 import AddressCard from 'src/components/Home/AddressCard';
@@ -21,6 +22,7 @@ const Home = () => {
 	const { address, multisigAddresses, createdAt, addressBook, activeMultisig, loading, gnosisSafe } = useGlobalUserDetailsContext();
 	const [openNewUserModal, setOpenNewUserModal] = useState(false);
 	const [hasProxy] = useState<boolean>(true);
+	const metaMaskAddress = useAddress();
 
 	const [transactionLoading] = useState(false);
 	const [isOnchain, setIsOnchain] = useState(true);
@@ -51,7 +53,7 @@ const Home = () => {
 	return (
 		<>
 			{
-				address ?
+				address === metaMaskAddress ?
 					<>
 						<NewUserModal open={openNewUserModal} onCancel={() => setOpenNewUserModal(false)} />
 						{ loading ? <Spinner size='large' /> :multisigAddresses.filter((address:any) => address.network === network).length > 0

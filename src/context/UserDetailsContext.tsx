@@ -5,7 +5,6 @@
 
 import { EthersAdapter } from '@safe-global/protocol-kit';
 import { useAddress, useMetamask, useNetworkMismatch, useSigner } from '@thirdweb-dev/react';
-import { Modal } from 'antd';
 import { ethers } from 'ethers';
 import React, {
 	createContext,
@@ -21,10 +20,10 @@ import { FIREBASE_FUNCTIONS_URL } from 'src/global/firebaseFunctionsUrl';
 import { returnTxUrl } from 'src/global/gnosisService';
 import { GnosisSafeService } from 'src/services';
 import { EFieldType, IUser, UserDetailsContextType } from 'src/types';
+import InvalidNetwork from 'src/ui-components/InvalidNetwork';
 import { convertSafeMultisig } from 'src/utils/convertSafeData/convertSafeMultisig';
 
 import { useGlobalApiContext } from './ApiContext';
-
 const initialUserDetailsContext: UserDetailsContextType = {
 	activeMultisig: localStorage.getItem('active_multisig') || '',
 	address: localStorage.getItem('address') || '',
@@ -306,6 +305,12 @@ export const UserDetailsProvider = ({
 	const connect  = useMetamask();
 
 	const connectAddress = useCallback(async (passedNetwork:string = network, address?:string, signature?:string) => {
+		if(isNetworkMismatch){
+			return;
+		}
+		if(!address && !localStorage.getItem('address')){
+			return;
+		}
 		setLoading(true);
 		const user = await fetch(`${FIREBASE_FUNCTIONS_URL}/connectAddress`, {
 			headers: firebaseFunctionsHeader(passedNetwork, address, signature),
@@ -327,8 +332,7 @@ export const UserDetailsProvider = ({
 				};
 			});
 			if(!signer){
-				await connect();
-				console.log('enter');
+				await connect({ chainId:592 });
 			}
 			if(signer){
 				const txUrl = returnTxUrl(network);
@@ -345,9 +349,8 @@ export const UserDetailsProvider = ({
 			navigate('/');
 		}
 		setLoading(false);
-
-	// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [connect, network, signer]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [network, signer]);
 
 	const updateCurrentMultisigData = useCallback(async () => {
 		if (
@@ -395,15 +398,27 @@ export const UserDetailsProvider = ({
 	}, [network, gnosisSafe, signer?.provider, userDetailsContextState.activeMultisig, userDetailsContextState.address, userDetailsContextState.multisigAddresses]);
 
 	useEffect(() => {
+		if(!address){
+			return;
+		}
+		if(localStorage.getItem('address') !== address){
+			localStorage.removeItem('signature');
+			localStorage.removeItem('address');
+			setUserDetailsContextState(initialUserDetailsContext);
+			navigate('/',{ replace: true });
+			setLoading(false);
+			return;
+		}
 		if (localStorage.getItem('signature')) {
-			connectAddress(network, address);
+			console.log(address, localStorage.getItem('address'));
+			connectAddress(network);
 		} else {
 			localStorage.clear();
 			setLoading(false);
 			navigate('/');
 		}
-	// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [address, connectAddress, network]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [address, network]);
 
 	useEffect(() => {
 		if(!userDetailsContextState.activeMultisig){
@@ -415,6 +430,18 @@ export const UserDetailsProvider = ({
 	useEffect(() => {
 		if(!gnosisSafe) return;
 	}, [gnosisSafe]);
+
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	const handleNetworkMisMatch = async () => {
+		await connect({ chainId:592 });
+	};
+
+	useEffect(() => {
+		if(isNetworkMismatch){
+			handleNetworkMisMatch();
+		}
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	},[isNetworkMismatch]);
 
 	return (
 		<UserDetailsContext.Provider
@@ -431,13 +458,10 @@ export const UserDetailsProvider = ({
 				updateCurrentMultisigData
 			}}
 		>
-			{
-				isNetworkMismatch &&
-				<Modal title='Error' open={isNetworkMismatch}>
-					inValid Network
-				</Modal>
+			{isNetworkMismatch && localStorage.getItem('signature')?
+				<InvalidNetwork/>:
+				<>{children}</>
 			}
-			{children}
 		</UserDetailsContext.Provider>
 	);
 };
