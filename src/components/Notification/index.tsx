@@ -35,7 +35,7 @@ const Notification = () => {
 		if (!address) return;
 
 		setLoading(true);
-		const getNotificationsRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/getNotifications`, {
+		const getNotificationsRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/getNotificationsEth`, {
 			headers: firebaseFunctionsHeader(network),
 			method: 'POST'
 		});

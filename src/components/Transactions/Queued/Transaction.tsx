@@ -81,7 +81,7 @@ const Transaction: FC<ITransactionProps> = ({
 	const getTransactionNote = useCallback(async () => {
 
 		setTransactionDetailsLoading(true);
-		const getTransactionDetailsRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/getTransactionNote`, {
+		const getTransactionDetailsRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/getTransactionDetailsEth`, {
 			body: JSON.stringify({ callHash }),
 			headers: firebaseFunctionsHeader(network),
 			method: 'POST'
@@ -167,7 +167,7 @@ const Transaction: FC<ITransactionProps> = ({
 					receipt: response || {},
 					txHash: callHash
 				};
-				fetch(`${FIREBASE_FUNCTIONS_URL}/completeTransaction`, {
+				fetch(`${FIREBASE_FUNCTIONS_URL}/completeTransactionEth`, {
 					body: JSON.stringify(completeTx),
 					headers: firebaseFunctionsHeader(network),
 					method: 'POST'

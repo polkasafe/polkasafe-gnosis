@@ -23,7 +23,7 @@ const ContactUs = () => {
 		try{
 			setLoading(true);
 
-			const contactFormRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/addContactFormResponse`, {
+			const contactFormRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/addContactFormResponseEth`, {
 				body: JSON.stringify({
 					email,
 					message,

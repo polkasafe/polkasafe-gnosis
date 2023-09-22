@@ -41,8 +41,7 @@ const RemoveAddress = ({ addressToRemove, name, shared }: { addressToRemove: str
 
 				const removeAddressRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/removeFromAddressBookEth`, {
 					body: JSON.stringify({
-						address: addressToRemove,
-						name
+						address: addressToRemove
 					}),
 					headers: firebaseFunctionsHeader(network),
 					method: 'POST'
@@ -104,7 +103,7 @@ const RemoveAddress = ({ addressToRemove, name, shared }: { addressToRemove: str
 					return;
 				}
 
-				const removeAddressRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/removeFromSharedAddressBook`, {
+				const removeAddressRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/removeFromSharedAddressBookEth`, {
 					body: JSON.stringify({
 						address: addressToRemove,
 						multisigAddress: activeMultisig

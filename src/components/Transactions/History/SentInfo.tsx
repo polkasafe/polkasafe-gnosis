@@ -5,37 +5,36 @@ import { Collapse, Divider, Spin, Timeline } from 'antd';
 import classNames from 'classnames';
 // import { ethers } from 'ethers';
 import React, { FC } from 'react';
-import { MetaMaskAvatar } from 'react-metamask-avatar';
 import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
-import { DEFAULT_ADDRESS_NAME } from 'src/global/default';
 import { chainProperties } from 'src/global/networkConstants';
 import AddressComponent from 'src/ui-components/AddressComponent';
-import { CircleCheckIcon, CirclePlusIcon, CircleWatchIcon, CopyIcon, ExternalLinkIcon } from 'src/ui-components/CustomIcons';
+import { CircleCheckIcon, CirclePlusIcon, CircleWatchIcon, CopyIcon } from 'src/ui-components/CustomIcons';
 import copyText from 'src/utils/copyText';
 import parseDecodedValue from 'src/utils/parseDecodedValue';
 import shortenAddress from 'src/utils/shortenAddress';
 import styled from 'styled-components';
 
 interface ISentInfoProps {
-	amount: string;
+	amount: string | string[];
 	amountType: string;
 	approvals: string[];
 	addressAddOrRemove?: string;
 	date: string;
 	// time: string;
 	className?: string;
-	recipient: string
+	recipientAddress: string | string[]
 	callHash: string
 	note?: string
 	loading?: boolean
 	amount_usd: number
 	from: string,
-	txType?:string
+	txType?:string,
+	transactionFields?: {category: string, subfields: {[subfield: string]: { name: string, value: string }}}
 }
 
-const SentInfo: FC<ISentInfoProps> = ({ approvals, amount, from, className, date, recipient, callHash, note, loading, txType, addressAddOrRemove }) => {
-	const { addressBook, activeMultisig, multisigAddresses } = useGlobalUserDetailsContext();
+const SentInfo: FC<ISentInfoProps> = ({ approvals, amount, from, className, date, recipientAddress, callHash, note, loading, txType, addressAddOrRemove, transactionFields }) => {
+	const { activeMultisig, multisigAddresses } = useGlobalUserDetailsContext();
 	const { network } = useGlobalApiContext();
 	const threshold = multisigAddresses?.find((item: any) => item.address === activeMultisig || item.proxy === activeMultisig)?.threshold || 0;
 
@@ -46,58 +45,52 @@ const SentInfo: FC<ISentInfoProps> = ({ approvals, amount, from, className, date
 			<article
 				className='p-4 rounded-lg bg-bg-main flex-1'
 			>
-				{!(txType === 'addOwnerWithThreshold' || txType === 'removeOwner') && recipient && amount && <>
-					<p
-						className='flex items-center gap-x-1 text-white font-medium text-sm leading-[15px]'
-					>
-						<span>
-						Sent
-						</span>
-						<span
-							className='text-failure'
-						>
-							{amount
-								? parseDecodedValue({
-									network,
-									value: String(amount),
-									withUnit: true
-								})
-								: `? ${chainProperties[network].ticker}`}{' '}
-						</span>
-						<span>
-						to:
-						</span>
-					</p>
-					<div
-						className='mt-3 flex items-center gap-x-4'
-					>
-						<MetaMaskAvatar address={recipient} size={30}/>
-						<div
-							className='flex flex-col gap-y-[6px]'
-						>
-							<p
-								className='font-medium text-sm leading-[15px] text-white'
-							>
-								{addressBook?.find((item: any) => item.address === recipient)?.name || DEFAULT_ADDRESS_NAME}
-							</p>
-							<p
-								className='flex items-center gap-x-3 font-normal text-xs leading-[13px] text-text_secondary'
-							>
-								<span>
-									{recipient}
+				{!(txType === 'addOwnerWithThreshold' || txType === 'removeOwner') && recipientAddress && amount &&
+				<>
+					{(typeof recipientAddress === 'string') ?
+						<>
+							<p className='flex items-center gap-x-1 text-white font-medium text-sm leading-[15px]'>
+								<span>Sent</span>
+								<span className='text-failure'>
+									{amount
+										? parseDecodedValue({
+											network,
+											value: String(amount),
+											withUnit: true
+										})
+										: `? ${chainProperties[network].ticker}`}{' '}
 								</span>
-								<span
-									className='flex items-center gap-x-2 text-sm'
-								>
-									<button onClick={() => copyText(recipient)}><CopyIcon className='hover:text-primary' /></button>
-									<a href={`https://${network}.subscan.io/account/${recipient}`} target='_blank' rel="noreferrer" >
-										<ExternalLinkIcon />
-									</a>
-								</span>
+								<span>To:</span>
 							</p>
+							<div className='mt-3'>
+								<AddressComponent address={recipientAddress} />
+							</div>
+						</>
+						:
+						<div className='flex flex-col gap-y-1' >
+							{Array.isArray(recipientAddress) && recipientAddress.map((item, i) => (
+								<>
+									<p className='flex items-center gap-x-1 text-white font-medium text-sm leading-[15px]'>
+										<span>Sent</span>
+										<span className='text-failure'>
+											{amount[i]
+												? parseDecodedValue({
+													network,
+													value: String(amount[i]),
+													withUnit: true
+												})
+												: `? ${chainProperties[network].ticker}`}{' '}
+										</span>
+										<span>To:</span>
+									</p>
+									<div className='mt-3'>
+										<AddressComponent address={item} />
+									</div>
+									{recipientAddress.length - 1 !== i && <Divider className='bg-text_secondary mt-1' />}
+								</>
+							))}
 						</div>
-					</div>
-					<Divider className='bg-text_secondary my-5' />
+					}
 				</>}
 				<div
 					className='flex items-center gap-x-7 mb-3'
@@ -167,7 +160,41 @@ const SentInfo: FC<ISentInfoProps> = ({ approvals, amount, from, className, date
 						</p>
 					</div>
 				}
-				{loading ? <Spin className='mt-3' /> : note &&
+				{loading ? <Spin className='mt-3' /> :
+					<>
+						{!!transactionFields && Object.keys(transactionFields).length !== 0 && transactionFields.category !== 'none' &&
+				<>
+					<div
+						className='flex items-center justify-between mt-3'
+					>
+						<span
+							className='text-text_secondary font-normal text-sm leading-[15px]'
+						>
+							Category:
+						</span>
+						<span className='text-primary border border-solid border-primary rounded-xl px-[6px] py-1'>
+							{transactionFields?.category}
+						</span>
+					</div>
+					{transactionFields && transactionFields?.subfields && Object.keys(transactionFields?.subfields).map((key) => {
+						const subfield = transactionFields?.subfields[key];
+						return (
+							<div
+								key={key}
+								className='flex items-center justify-between mt-3'
+							>
+								<span
+									className='text-text_secondary font-normal text-sm leading-[15px]'
+								>
+									{subfield?.name}:
+								</span>
+								<span className='text-waiting bg-waiting bg-opacity-5 border border-solid border-waiting rounded-lg px-[6px] py-[3px]'>
+									{subfield?.value}
+								</span>
+							</div>
+						);})}
+				</>}
+						{note &&
 					<div
 						className='flex items-center gap-x-5 mt-3'
 					>
@@ -186,6 +213,9 @@ const SentInfo: FC<ISentInfoProps> = ({ approvals, amount, from, className, date
 							</span>
 						</p>
 					</div>
+						}
+
+					</>
 				}
 			</article>
 			<article

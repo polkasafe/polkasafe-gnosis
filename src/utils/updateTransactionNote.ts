@@ -18,7 +18,7 @@ export default async function updateTransactionNote({
 	note,
 	network
 }: Args): Promise<{ data?: any, error?: string }> {
-	const editNoteRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/updateTransactionNote `, {
+	const editNoteRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/updateTransactionNoteEth `, {
 		body: JSON.stringify({
 			callHash,
 			multisigAddress : multisigAddress || '',

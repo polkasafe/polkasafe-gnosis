@@ -307,7 +307,7 @@ export const UserDetailsProvider = ({
 
 	const connectAddress = useCallback(async (passedNetwork:string = network, address?:string, signature?:string) => {
 		setLoading(true);
-		const user = await fetch(`${FIREBASE_FUNCTIONS_URL}/connectAddress`, {
+		const user = await fetch(`${FIREBASE_FUNCTIONS_URL}/connectAddressEth`, {
 			headers: firebaseFunctionsHeader(passedNetwork, address, signature),
 			method: 'POST'
 		});

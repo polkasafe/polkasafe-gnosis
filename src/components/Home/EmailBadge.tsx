@@ -37,7 +37,7 @@ const EmailBadge = () => {
 			}
 			else{
 
-				const addEmailRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/updateEmail`, {
+				const addEmailRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/updateEmailEth`, {
 					body: JSON.stringify({
 						email: inputValue
 					}),

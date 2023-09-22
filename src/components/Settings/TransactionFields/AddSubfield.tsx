@@ -95,7 +95,7 @@ const AddSubfield = ({ className, onCancel, category }: { className?: string, on
 					});
 				}
 
-				const updateTransactionFieldsRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/updateTransactionFields`, {
+				const updateTransactionFieldsRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/updateTransactionFieldsEth`, {
 					body: JSON.stringify({
 						transactionFields:{
 							...transactionFields,

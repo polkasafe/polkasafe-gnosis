@@ -33,7 +33,7 @@ const RemoveMultisigAddress = ({ onCancel }: { onCancel: () => void }) => {
 				return;
 			}
 
-			const removeSafeRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/deleteMultisig`, {
+			const removeSafeRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/deleteMultisigEth`, {
 				body: JSON.stringify({
 					multisigAddress: multisig.address
 				}),

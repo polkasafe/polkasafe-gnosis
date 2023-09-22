@@ -35,7 +35,7 @@ const DeleteField = ({ onCancel, subfield, category }: { onCancel: () => void, c
 				const newSubfields = { ...newTransactionFields[category].subfields };
 				delete newSubfields[subfield];
 
-				const updateTransactionFieldsRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/updateTransactionFields`, {
+				const updateTransactionFieldsRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/updateTransactionFieldsEth`, {
 					body: JSON.stringify({
 						transactionFields: {
 							...transactionFields,

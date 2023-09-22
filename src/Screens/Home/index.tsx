@@ -2,12 +2,10 @@
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
 /* eslint-disable sort-keys */
-import dayjs from 'dayjs';
 import React, { useEffect, useState } from 'react';
 import AddressCard from 'src/components/Home/AddressCard';
 import ConnectWallet from 'src/components/Home/ConnectWallet';
 import ConnectWalletWrapper from 'src/components/Home/ConnectWallet/ConnectWalletWrapper';
-import NewUserModal from 'src/components/Home/ConnectWallet/NewUserModal';
 import DashboardCard from 'src/components/Home/DashboardCard';
 import TxnCard from 'src/components/Home/TxnCard';
 import AddMultisig from 'src/components/Multisig/AddMultisig';
@@ -18,8 +16,8 @@ import Spinner from 'src/ui-components/Loader';
 import styled from 'styled-components';
 
 const Home = () => {
-	const { address, multisigAddresses, createdAt, addressBook, activeMultisig, loading, gnosisSafe } = useGlobalUserDetailsContext();
-	const [openNewUserModal, setOpenNewUserModal] = useState(false);
+	const { address, multisigAddresses, activeMultisig, loading, gnosisSafe } = useGlobalUserDetailsContext();
+	// const [openNewUserModal, setOpenNewUserModal] = useState(false);
 	const [hasProxy] = useState<boolean>(true);
 
 	const [transactionLoading] = useState(false);
@@ -27,12 +25,12 @@ const Home = () => {
 	const [openTransactionModal, setOpenTransactionModal] = useState(false);
 	const { network } = useGlobalApiContext();
 
-	useEffect(() => {
-		if ((dayjs(createdAt) > dayjs().subtract(15, 'seconds')) && addressBook?.length === 1) {
-			setOpenNewUserModal(true);
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [createdAt]);
+	// useEffect(() => {
+	// if ((dayjs(createdAt) > dayjs().subtract(15, 'seconds')) && addressBook?.length === 1) {
+	// setOpenNewUserModal(true);
+	// }
+	// // eslint-disable-next-line react-hooks/exhaustive-deps
+	// }, [createdAt]);
 
 	useEffect(() => {
 		const handleNewTransaction = async () => {
@@ -53,7 +51,7 @@ const Home = () => {
 			{
 				address ?
 					<>
-						<NewUserModal open={openNewUserModal} onCancel={() => setOpenNewUserModal(false)} />
+						{/* <NewUserModal open={openNewUserModal} onCancel={() => setOpenNewUserModal(false)} /> */}
 						{ loading ? <Spinner size='large' /> :multisigAddresses.filter((address:any) => address.network === network).length > 0
 							?
 							<section>

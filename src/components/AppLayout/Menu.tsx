@@ -20,7 +20,7 @@ interface Props {
 }
 
 const Menu: FC<Props> = ({ className }) => {
-	const { multisigAddresses, setUserDetailsContextState, activeMultisig } = useGlobalUserDetailsContext();
+	const { multisigAddresses, setUserDetailsContextState, activeMultisig, multisigSettings } = useGlobalUserDetailsContext();
 	const [selectedMultisigAddress, setSelectedMultisigAddress] = useState(activeMultisig ||localStorage.getItem('active_multisig') || '');
 	const location = useLocation();
 	const userAddress = localStorage.getItem('address');
@@ -138,7 +138,7 @@ const Menu: FC<Props> = ({ className }) => {
 			<section className='overflow-y-auto max-h-full [&::-webkit-scrollbar]:hidden flex-1 mb-3'>
 				{multisigAddresses &&
 					<ul className='flex flex-col gap-y-2 py-3 text-white list-none'>
-						{multisigAddresses.filter(a => a.network === network).map((multisig: any) => {
+						{multisigAddresses.filter((multisig) => (multisig.network === network && !multisigSettings?.[`${multisig.address}_${multisig.network}`]?.deleted) && !multisig.disabled).map((multisig) => {
 							return (<li className='w-full' key={multisig.address}>
 								<button className={classNames('w-full flex items-center gap-x-2 flex-1 rounded-lg p-3 font-medium text-[13px]', {
 									'bg-highlight text-primary': multisig.address === selectedMultisigAddress

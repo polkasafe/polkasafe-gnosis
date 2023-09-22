@@ -61,7 +61,7 @@ const AppLayout = ({ className }: {className?: string}) => {
 		if(!localStorage.getItem('signature') || !localStorage.getItem('address') || !multisig) return;
 
 		setMultisigChanged(true);
-		const getSharedAddressBookRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/getSharedAddressBook`, {
+		const getSharedAddressBookRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/getSharedAddressBookEth`, {
 			body: JSON.stringify({
 				multisigAddress: multisig?.proxy ? multisig.proxy : multisig?.address
 			}),

@@ -113,7 +113,7 @@ const EditField = ({ className, onCancel, category, subfield, subfieldName, subf
 			else{
 				setLoading(true);
 
-				const updateTransactionFieldsRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/updateTransactionFields`, {
+				const updateTransactionFieldsRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/updateTransactionFieldsEth`, {
 					body: JSON.stringify({
 						transactionFields:{
 							...transactionFields,

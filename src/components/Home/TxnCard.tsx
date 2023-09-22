@@ -195,9 +195,9 @@ const TxnCard = () => {
 											<Link
 												to={`/transactions?tab=History#${transaction?.txHash || ''}`}
 												key={i}
-												className='flex items-center justify-between pb-2 mb-2'
+												className='flex items-center pb-2 mb-2'
 											>
-												<div className='flex items-center justify-between'>
+												<div className='flex flex-1 items-center'>
 													<div
 														className={`${
 															sent ? 'bg-failure' : 'bg-success'
@@ -210,7 +210,7 @@ const TxnCard = () => {
 													</div>
 													<div>
 														<h1 className='text-md text-white'>
-															<span>Txn: {shortenAddress(transaction?.txHash)}</span>
+															<span>{transaction.type === 'addOwnerWithThreshold' ? 'Added Owner' : transaction.type === 'removeOwner' ? 'Removed Owner' : `Txn: ${shortenAddress(transaction?.txHash)}`}</span>
 														</h1>
 
 														{/* <p className='text-text_secondary text-xs'>{dayjs(transaction.created_at).format('D-MM-YY [at] HH:mm')}</p> */}
@@ -242,6 +242,9 @@ const TxnCard = () => {
 															)}
 														</h1>
 													)}
+												</div>
+												<div className='flex justify-center items-center h-full px-2 text-text_secondary'>
+													<ArrowRightOutlined />
 												</div>
 											</Link>
 										);
