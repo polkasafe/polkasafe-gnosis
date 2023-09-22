@@ -13,7 +13,7 @@
 // import { UserDetailsProvider } from './context/UserDetailsContext';
 // import { GlobalStyle } from './ui-components/GlobalStyle';
 import { Astar, Goerli,Polygon } from '@thirdweb-dev/chains';
-import { ThirdwebProvider } from '@thirdweb-dev/react';
+import { metamaskWallet,ThirdwebProvider, walletConnect } from '@thirdweb-dev/react';
 import { ConfigProvider } from 'antd';
 import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
@@ -47,6 +47,7 @@ function App() {
 						authConfig={{
 							domain: FIREBASE_FUNCTIONS_URL as string
 						}}
+						supportedWallets={[metamaskWallet(), walletConnect()]}
 					>
 						<UserDetailsProvider>
 							<ActiveMultisigProvider>
