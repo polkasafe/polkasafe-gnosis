@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site" : "evm-polkasafe",
     "public": "build",
     "ignore": [
       "firebase.json",
