@@ -421,7 +421,7 @@ export const addMultisig = functions.https.onRequest(async (req, res) => {
 	});
 });
 
-export const completeTransaction = functions.https.onRequest(async (req, res) => {
+export const completeTransactionEth = functions.https.onRequest(async (req, res) => {
 	corsHandler(req, res, async () => {
 		const signature = req.get('x-signature');
 		const address = String(req.get('x-address'));
@@ -1655,7 +1655,7 @@ export const sendNotification = functions.https.onRequest(async (req, res) => {
 	});
 });
 
-export const getNotifications = functions.https.onRequest(async (req, res) => {
+export const getNotificationsEth = functions.https.onRequest(async (req, res) => {
 	corsHandler(req, res, async () => {
 		const signature = req.get('x-signature');
 		const address = req.get('x-address');
@@ -3393,7 +3393,7 @@ export const removeFromSharedAddressBook = functions.https.onRequest(async (req,
 	});
 });
 
-export const getSharedAddressBook = functions.https.onRequest(async (req, res) => {
+export const getSharedAddressBookEth = functions.https.onRequest(async (req, res) => {
 	corsHandler(req, res, async () => {
 		const signature = req.get('x-signature');
 		const address = req.get('x-address');

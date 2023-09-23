@@ -3,6 +3,7 @@
 // of the Apache-2.0 license. See the LICENSE file for details.
 
 import { ArrowRightOutlined } from '@ant-design/icons';
+import { ethers } from 'ethers';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import noTransactionsHistory from 'src/assets/icons/no-transaction.svg';
@@ -14,7 +15,7 @@ import {
 	RightArrowOutlined
 } from 'src/ui-components/CustomIcons';
 import Loader from 'src/ui-components/Loader';
-import { convertSafeHistoryData } from 'src/utils/convertSafeData/convertSafeHistory';
+import { convertSafeHistoryData,IHistoryTransactions } from 'src/utils/convertSafeData/convertSafeHistory';
 import { convertSafePendingData } from 'src/utils/convertSafeData/convertSafePending';
 import formatBnBalance from 'src/utils/formatBnBalance';
 import shortenAddress from 'src/utils/shortenAddress';
@@ -28,7 +29,7 @@ const DEFAULT_TXN_CARD_LIMIT = 8;
 const TxnCard = () => {
 	const { activeMultisig, address, gnosisSafe } = useGlobalUserDetailsContext();
 	const [queuedTransactions, setQueuedTransactions] = useState<any>([]);
-	const [completedTransactions, setCompletedTransactions] = useState<any>([]);
+	const [completedTransactions, setCompletedTransactions] = useState<IHistoryTransactions[]>([]);
 	const { network } = useGlobalApiContext();
 	const [loading, setLoading] = useState<boolean>(false);
 
@@ -187,7 +188,7 @@ const TxnCard = () => {
 							completedTransactions.length > 0 ? (
 								completedTransactions
 									.filter((_: any, i: number) => i < 10)
-									.map((transaction: any, i: React.Key | null | undefined) => {
+									.map((transaction, i) => {
 										// const from = transaction?.receipt?.options?.from;
 										const sent = transaction.type === 'sent' || transaction.type === 'MULTISIG_TRANSACTION' || transaction.type === 'removeOwner';
 
@@ -217,29 +218,15 @@ const TxnCard = () => {
 													</div>
 												</div>
 												<div>
-													{transaction.type !== 'addOwnerWithThreshold' || transaction.type !== 'removeOwner' ? <span className='text-md text-white' >-?</span> : sent ? (
+													{transaction.type === 'addOwnerWithThreshold' || transaction.type === 'removeOwner' ? <span className='text-md text-white' >-?</span> : sent ? (
 														<h1 className='text-md text-failure'>
-                              -
-															{formatBnBalance(
-																transaction.amount_token,
-																{
-																	numberAfterComma: 3,
-																	withThousandDelimitor: false
-																},
-																network
-															)}
+															-
+															{ethers?.utils?.formatEther(transaction.amount_token?.toString())?.toString()}
 														</h1>
 													) : (
 														<h1 className='text-md text-success'>
-                              +
-															{formatBnBalance(
-																transaction.amount_token,
-																{
-																	numberAfterComma: 3,
-																	withThousandDelimitor: false
-																},
-																network
-															)}
+															+
+															{ethers?.utils?.formatEther(transaction.amount_token?.toString())?.toString()}
 														</h1>
 													)}
 												</div>
