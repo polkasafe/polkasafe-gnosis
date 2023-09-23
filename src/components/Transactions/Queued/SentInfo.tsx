@@ -1,7 +1,7 @@
 // Copyright 2022-2023 @Polkasafe/polkaSafe-ui authors & contributors
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
-import { Button, Collapse, Divider, Modal, Timeline } from 'antd';
+import { Button, Collapse, Divider, Modal, Spin, Timeline } from 'antd';
 import classNames from 'classnames';
 import dayjs from 'dayjs';
 import React, { FC, useState } from 'react';
@@ -22,7 +22,6 @@ import {
 	EditIcon,
 	OutlineCloseIcon
 } from 'src/ui-components/CustomIcons';
-import Loader from 'src/ui-components/Loader';
 import copyText from 'src/utils/copyText';
 import parseDecodedValue from 'src/utils/parseDecodedValue';
 import shortenAddress from 'src/utils/shortenAddress';
@@ -217,7 +216,7 @@ const SentInfo: FC<ISentInfoProps> = ({
 						</p>
 					</div>
 				}
-				{transactionDetailsLoading ? <Loader size='small' /> :
+				{transactionDetailsLoading ? <Spin className='mt-3' /> :
 					<>
 						<div
 							className='flex items-center gap-x-5 justify-between mt-3'
