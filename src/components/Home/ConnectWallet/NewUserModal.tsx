@@ -9,6 +9,7 @@ import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { DEFAULT_ADDRESS_NAME } from 'src/global/default';
 import { firebaseFunctionsHeader } from 'src/global/firebaseFunctionsHeader';
 import { FIREBASE_FUNCTIONS_URL } from 'src/global/firebaseFunctionsUrl';
+import useGetWalletAccounts from 'src/hooks/useGetWalletAccounts';
 import { IAddressBookItem } from 'src/types';
 import { NotificationStatus } from 'src/types';
 import { AddIcon } from 'src/ui-components/CustomIcons';
@@ -23,6 +24,7 @@ const NewUserModal = ({ open, onCancel }: INewUserModal) => {
 
 	const [loading, setLoading] = useState(false);
 	const { network } = useGlobalApiContext();
+	const walletAccounts = useGetWalletAccounts();
 	const { setUserDetailsContextState } = useGlobalUserDetailsContext();
 
 	const handleAddAddress = async (address: string, name: string) => {
@@ -69,8 +71,8 @@ const NewUserModal = ({ open, onCancel }: INewUserModal) => {
 
 	const addToAddressBook = async () => {
 		setLoading(true);
-		for (const account of [] as any) {
-			await handleAddAddress(account.address, account.name || DEFAULT_ADDRESS_NAME);
+		for (const account of walletAccounts as any) {
+			await handleAddAddress(account,  DEFAULT_ADDRESS_NAME);
 		}
 		setLoading(false);
 		queueNotification({
