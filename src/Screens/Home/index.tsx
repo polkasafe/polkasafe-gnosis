@@ -20,7 +20,6 @@ import styled from 'styled-components';
 
 const Home = () => {
 	const { address, multisigAddresses, activeMultisig, loading, gnosisSafe, createdAt, addressBook } = useGlobalUserDetailsContext();
-	// const [openNewUserModal, setOpenNewUserModal] = useState(false);
 	const [hasProxy] = useState<boolean>(true);
 	const metaMaskAddress = useAddress();
 

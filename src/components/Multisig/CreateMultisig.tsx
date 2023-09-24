@@ -91,12 +91,9 @@ const CreateMultisig: React.FC<IMultisigProps> = ({ onCancel, homepage = false }
 			const signature = localStorage.getItem('signature');
 
 			if (!address || !signature || Boolean(!Object.keys(gnosisSafe).length)) {
-				console.log('CreateMultisig line 97');
 				return;
 			}
 			else {
-				console.log(gnosisSafe);
-				console.log(signatories, threshold);
 				const safeAddress = await gnosisSafe.createSafe(
 					signatories as [string],
 					threshold);

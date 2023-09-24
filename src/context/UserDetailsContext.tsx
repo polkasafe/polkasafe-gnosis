@@ -359,12 +359,6 @@ export const UserDetailsProvider = ({
 			|| !userDetailsContextState.multisigAddresses
 			|| !userDetailsContextState.address
 		) {
-			console.log(
-				userDetailsContextState.activeMultisig,
-				gnosisSafe,
-				userDetailsContextState.multisigAddresses,
-				userDetailsContextState.address
-			);
 			return;
 		}
 		try {
@@ -410,7 +404,6 @@ export const UserDetailsProvider = ({
 			return;
 		}
 		if (localStorage.getItem('signature')) {
-			console.log(address, localStorage.getItem('address'));
 			connectAddress(network);
 		} else {
 			localStorage.clear();
