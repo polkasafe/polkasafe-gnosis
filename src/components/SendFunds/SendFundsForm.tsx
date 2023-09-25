@@ -23,6 +23,7 @@ import queueNotification from 'src/ui-components/QueueNotification';
 import { addNewTransaction } from 'src/utils/addNewTransaction';
 import { addToAddressBook } from 'src/utils/addToAddressBook';
 import getOtherSignatories from 'src/utils/getOtherSignatories';
+import isValidWeb3Address from 'src/utils/isValidWeb3Address';
 import { notify } from 'src/utils/notify';
 import styled from 'styled-components';
 
@@ -137,7 +138,7 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 		if(!recipientAndAmount) return;
 
 		recipientAndAmount.forEach((item, i) => {
-			if(item.recipient && (!(item.recipient) || recipientAndAmount.indexOf(recipientAndAmount.find(a => (item.recipient) === (a.recipient)) as IRecipientAndAmount) !== i)){
+			if(item.recipient && (!isValidWeb3Address(item.recipient) || recipientAndAmount.indexOf(recipientAndAmount.find(a => (item.recipient) === (a.recipient)) as IRecipientAndAmount) !== i)){
 				setValidRecipient(prev => {
 					const copyArray = [...prev];
 					copyArray[i] = false;

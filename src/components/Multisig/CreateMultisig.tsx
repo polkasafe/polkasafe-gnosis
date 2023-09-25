@@ -24,6 +24,7 @@ import { DashDotIcon, OutlineCloseIcon } from 'src/ui-components/CustomIcons';
 import PrimaryButton from 'src/ui-components/PrimaryButton';
 import ProxyImpPoints from 'src/ui-components/ProxyImpPoints';
 import queueNotification from 'src/ui-components/QueueNotification';
+import isValidWeb3Address from 'src/utils/isValidWeb3Address';
 
 import AddAddress from '../AddressBook/AddAddress';
 import DragDrop from '../Multisig/DragDrop';
@@ -203,7 +204,7 @@ const CreateMultisig: React.FC<IMultisigProps> = ({ onCancel, homepage = false }
 	const AddAddressModal: FC = () => {
 		return (
 			<>
-				<PrimaryButton disabled={!addAddress || Object.keys(records).includes(addAddress) || addressBook.some(item => item.address === addAddress)} onClick={() => setShowAddressModal(true)}>
+				<PrimaryButton disabled={!addAddress || !isValidWeb3Address(addAddress) || Object.keys(records).includes(addAddress) || addressBook.some(item => item.address === addAddress)} onClick={() => setShowAddressModal(true)}>
 					<p className='font-normal text-sm'>Add</p>
 				</PrimaryButton>
 				<Modal

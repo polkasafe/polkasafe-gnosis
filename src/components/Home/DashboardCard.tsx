@@ -69,7 +69,7 @@ const DashboardCard = ({ className, setNewTxn, transactionLoading, openTransacti
 	const FundMultisigModal: FC = () => {
 		return (
 			<>
-				<PrimaryButton onClick={() => setOpenFundMultisigModal(true)} className='w-[45%] flex items-center justify-center py-4 2xl:py-5 bg-highlight text-primary '>
+				<PrimaryButton secondary onClick={() => setOpenFundMultisigModal(true)} className='w-[45%] flex items-center justify-center py-4 2xl:py-5 '>
 					<WalletIcon /> Fund Multisig
 				</PrimaryButton>
 				<Modal

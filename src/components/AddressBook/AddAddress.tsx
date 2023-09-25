@@ -18,6 +18,7 @@ import { FIREBASE_FUNCTIONS_URL } from 'src/global/firebaseFunctionsUrl';
 import { IAddressBookItem, ISharedAddressBooks, NotificationStatus } from 'src/types';
 import { OutlineCloseIcon, WarningCircleIcon } from 'src/ui-components/CustomIcons';
 import queueNotification from 'src/ui-components/QueueNotification';
+import isValidWeb3Address from 'src/utils/isValidWeb3Address';
 import styled from 'styled-components';
 
 interface IMultisigProps {
@@ -65,6 +66,7 @@ const AddAddress: React.FC<IMultisigProps> = ({ addAddress, onCancel, setAddAddr
 	const { addressBook, activeMultisig, multisigAddresses, setUserDetailsContextState } = useGlobalUserDetailsContext();
 
 	const [address, setAddress] = useState<string>(addAddress || '');
+	const [addressValid, setAddressValid] = useState<boolean>(true);
 	const [name, setName] = useState<string>('');
 	const [nickName, setNickName] = useState<string>('');
 	const [showNickNameField, setShowNickNameField] = useState<boolean>(false);
@@ -82,6 +84,15 @@ const AddAddress: React.FC<IMultisigProps> = ({ addAddress, onCancel, setAddAddr
 	const { setActiveMultisigContextState, records, roles: defaultRoles } = useActiveMultisigContext();
 
 	const multisig = multisigAddresses.find((item) => item.address === activeMultisig || item.proxy === activeMultisig);
+
+	useEffect(() => {
+		if(isValidWeb3Address(address)){
+			setAddressValid(true);
+		}
+		else {
+			setAddressValid(false);
+		}
+	}, [address]);
 
 	useEffect(() => {
 		if(email){
@@ -372,8 +383,8 @@ const AddAddress: React.FC<IMultisigProps> = ({ addAddress, onCancel, setAddAddr
 						<Form.Item
 							name="address"
 							rules={[{ message: 'Address Required', required: true }]}
-							validateStatus={(!address) ? 'error' : 'success'}
-							help={!address && 'Please enter a valid address'}
+							validateStatus={(address && !addressValid) ? 'error' : 'success'}
+							help={address && !addressValid && 'Please enter a valid address'}
 							className='border-0 outline-0 my-0 p-0'
 						>
 							<Input
@@ -476,7 +487,7 @@ const AddAddress: React.FC<IMultisigProps> = ({ addAddress, onCancel, setAddAddr
 				</Form>
 				<div className='flex items-center justify-between gap-x-5 mt-[30px]'>
 					<CancelBtn onClick={onCancel ? onCancel : toggleVisibility}/>
-					<AddBtn loading={loading} disabled={!name || !address || (!!email && !emailValid)} title='Add' onClick={shared ? () => setOpenConfirmationModal(true) : handlePersonalAddressBookUpdate} />
+					<AddBtn loading={loading} disabled={!name || !address || !addressValid || (!!email && !emailValid)} title='Add' onClick={shared ? () => setOpenConfirmationModal(true) : handlePersonalAddressBookUpdate} />
 				</div>
 			</Spin>
 		</>

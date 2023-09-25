@@ -78,7 +78,7 @@ const Transaction: FC<ITransactionProps> = ({
 	const hash = location.hash.slice(1);
 	const [transactionDetailsLoading, setTransactionDetailsLoading] = useState<boolean>(false);
 
-	const getTransactionNote = useCallback(async () => {
+	const getTransactionDetails = useCallback(async () => {
 
 		setTransactionDetailsLoading(true);
 		const getTransactionDetailsRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/getTransactionDetailsEth`, {
@@ -94,8 +94,8 @@ const Transaction: FC<ITransactionProps> = ({
 		setTransactionDetailsLoading(false);
 	}, [callHash, network]);
 	useEffect(() => {
-		getTransactionNote();
-	},[getTransactionNote]);
+		getTransactionDetails();
+	},[getTransactionDetails]);
 
 	useEffect(() => {
 		if(!callData) return;

@@ -1740,7 +1740,7 @@ export const getNotificationPreferencesForAddress = functions.https.onRequest(as
 	});
 });
 
-export const updateTransactionNote = functions.https.onRequest(async (req, res) => {
+export const updateTransactionNoteEth = functions.https.onRequest(async (req, res) => {
 	corsHandler(req, res, async () => {
 		const signature = req.get('x-signature');
 		const address = req.get('x-address');
@@ -1794,7 +1794,7 @@ export const updateTransactionNote = functions.https.onRequest(async (req, res) 
 	});
 });
 
-export const getTransactionNote = functions.https.onRequest(async (req, res) => {
+export const getTransactionDetailsEth = functions.https.onRequest(async (req, res) => {
 	corsHandler(req, res, async () => {
 		const signature = req.get('x-signature');
 		const address = req.get('x-address');

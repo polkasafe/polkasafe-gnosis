@@ -4,7 +4,7 @@
 import { Button, Collapse, Divider, Modal, Spin, Timeline } from 'antd';
 import classNames from 'classnames';
 import dayjs from 'dayjs';
-import React, { FC, useState } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import CancelBtn from 'src/components/Multisig/CancelBtn';
 import RemoveBtn from 'src/components/Settings/RemoveBtn';
 import { useGlobalApiContext } from 'src/context/ApiContext';
@@ -89,6 +89,10 @@ const SentInfo: FC<ISentInfoProps> = ({
 	const [openCancelModal, setOpenCancelModal] = useState<boolean>(false);
 	const [updatedNote, setUpdatedNote] = useState(note);
 	const { openModal } = useModalContext();
+
+	useEffect(() => {
+		setUpdatedNote(note);
+	}, [note]);
 
 	const depositor = approvals[0];
 
