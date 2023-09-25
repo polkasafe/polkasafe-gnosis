@@ -5,8 +5,8 @@ import { Button, Divider, Modal } from 'antd';
 import React, { useState } from 'react';
 import { MetaMaskAvatar } from 'react-metamask-avatar';
 import EditAddress from 'src/components/AddressBook/Edit';
+import { useActiveMultisigContext } from 'src/context/ActiveMultisigContext';
 import { useGlobalApiContext } from 'src/context/ApiContext';
-import { useModalContext } from 'src/context/ModalContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { DEFAULT_ADDRESS_NAME } from 'src/global/default';
 import { CopyIcon, DeleteIcon, EditIcon, ExternalLinkIcon, OutlineCloseIcon } from 'src/ui-components/CustomIcons';
@@ -45,12 +45,53 @@ const RemoveSignatoryModal = ({ address, className, signatoriesLength, threshold
 	);
 };
 
+const EditAddressModal = ({ className, addressToEdit, nameToEdit, discordToEdit, emailToEdit, telegramToEdit, rolesToEdit, nickNameToEdit }: { className?: string, nickNameToEdit?: string, addressToEdit: string, nameToEdit?: string, discordToEdit?: string, emailToEdit?: string, telegramToEdit?: string, rolesToEdit?: string[] }) => {
+	const [openEditModal, setOpenEditModal] = useState<boolean>(false);
+	return (
+		<>
+			<Button
+				onClick={() => setOpenEditModal(true)}
+				className='text-primary bg-highlight flex items-center justify-center p-1 sm:p-2 rounded-md sm:rounded-lg text-xs sm:text-sm w-6 h-6 sm:w-8 sm:h-8 border-none outline-none'>
+				<EditIcon className='' />
+			</Button>
+			<Modal
+				centered
+				footer={false}
+				closeIcon={
+					<button
+						className='outline-none border-none bg-highlight w-6 h-6 rounded-full flex items-center justify-center'
+						onClick={() => setOpenEditModal(false)}
+					>
+						<OutlineCloseIcon className='text-primary w-2 h-2' />
+					</button>}
+				title={<h3 className='text-white mb-8 text-lg font-semibold md:font-bold md:text-xl'>Edit Address</h3>}
+				open={openEditModal}
+				className={`${className} w-auto md:min-w-[500px] scale-90`}
+			>
+				<EditAddress
+					onCancel={() => setOpenEditModal(false)}
+					className={className}
+					addressToEdit={addressToEdit}
+					nameToEdit={nameToEdit}
+					discordToEdit={discordToEdit}
+					emailToEdit={emailToEdit}
+					rolesToEdit={rolesToEdit}
+					telegramToEdit={telegramToEdit}
+					nickNameToEdit={nickNameToEdit}
+					shared={false}
+				/>
+			</Modal>
+		</>
+	);
+};
+
 const ListOwners = ({ className, disabled }: { className?: string, disabled?: boolean }) => {
 	const { network } = useGlobalApiContext();
-	const { openModal } = useModalContext();
-	const { multisigAddresses, activeMultisig, addressBook, address: userAddress } = useGlobalUserDetailsContext();
-	const multisig = multisigAddresses?.find((item: any) => item.address === activeMultisig || item.proxy === activeMultisig);
-	const signatories = multisig?.signatories;
+	const { multisigAddresses, activeMultisig, addressBook, address: userAddress, activeMultisigData } = useGlobalUserDetailsContext();
+	const multisig = multisigAddresses?.find((item: any) => item.address === activeMultisig);
+	const signatories = activeMultisigData?.signatories || multisig?.signatories;
+	const userAddressObject = addressBook.find((item) => item.address === userAddress);
+	const { records } = useActiveMultisigContext();
 
 	return (
 		<div className='text-sm font-medium leading-[15px] '>
@@ -67,7 +108,7 @@ const ListOwners = ({ className, disabled }: { className?: string, disabled?: bo
 			</article>
 			<article>
 				<div className='grid grid-cols-4 gap-x-5 py-6 px-4 text-white'>
-					<p className='max-w-[100px] sm:w-auto overflow-hidden text-ellipsis col-span-1 flex items-center text-base'>
+					<p className=' sm:w-auto overflow-hidden text-ellipsis col-span-1 flex items-center text-base'>
 						{addressBook.find((item: any) => item.address === userAddress)?.name || DEFAULT_ADDRESS_NAME}
 					</p>
 					<div className='col-span-2 flex items-center'>
@@ -83,24 +124,20 @@ const ListOwners = ({ className, disabled }: { className?: string, disabled?: bo
 						</div>
 					</div>
 					<div className='col-span-1 flex items-center gap-x-[10px]'>
-						<Button
-							onClick={() => openModal('Edit Address', <EditAddress addressToEdit={userAddress} />)}
-							className='text-primary bg-highlight flex items-center justify-center p-1 sm:p-2 rounded-md sm:rounded-lg text-xs sm:text-sm w-6 h-6 sm:w-8 sm:h-8 border-none outline-none'>
-							<EditIcon className='' />
-						</Button>
+						<EditAddressModal className={className} nickNameToEdit={userAddressObject?.nickName} addressToEdit={userAddressObject?.address || ''} nameToEdit={userAddressObject?.name} emailToEdit={userAddressObject?.email} discordToEdit={userAddressObject?.discord} telegramToEdit={userAddressObject?.telegram} rolesToEdit={userAddressObject?.roles}  />
 					</div>
 				</div>
 				<Divider className='bg-text_secondary my-0' />
 			</article>
 			{
 				signatories?.filter((item: any) => item !== userAddress).map((address: any, index: any) => {
-					const name = addressBook.find((item: any) => item.address === address)?.name || DEFAULT_ADDRESS_NAME;
+					const addressObject = addressBook.find((item) => item.address === address);
 					const encodedAddress = address;
 					return (
 						<article key={index}>
 							<div className='grid grid-cols-4 gap-x-5 py-6 px-4 text-white'>
-								<p className='max-w-[100px] sm:w-auto overflow-hidden text-ellipsis col-span-1 flex items-center text-base'>
-									{name}
+								<p className='sm:w-auto overflow-hidden text-ellipsis col-span-1 flex items-center text-base'>
+									{addressObject?.nickName || records?.[address]?.name || addressObject?.name || DEFAULT_ADDRESS_NAME}
 								</p>
 								<div className='col-span-2 flex items-center'>
 									<MetaMaskAvatar address={encodedAddress}
@@ -115,11 +152,7 @@ const ListOwners = ({ className, disabled }: { className?: string, disabled?: bo
 									</div>
 								</div>
 								<div className='col-span-1 flex items-center gap-x-[10px]'>
-									<Button
-										onClick={() => openModal('Edit Address', <EditAddress addressToEdit={encodedAddress || address} />)}
-										className='text-primary border-none outline-none bg-highlight flex items-center justify-center p-1 sm:p-2 rounded-md sm:rounded-lg text-xs sm:text-sm w-6 h-6 sm:w-8 sm:h-8'>
-										<EditIcon className='' />
-									</Button>
+									<EditAddressModal className={className} nickNameToEdit={userAddressObject?.nickName} addressToEdit={userAddressObject?.address || ''} nameToEdit={userAddressObject?.name} emailToEdit={userAddressObject?.email} discordToEdit={userAddressObject?.discord} telegramToEdit={userAddressObject?.telegram} rolesToEdit={userAddressObject?.roles}  />
 									{signatories.length > 2 && !disabled &&
 										<RemoveSignatoryModal threshold={multisig?.threshold || 2} className={className} signatoriesLength={signatories.length || 2} address={address} />
 									}

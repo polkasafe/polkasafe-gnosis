@@ -15,16 +15,14 @@ import { IAddressBookItem } from 'src/types';
 import { NotificationStatus } from 'src/types';
 import queueNotification from 'src/ui-components/QueueNotification';
 
-import { IAddress } from './AddressTable';
-
 const ImportAdress = () => {
 	const { toggleVisibility } = useModalContext();
-	const [addresses, setAddresses] = useState<IAddress[]>([]);
+	const [addresses, setAddresses] = useState<IAddressBookItem[]>([]);
 	const [loading, setLoading] = useState<boolean>(false);
 	const { addressBook, setUserDetailsContextState } = useGlobalUserDetailsContext();
 	const { network } = useGlobalApiContext();
 
-	const handleAddAddress = async (address: string, name: string) => {
+	const handleAddAddress = async (address: string, name: string, email?: string, discord?: string, telegram?: string, roles?: string[]) => {
 		try {
 			const userAddress = localStorage.getItem('address');
 			const signature = localStorage.getItem('signature');
@@ -38,10 +36,14 @@ const ImportAdress = () => {
 					return;
 				}
 
-				const addAddressRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/addToAddressBook`, {
+				const addAddressRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/addToAddressBookEth`, {
 					body: JSON.stringify({
 						address,
-						name
+						discord: discord || '',
+						email: email || '',
+						name,
+						roles: roles || [],
+						telegram: telegram || ''
 					}),
 					headers: firebaseFunctionsHeader(network),
 					method: 'POST'
@@ -79,7 +81,7 @@ const ImportAdress = () => {
 	const addImportedAddresses = () => {
 		setLoading(true);
 		Promise.all(addresses.map(
-			(item) => handleAddAddress(item.address, item.name)
+			(item) => handleAddAddress(item.address, item.name, item.email, item.discord, item.telegram, item.roles)
 		)).then(() => {
 			queueNotification({
 				header: 'Success!',

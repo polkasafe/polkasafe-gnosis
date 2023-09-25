@@ -162,7 +162,7 @@ export async function approveAddProxy({ api, approvingAddress, callDataHex, call
 							activeMultisig: multisigData.address,
 							multisigAddresses: copyMultisigAddresses,
 							multisigSettings: {
-								...prevState,
+								...prevState.multisigSettings,
 								[multisigData.address]: {
 									deleted: false,
 									name: multisigData.name

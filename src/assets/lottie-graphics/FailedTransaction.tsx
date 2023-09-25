@@ -14,10 +14,10 @@ interface Props {
 	className?: string
 }
 
-function FailedTransactionLottie({ message, width = 350, waitMessage, className }: Props): ReactElement {
+function FailedTransactionLottie({ message, width = 350, waitMessage }: Props): ReactElement {
 
 	return (
-		<div className={`w-full flex flex-col justify-center items-center ${className}`}>
+		<div className={'w-full flex flex-col justify-center items-center'}>
 			<Lottie
 				animationData={FailedScreen}
 				style={{

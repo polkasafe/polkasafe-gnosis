@@ -35,10 +35,9 @@ const Assets = () => {
 			else {
 
 				setLoading(true);
-				const getAssestsRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/getAssetsForAddress`, {
+				const getAssestsRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/getAssetsForAddressEth`, {
 					body: JSON.stringify({
-						address: multisig.address,
-						network
+						address: multisig.address
 					}),
 					headers: firebaseFunctionsHeader(network),
 					method: 'POST'

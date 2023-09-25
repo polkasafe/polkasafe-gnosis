@@ -4,7 +4,7 @@
 import { PlusCircleOutlined } from '@ant-design/icons';
 import { Button, Dropdown, Form, Input, MenuProps, Modal } from 'antd';
 import { Checkbox } from 'antd';
-import React, { FC, useEffect, useState } from 'react';
+import React, { FC, useCallback, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
@@ -23,9 +23,9 @@ const Notifications = () => {
 
 	const { network } = useGlobalApiContext();
 	const { pathname } = useLocation();
-	const { address, setUserDetailsContextState } = useGlobalUserDetailsContext();
+	const { notification_preferences, address, setUserDetailsContextState } = useGlobalUserDetailsContext();
 	const [notifyAfter, setNotifyAfter] = useState<number>(8);
-	const emailPreference = '' as any;
+	const emailPreference = notification_preferences?.channelPreferences?.[CHANNEL.EMAIL];
 	const [email, setEmail] = useState<string>(emailPreference?.handle || '');
 	const [emailValid, setEmailValid] = useState<boolean>(true);
 	const [newTxn, setNewTxn] = useState<boolean>(false);
@@ -41,7 +41,7 @@ const Notifications = () => {
 	const [remindersFromOthers, setReminderFromOthers] = useState<boolean>(false);
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const [resendEmail, setResendEmail] = useState<boolean>(emailPreference?.verified || false);
-	const [enabledUpdate] = useState<boolean>(false);
+	const [enabledUpdate, setEnableUpdate] = useState<boolean>(false);
 
 	const emailVerificationRegex = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
@@ -58,14 +58,48 @@ const Notifications = () => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [email]);
 
-	const handleEnableUpdate = () => {
+	useEffect(() => {
+		const triggerPreferences = notification_preferences?.triggerPreferences;
+		if(triggerPreferences){
+			setNewTxn(triggerPreferences[Triggers.INIT_MULTISIG_TRANSFER]?.enabled || false);
+			setTxnExecuted(triggerPreferences[Triggers.EXECUTED_TRANSACTION]?.enabled || false);
+			setCancelledTxn(triggerPreferences[Triggers.CANCELLED_TRANSACTION]?.enabled || false);
+			setScheduleTxn(triggerPreferences[Triggers.SCHEDULED_APPROVAL_REMINDER]?.enabled || false);
+			setNotifyAfter(triggerPreferences[Triggers.SCHEDULED_APPROVAL_REMINDER]?.hoursToRemindIn || 8);
+			setReminderFromOthers(triggerPreferences[Triggers.APPROVAL_REMINDER]?.enabled || false);
+		}
+	}, [notification_preferences]);
 
-	};
+	const handleEnableUpdate = useCallback(() => {
+		if(notification_preferences){
+			const triggerPreferences = notification_preferences.triggerPreferences;
+			const oldPreferences = {
+				cancelledTxn:triggerPreferences[Triggers.CANCELLED_TRANSACTION]?.enabled || false,
+				newTxn:triggerPreferences[Triggers.INIT_MULTISIG_TRANSFER]?.enabled || false,
+				notifyAfter: triggerPreferences[Triggers.SCHEDULED_APPROVAL_REMINDER]?.hoursToRemindIn || 8,
+				remindersFromOthers: triggerPreferences[Triggers.APPROVAL_REMINDER]?.enabled || false,
+				scheduleTxn:triggerPreferences[Triggers.SCHEDULED_APPROVAL_REMINDER]?.enabled || false,
+				txnExecuted:triggerPreferences[Triggers.EXECUTED_TRANSACTION]?.enabled || false
+			};
+			const newPreferences = {
+				cancelledTxn,
+				newTxn,
+				notifyAfter,
+				remindersFromOthers,
+				scheduleTxn,
+				txnExecuted
+			};
+			if(JSON.stringify(oldPreferences) === JSON.stringify(newPreferences)){
+				setEnableUpdate(false);
+				return;
+			}
+			setEnableUpdate(true);
+		}
+	}, [cancelledTxn, newTxn, notification_preferences, notifyAfter, remindersFromOthers, scheduleTxn, txnExecuted]);
 
 	useEffect(() => {
 		handleEnableUpdate();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [cancelledTxn, newTxn, scheduleTxn, txnExecuted, notifyAfter, remindersFromOthers]);
+	}, [handleEnableUpdate]);
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const notifyAfterHours: MenuProps['items'] = [8, 12, 24, 48].map((hr) => {
@@ -132,7 +166,7 @@ const Notifications = () => {
 				};
 				setLoading(true);
 
-				const updateNotificationTriggerRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/updateNotificationTriggerPreferences`, {
+				const updateNotificationTriggerRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/updateNotificationTriggerPreferencesEth`, {
 					body: JSON.stringify({
 						triggerPreferences: newPreferences
 					}),
@@ -396,7 +430,7 @@ const Notifications = () => {
 						</div>
 					</div>
 					<div className='mt-4'>
-						<Button disabled={!enabledUpdate} onClick={updateNotificationPreferences} className={`text-white bg-primary rounded-lg cursor-pointer ${!enabledUpdate && 'opacity-50 cursor-default'}`}>Save</Button>
+						<Button loading={loading} disabled={!enabledUpdate} onClick={updateNotificationPreferences} className={`text-white bg-primary rounded-lg cursor-pointer ${!enabledUpdate && 'opacity-50 cursor-default'}`}>Save</Button>
 					</div>
 				</div>
 			</div>

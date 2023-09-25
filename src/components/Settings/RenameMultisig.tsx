@@ -36,7 +36,7 @@ const RenameMultisig = ({ name }: { name: string }) => {
 			}
 			else {
 
-				const changeNameRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/renameMultisig`, {
+				const changeNameRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/renameMultisigEth`, {
 					body: JSON.stringify({
 						address: multisig?.address,
 						name: multisigName

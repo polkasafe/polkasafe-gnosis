@@ -2,8 +2,7 @@
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
 /* eslint-disable sort-keys */
-
-import { EthersAdapter } from '@safe-global/protocol-kit';
+import { useAddress } from '@thirdweb-dev/react';
 import dayjs from 'dayjs';
 import React, { useEffect, useState } from 'react';
 import AddressCard from 'src/components/Home/AddressCard';
@@ -14,69 +13,50 @@ import DashboardCard from 'src/components/Home/DashboardCard';
 import TxnCard from 'src/components/Home/TxnCard';
 import AddMultisig from 'src/components/Multisig/AddMultisig';
 import Loader from 'src/components/UserFlow/Loader';
-import { useGlobalWeb3Context } from 'src/context';
 import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
-import { returnTxUrl } from 'src/global/gnosisService';
-import { GnosisSafeService } from 'src/services';
 import Spinner from 'src/ui-components/Loader';
 import styled from 'styled-components';
 
 const Home = () => {
-	const { address, multisigAddresses, createdAt, addressBook, activeMultisig } = useGlobalUserDetailsContext();
-	const [openNewUserModal, setOpenNewUserModal] = useState(false);
+	const { address, multisigAddresses, activeMultisig, loading, gnosisSafe, createdAt, addressBook } = useGlobalUserDetailsContext();
 	const [hasProxy] = useState<boolean>(true);
-	const { web3AuthUser, ethProvider } = useGlobalWeb3Context();
-	const { network } = useGlobalApiContext();
+	const metaMaskAddress = useAddress();
 
 	const [transactionLoading] = useState(false);
 	const [isOnchain, setIsOnchain] = useState(true);
 	const [openTransactionModal, setOpenTransactionModal] = useState(false);
-	const [loading, setLoading] = useState<boolean>(true);
+	const [openNewUserModal, setOpenNewUserModal] = useState(false);
+	const { network } = useGlobalApiContext();
 
 	useEffect(() => {
 		if ((dayjs(createdAt) > dayjs().subtract(15, 'seconds')) && addressBook?.length === 1) {
 			setOpenNewUserModal(true);
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [createdAt]);
 
 	useEffect(() => {
-		setLoading(true);
 		const handleNewTransaction = async () => {
-			if (!activeMultisig) return;
-
-			if (web3AuthUser && ethProvider) {
-				const signer = ethProvider?.getSigner();
-				const adapter = new EthersAdapter({
-					ethers: ethProvider,
-					signerOrProvider: ethProvider.getSigner()
-				});
-				const txUrl = returnTxUrl(network);
-				const gnosisService = new GnosisSafeService(adapter, signer, txUrl);
-
-				const safeData = await gnosisService.getSafeCreationInfo(activeMultisig);
-
-				if (safeData) {
-					setIsOnchain(true);
-				} else {
-					setIsOnchain(false);
-				}
+			if (!activeMultisig || Boolean(!Object.keys(gnosisSafe).length)) return;
+			const safeData = await gnosisSafe.getSafeCreationInfo(activeMultisig);
+			if (safeData) {
+				setIsOnchain(true);
+			} else {
+				setIsOnchain(false);
 			}
-			setLoading(false);
+
 		};
 		handleNewTransaction();
-
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [web3AuthUser, ethProvider]);
+	}, [activeMultisig, gnosisSafe]);
 
 	return (
 		<>
 			{
-				address ?
+				address === metaMaskAddress ?
 					<>
 						<NewUserModal open={openNewUserModal} onCancel={() => setOpenNewUserModal(false)} />
-						{ loading ? <Spinner size='large' /> :multisigAddresses.length > 0
+						{ loading ? <Spinner size='large' /> :multisigAddresses.filter((address:any) => address.network === network).length > 0
 							?
 							<section>
 								<div className="mb-0 grid grid-cols-16 gap-4 grid-row-2 lg:grid-row-1 h-auto">

@@ -4,31 +4,27 @@
 import { Divider, Spin } from 'antd';
 import { ethers } from 'ethers';
 import React, { FC } from 'react';
-import { MetaMaskAvatar } from 'react-metamask-avatar';
-import { useGlobalApiContext } from 'src/context/ApiContext';
-import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import AddressComponent from 'src/ui-components/AddressComponent';
-import { CopyIcon, ExternalLinkIcon } from 'src/ui-components/CustomIcons';
+import { CopyIcon } from 'src/ui-components/CustomIcons';
 import copyText from 'src/utils/copyText';
 import shortenAddress from 'src/utils/shortenAddress';
 
 interface IReceivedInfoProps {
 	className?: string;
 	amount: string;
+	addedOwner?: string;
 	amountType: string;
 	amount_usd: number;
 	date: string;
 	// time: string;
 	from: string
-	to: string
+	to: string | string[]
 	callHash: string
 	note?: string
 	loading?: boolean
 }
 
-const ReceivedInfo: FC<IReceivedInfoProps> = ({ amount, to, date, from, callHash, note, loading }) => {
-	const { addressBook } = useGlobalUserDetailsContext();
-	const { network } = useGlobalApiContext();
+const ReceivedInfo: FC<IReceivedInfoProps> = ({ amount, to, date, from, callHash, note, loading, addedOwner }) => {
 
 	return (
 		<article
@@ -50,33 +46,9 @@ const ReceivedInfo: FC<IReceivedInfoProps> = ({ amount, to, date, from, callHash
 				</span>
 			</p>
 			<div
-				className='mt-3 flex items-center gap-x-4'
+				className='mt-3'
 			>
-				<MetaMaskAvatar address={from }size={30} />
-				<div
-					className='flex flex-col gap-y-[6px]'
-				>
-					<p
-						className='font-medium text-sm leading-[15px] text-white'
-					>
-						{addressBook?.find((item: any) => item.address === from)?.name || from}
-					</p>
-					<p
-						className='flex items-center gap-x-3 font-normal text-xs leading-[13px] text-text_secondary'
-					>
-						<span>
-							{from}
-						</span>
-						<span
-							className='flex items-center gap-x-2 text-sm'
-						>
-							<button onClick={() => copyText(from)}><CopyIcon className='hover:text-primary' /></button>
-							<a href={`https://${network}.subscan.io/account/${from}`} target='_blank' rel="noreferrer" >
-								<ExternalLinkIcon />
-							</a>
-						</span>
-					</p>
-				</div>
+				<AddressComponent address={from} />
 			</div>
 			<Divider className='bg-text_secondary my-5' />
 			<div
@@ -87,7 +59,7 @@ const ReceivedInfo: FC<IReceivedInfoProps> = ({ amount, to, date, from, callHash
 				>
 					To:
 				</span>
-				<AddressComponent address={to} />
+				<AddressComponent address={to.toString()} />
 			</div>
 			<div
 				className='w-full max-w-[418px] flex items-center gap-x-5'
@@ -132,6 +104,22 @@ const ReceivedInfo: FC<IReceivedInfoProps> = ({ amount, to, date, from, callHash
 						</span>
 					</p>
 				</div>}
+			{addedOwner &&
+				<div
+					className='w-full max-w-[418px] flex items-center  gap-x-5 mt-3'
+				>
+					<span
+						className='text-text_secondary font-normal text-sm leading-[15px]'
+					>
+					Added Owner:
+					</span>
+					<p
+						className='flex items-center gap-x-3 font-normal text-xs leading-[13px] text-text_secondary'
+					>
+						<AddressComponent address={addedOwner} />
+					</p>
+				</div>
+			}
 			{loading ? <Spin className='mt-3' /> : note &&
 				<div
 					className='w-full max-w-[418px] flex items-center gap-x-5 mt-3'

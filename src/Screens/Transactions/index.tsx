@@ -82,11 +82,13 @@ const Transactions = () => {
 							Refresh
 							</Button>
 						</div>
-						{
-							tab === ETab.HISTORY?
-								<History loading={loading} refetch={refetch} setLoading={setLoading} />
-								:<Queued loading={loading} refetch={refetch} setLoading={setLoading} setRefetch={setRefetch} />
-						}
+						<div className='h-full max-h-[690px] overflow-auto pr-2'>
+							{
+								tab === ETab.HISTORY?
+									<History loading={loading} refetch={refetch} setLoading={setLoading} />
+									:<Queued loading={loading} refetch={refetch} setLoading={setLoading} setRefetch={setRefetch} />
+							}
+						</div>
 					</>
 					:
 					<div className='h-full w-full flex items-center justify-center text-primary font-bold text-lg'>

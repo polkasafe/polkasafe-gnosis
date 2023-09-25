@@ -36,10 +36,12 @@ const AddNewOwnerBtn = ({ className, disabled }: { className?: string, disabled?
 	return (
 		<>
 			<AddOwnerModal />
-			<Button disabled={disabled} size='large' onClick={() => setOpenAddOwnerModal(true) } className={` outline-none border-none text-xs md:text-sm font-medium ${disabled ? 'bg-highlight text-text_secondary' : 'bg-primary text-white'} rounded-md md:rounded-lg flex items-center gap-x-3`}>
-				<AddIcon />
-				<span>Add New Owner</span>
-			</Button>
+			<div className='flex justify-end mt-2'>
+				<Button disabled={disabled} size='large' onClick={() => setOpenAddOwnerModal(true) } className={`outline-none border-none text-xs md:text-sm font-medium ${disabled ? 'bg-highlight text-text_secondary' : 'bg-primary text-white'} rounded-md md:rounded-lg flex items-center gap-x-3`}>
+					<AddIcon />
+					<span>Add New Owner</span>
+				</Button>
+			</div>
 		</>
 	);
 };

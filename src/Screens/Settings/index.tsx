@@ -2,18 +2,33 @@
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
 import classNames from 'classnames';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import ManageMultisig from 'src/components/Settings/ManageMultisig';
 import Notifications from 'src/components/Settings/Notifications';
+import TransactionFields from 'src/components/Settings/TransactionFields';
+import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
+import Loader from 'src/ui-components/Loader';
 
 enum ETab {
 	SIGNATORIES,
-	NOTIFICATIONS
+	NOTIFICATIONS,
+	TRANSACTIONS
 }
 
 const Settings = () => {
 	const [tab, setTab] = useState(ETab.SIGNATORIES);
+	const [loading, setLoading ] = useState<boolean>(true);
+	const { activeMultisigData } = useGlobalUserDetailsContext();
 
+	useEffect(() => {
+		if(Object.keys(activeMultisigData).length > 0){
+			setLoading(false);
+		}
+	},[activeMultisigData]);
+
+	if(loading){
+		return <Loader size='large'/>;
+	}
 	return (
 		<div className='scale-[80%] h-[125%] w-[125%] origin-top-left'>
 			<div
@@ -43,12 +58,26 @@ const Settings = () => {
 					{/* <HistoryIcon/> */}
 						Notifications
 				</button>
+				<button
+					onClick={() => setTab(ETab.TRANSACTIONS)}
+					className={classNames(
+						'rounded-lg p-3 text-sm leading-[15px] text-white',
+						{
+							'text-primary bg-highlight': tab === ETab.TRANSACTIONS
+						}
+					)}
+				>
+						Transaction Fields
+				</button>
 			</div>
 			{
 				tab === ETab.SIGNATORIES ?
 					<ManageMultisig/>
 					:
-					<Notifications/>
+					tab === ETab.NOTIFICATIONS ?
+						<Notifications/>
+						:
+						<TransactionFields/>
 			}
 		</div>
 	);

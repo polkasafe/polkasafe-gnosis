@@ -36,7 +36,7 @@ export default function NotifyButton({
 	useEffect(() => {
 		const canSendReminder = async () => {
 			const notificationPreferences = await fetch(
-				`${FIREBASE_FUNCTIONS_URL}/getNotificationPreferencesForAddress`,
+				`${FIREBASE_FUNCTIONS_URL}/getNotificationPreferencesForAddressEth`,
 				{
 					body: JSON.stringify({
 						address: address

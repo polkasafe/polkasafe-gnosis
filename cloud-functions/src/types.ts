@@ -3,6 +3,11 @@ import { KeypairType } from '@polkadot/util-crypto/types';
 export interface IAddressBookItem {
 	name: string;
 	address: string;
+	email?: string,
+	roles?: string[],
+	discord?: string,
+	telegram?: string,
+	nickName?: string
 }
 
 export interface IMultisigSettings {
@@ -52,6 +57,9 @@ export interface ITransaction {
 	callHash: string;
 	created_at: Date;
 	block_number: number;
+	safeAddress: string;
+	type: 'sent' | 'received';
+	executed: boolean;
 	from: string;
 	to: string | string[];
 	token: string;
@@ -170,4 +178,24 @@ export interface ITransactionFields {
 		fieldDesc: string,
 		subfields: ITransactionCategorySubfields
 	}
+}
+
+export interface ISharedAddressBookRecord {
+	name: string,
+	address: string,
+	created_at?: Date,
+	email?: string,
+	discord?: string,
+	telegram?: string,
+	roles?: string[],
+	updated_at?: Date,
+	updatedBy?: string
+}
+
+export interface ISharedAddressBooks {
+	records: {
+		[address: string]: ISharedAddressBookRecord
+	},
+	roles?: string[],
+	multisig: string
 }

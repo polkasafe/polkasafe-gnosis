@@ -6,15 +6,17 @@ import { Collapse, Divider } from 'antd';
 import classNames from 'classnames';
 import dayjs from 'dayjs';
 import { ethers } from 'ethers';
-import React, { FC, useState } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { ParachainIcon } from 'src/components/NetworksDropdown';
 import { useGlobalApiContext } from 'src/context/ApiContext';
+import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { firebaseFunctionsHeader } from 'src/global/firebaseFunctionsHeader';
 import { FIREBASE_FUNCTIONS_URL } from 'src/global/firebaseFunctionsUrl';
 import { chainProperties } from 'src/global/networkConstants';
 import { ITransaction } from 'src/types';
 import { ArrowDownLeftIcon, ArrowUpRightIcon, CircleArrowDownIcon, CircleArrowUpIcon } from 'src/ui-components/CustomIcons';
+import { IHistoryTransactions } from 'src/utils/convertSafeData/convertSafeHistory';
 
 import ReceivedInfo from './ReceivedInfo';
 import SentInfo from './SentInfo';
@@ -22,17 +24,34 @@ import SentInfo from './SentInfo';
 const LocalizedFormat = require('dayjs/plugin/localizedFormat');
 dayjs.extend(LocalizedFormat);
 
-const Transaction: FC<ITransaction> = ({ amount_token, token, created_at, to, from, callHash, amount_usd, type }) => {
+const Transaction: FC<IHistoryTransactions> = ({ approvals, amount_token, created_at, to, from, txHash, type, executor, decodedData, data: callData }) => {
 	const { network } = useGlobalApiContext();
-
+	const { gnosisSafe } = useGlobalUserDetailsContext();
+	const token = chainProperties[network].ticker;
 	const [transactionInfoVisible, toggleTransactionVisible] = useState(false);
 	const [loading, setLoading] = useState(false);
-	const [note, setNote] = useState<string>('');
-
 	const location = useLocation();
 	const hash = location.hash.slice(1);
+	const isSentType =  type === 'Sent' || type === 'MULTISIG_TRANSACTION';
+	const isFundType = type === 'ETHEREUM_TRANSACTION';
 
-	console.log('multisig?.type, to', type);
+	const [transactionDetails, setTransactionDetails] = useState<ITransaction>({} as any);
+
+	const [totalAmount, setTotalAmount] = useState<number>(0);
+
+	const [decodedCallData, setDecodedCallData] = useState<any>({});
+
+	useEffect(() => {
+		if(!callData) return;
+		gnosisSafe.safeService.decodeData(callData).then((res) => setDecodedCallData(res)).catch((e) => console.log(e));
+	}, [callData, gnosisSafe.safeService]);
+
+	useEffect(() => {
+		if(decodedCallData.method !== 'multiSend') return;
+
+		const total = decodedCallData?.parameters?.[0]?.valueDecoded?.reduce((t: number,item: any) => t + Number(item.value), 0);
+		setTotalAmount(total);
+	}, [decodedCallData]);
 
 	const handleGetHistoryNote = async () => {
 		try {
@@ -45,23 +64,21 @@ const Transaction: FC<ITransaction> = ({ amount_token, token, created_at, to, fr
 			}
 			else {
 				setLoading(true);
-				const noteRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/getTransactionNote`, {
-					body: JSON.stringify({
-						callHash
-					}),
+				const getTransactionDetailsRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/getTransactionDetailsEth`, {
+					body: JSON.stringify({ callHash: txHash }),
 					headers: firebaseFunctionsHeader(network),
 					method: 'POST'
 				});
 
-				const { data: noteData, error: noteError } = await noteRes.json() as { data: string, error: string };
+				const { data: getTransactionData, error: getTransactionErr } = await getTransactionDetailsRes.json() as { data: ITransaction, error: string };
 
-				if (noteError) {
-					console.log('error', noteError);
+				if (getTransactionErr) {
+					console.log('error', getTransactionErr);
 					setLoading(false);
 					return;
 				} else {
 					setLoading(false);
-					setNote(noteData);
+					setTransactionDetails(getTransactionData);
 				}
 
 			}
@@ -78,7 +95,7 @@ const Transaction: FC<ITransaction> = ({ amount_token, token, created_at, to, fr
 				bordered={false}
 				defaultActiveKey={[`${hash}`]}
 			>
-				<Collapse.Panel showArrow={false} key={`${callHash}`} header={
+				<Collapse.Panel showArrow={false} key={`${txHash}`} header={
 					<div
 						onClick={() => {
 							if (!transactionInfoVisible) {
@@ -92,7 +109,7 @@ const Transaction: FC<ITransaction> = ({ amount_token, token, created_at, to, fr
 					>
 						<p className='col-span-3 flex items-center gap-x-3'>
 							{
-								type === 'sent' ?
+								type === 'Sent' ||  type === 'removeOwner' ||  type === 'MULTISIG_TRANSACTION'?
 									<span
 										className='flex items-center justify-center w-9 h-9 bg-success bg-opacity-10 p-[10px] rounded-lg text-red-500'
 									>
@@ -106,25 +123,32 @@ const Transaction: FC<ITransaction> = ({ amount_token, token, created_at, to, fr
 									</span>
 							}
 							<span>
-								{type}
+								{type === 'ETHEREUM_TRANSACTION'
+									? 'Fund'
+									: type === 'Sent'
+									|| type === 'MULTISIG_TRANSACTION'
+										? 'Sent'
+										: type === 'removeOwner'
+											? 'Removed Owner'
+											: type === 'addOwnerWithThreshold'
+												? 'Added Owner'
+												: type}
 							</span>
 						</p>
-						<p className='col-span-2 flex items-center gap-x-[6px]'>
+						{(isFundType || isSentType) ? <p className='col-span-2 flex items-center gap-x-[6px]'>
 							<ParachainIcon src={chainProperties[network].logo} />
 							<span
 								className={classNames(
 									'font-normal text-xs leading-[13px] text-failure',
 									{
-										'text-success': type === 'fund'
+										'text-success': isFundType
 									}
 								)}
 							>
-								{type === 'sent' ? '-' : '+'}{ethers.utils.formatEther(amount_token.toString()).toString()} {token}
+								{isSentType ? '-' : '+'} {ethers?.utils?.formatEther(totalAmount? totalAmount.toString() : amount_token?.toString())?.toString()} {token}
 							</span>
-						</p>
-						<p className='col-span-2'>
-							{dayjs(created_at._seconds * 1000).format('lll')}
-						</p>
+						</p> : <p className='col-span-2'>-</p>}
+						{created_at && <p className='col-span-2'>{new Date(created_at).toLocaleString()}</p>}
 						<p className='col-span-2 flex items-center justify-end gap-x-4'>
 							<span className='text-success'>
 								Success
@@ -143,29 +167,32 @@ const Transaction: FC<ITransaction> = ({ amount_token, token, created_at, to, fr
 					<div>
 						<Divider className='bg-text_secondary my-5' />
 						{
-							type === 'fund' ?
+							isFundType ?
 								<ReceivedInfo
 									amount={String(amount_token)}
 									amountType={token}
-									date={dayjs(created_at._seconds * 1000).format('llll')}
+									date={dayjs(created_at).format('lll')}
 									from={from}
-									callHash={callHash}
-									note={note}
+									callHash={txHash||''}
+									note={transactionDetails?.note || ''}
 									loading={loading}
-									amount_usd={amount_usd}
+									amount_usd={0}
 									to={to}
 								/>
 								:
 								<SentInfo
-									amount={String(amount_token)}
+									amount={decodedCallData.method === 'multiSend' ? decodedCallData?.parameters?.[0]?.valueDecoded?.map((item: any) => item.value) : String(amount_token)}
+									approvals={approvals}
 									amountType={token}
-									date={dayjs(created_at._seconds * 1000).format('llll')}
-									recipient={to}
-									callHash={callHash}
-									note={note}
-									from={from}
+									date={dayjs(created_at).format('lll')}
+									recipientAddress={decodedCallData.method === 'multiSend' ? decodedCallData?.parameters?.[0]?.valueDecoded?.map((item: any) => item.to) : to.toString() || ''}
+									callHash={txHash || ''}
+									note={transactionDetails?.note || ''}
+									from={executor || ''}
 									loading={loading}
-									amount_usd={amount_usd}
+									amount_usd={0}
+									txType={type}
+									addressAddOrRemove={type === 'addOwnerWithThreshold' ? decodedData.parameters?.[0]?.value : type === 'removeOwner' ? decodedData.parameters?.[1]?.value : ''}
 								/>
 						}
 					</div>

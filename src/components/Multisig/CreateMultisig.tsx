@@ -11,21 +11,20 @@ import LoadingLottie from 'src/assets/lottie-graphics/Loading';
 import SuccessTransactionLottie from 'src/assets/lottie-graphics/SuccessTransaction';
 import CancelBtn from 'src/components/Multisig/CancelBtn';
 import AddBtn from 'src/components/Multisig/ModalBtn';
-import { useGlobalWeb3Context } from 'src/context';
+import { useActiveMultisigContext } from 'src/context/ActiveMultisigContext';
 import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useModalContext } from 'src/context/ModalContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
+import { DEFAULT_ADDRESS_NAME } from 'src/global/default';
 import { firebaseFunctionsHeader } from 'src/global/firebaseFunctionsHeader';
 import { FIREBASE_FUNCTIONS_URL } from 'src/global/firebaseFunctionsUrl';
-import { returnTxUrl } from 'src/global/gnosisService';
-import { GnosisSafeService } from 'src/services';
-import { IMultisigAddress } from 'src/types';
+import { IMultisigAddress, ISharedAddressBookRecord } from 'src/types';
 import { NotificationStatus } from 'src/types';
 import { DashDotIcon, OutlineCloseIcon } from 'src/ui-components/CustomIcons';
 import PrimaryButton from 'src/ui-components/PrimaryButton';
 import ProxyImpPoints from 'src/ui-components/ProxyImpPoints';
 import queueNotification from 'src/ui-components/QueueNotification';
-import { createAdapter } from 'src/utils/web3';
+import isValidWeb3Address from 'src/utils/isValidWeb3Address';
 
 import AddAddress from '../AddressBook/AddAddress';
 import DragDrop from '../Multisig/DragDrop';
@@ -41,18 +40,18 @@ interface IMultisigProps {
 }
 
 const CreateMultisig: React.FC<IMultisigProps> = ({ onCancel, homepage = false }) => {
-	const { setUserDetailsContextState, address: userAddress, multisigAddresses } = useGlobalUserDetailsContext();
+	const { setUserDetailsContextState, address: userAddress, multisigAddresses, addressBook } = useGlobalUserDetailsContext();
+	const { records, setActiveMultisigContextState } = useActiveMultisigContext();
 	const { network } = useGlobalApiContext();
-	const { ethProvider } = useGlobalWeb3Context();
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const [uploadSignatoriesJson, setUploadSignatoriesJson] = useState(false);
 
 	const [multisigName, setMultisigName] = useState<string>('');
-	const [threshold, setThreshold] = useState<number | null>(2);
+	const [threshold, setThreshold] = useState<number>(2);
 	const [signatories, setSignatories] = useState<string[]>([userAddress]);
 	const { openModal, toggleVisibility } = useModalContext();
-	const { fetchUserData } = useGlobalUserDetailsContext();
+	const { gnosisSafe } = useGlobalUserDetailsContext();
 
 	const [loading, setLoading] = useState<boolean>(false);
 	const [success] = useState<boolean>(false);
@@ -92,32 +91,38 @@ const CreateMultisig: React.FC<IMultisigProps> = ({ onCancel, homepage = false }
 			const address = localStorage.getItem('address');
 			const signature = localStorage.getItem('signature');
 
-			if (!address || !signature) {
+			if (!address || !signature || Boolean(!Object.keys(gnosisSafe).length)) {
 				return;
 			}
 			else {
-
-				const signer = ethProvider.getSigner();
-				const adapter = createAdapter('eth', ethProvider);
-				const txUrl = returnTxUrl(network);
-				const gnosisService = new GnosisSafeService(adapter, signer, txUrl);
-				console.log(gnosisService);
-				const safeAddress = await gnosisService.createSafe(
+				const safeAddress = await gnosisSafe.createSafe(
 					signatories as [string],
-					threshold!);
-				// if (safeAddress) return;
-				console.log(safeAddress);
-				console.log('txUrl', txUrl);
-				const { data: multisigData, error: multisigError } = await fetch(`${FIREBASE_FUNCTIONS_URL}/createMultisigEth`, {
+					threshold);
+
+				if (!safeAddress) {
+					queueNotification({
+						header: 'Error!',
+						message: 'Something went wrong',
+						status: NotificationStatus.ERROR
+					});
+					setLoading(false);
+					setFailure(true);
+					return;
+				}
+
+				const createMultisigRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/createMultisigEth`, {
 					body: JSON.stringify({
 						signatories: signatories,
 						threshold,
 						multisigName,
-						safeAddress: safeAddress
+						safeAddress: safeAddress,
+						addressBook
 					}),
 					headers: firebaseFunctionsHeader(network, address, signature),
 					method: 'POST'
-				}).then(res => res.json());
+				});
+
+				const { data: multisigData, error: multisigError } = await createMultisigRes.json() as { error: string; data: IMultisigAddress};
 
 				if (multisigError) {
 					queueNotification({
@@ -147,7 +152,38 @@ const CreateMultisig: React.FC<IMultisigProps> = ({ onCancel, homepage = false }
 						status: NotificationStatus.SUCCESS
 					});
 					setCreateMultisigData(multisigData);
-					fetchUserData();
+					onCancel?.();
+					setUserDetailsContextState((prevState) => {
+						return {
+							...prevState,
+							activeMultisig: multisigData.address,
+							multisigAddresses: [...(prevState?.multisigAddresses || []), multisigData],
+							multisigSettings: {
+								...prevState.multisigSettings,
+								[`${multisigData.address}_${multisigData.network}`]: {
+									name: multisigData.name,
+									deleted: false
+								}
+							}
+						};
+					});
+					const records: { [address: string]: ISharedAddressBookRecord } = {};
+					multisigData.signatories.forEach((signatory) => {
+						const data = addressBook.find((a) => (a.address) === (signatory));
+						records[signatory] = {
+							address: signatory,
+							name: data?.name || DEFAULT_ADDRESS_NAME,
+							email: data?.email,
+							discord: data?.discord,
+							telegram: data?.telegram,
+							roles: data?.roles
+						};
+					});
+					setActiveMultisigContextState(prev => ({
+						...prev,
+						records,
+						multisig: multisigData.address
+					}));
 				}
 
 			}
@@ -168,10 +204,24 @@ const CreateMultisig: React.FC<IMultisigProps> = ({ onCancel, homepage = false }
 	const AddAddressModal: FC = () => {
 		return (
 			<>
-				<PrimaryButton onClick={() => setShowAddressModal(true)} className='bg-primary text-white w-fit'>
+				<PrimaryButton disabled={!addAddress || !isValidWeb3Address(addAddress) || Object.keys(records).includes(addAddress) || addressBook.some(item => item.address === addAddress)} onClick={() => setShowAddressModal(true)}>
 					<p className='font-normal text-sm'>Add</p>
 				</PrimaryButton>
-				<Modal width={600} onCancel={() => setShowAddressModal(false)} footer={null} open={showAddressModal}>
+				<Modal
+					onCancel={() => setShowAddressModal(false)}
+					open={showAddressModal}
+					centered
+					footer={false}
+					closeIcon={
+						<button
+							className='outline-none border-none bg-highlight w-6 h-6 rounded-full flex items-center justify-center'
+							onClick={() => setShowAddressModal(false)}
+						>
+							<OutlineCloseIcon className='text-primary w-2 h-2' />
+						</button>}
+					title={<h3 className='text-white mb-8 text-lg font-semibold md:font-bold md:text-xl'>Add Address</h3>}
+					className={'w-auto md:min-w-[500px] scale-90'}
+				>
 					<AddAddress onCancel={() => setShowAddressModal(false)} addAddress={addAddress} setAddAddress={setAddAddress} />
 				</Modal>
 			</>
@@ -280,7 +330,7 @@ const CreateMultisig: React.FC<IMultisigProps> = ({ onCancel, homepage = false }
 									>
 										<div className='w-[45vw]'>
 											<p className='text-primary'>Threshold</p>
-											<InputNumber onChange={(val) => setThreshold(val)} value={threshold} className='bg-bg-secondary placeholder:text-[#505050] text-white outline-none border-none w-full mt-2 py-2' placeholder='0' />
+											<InputNumber onChange={(val) => setThreshold(val || 2)} value={threshold} className='bg-bg-secondary placeholder:text-[#505050] text-white outline-none border-none w-full mt-2 py-2' placeholder='0' />
 										</div>
 									</Form.Item>
 									<DashDotIcon className='mt-5' />

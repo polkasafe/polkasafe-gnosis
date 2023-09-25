@@ -51,9 +51,11 @@ export default async function getTransactionsByAddress(
 					network: network,
 					note: transactionDoc.exists && storedTransaction?.note ? storedTransaction?.note : '',
 					notifications: transactionDoc.exists && storedTransaction.notifications ? Object.fromEntries(
-						Object.entries(storedTransaction.notifications || {}).map(([address, notification]) =>
-							[address, { ...notification, lastNotified: (notification.lastNotified as any)?.toDate?.() }])
-					) : {}
+						Object.entries(storedTransaction.notifications || {}).map(([address, notification]) => [address, { ...notification, lastNotified: (notification.lastNotified as any)?.toDate?.() }])
+					) : {},
+					safeAddress: '',
+					type: 'sent',
+					executed: false
 				};
 
 				transactions.push(newTransaction);

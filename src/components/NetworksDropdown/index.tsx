@@ -29,6 +29,7 @@ const NetworksDropdown: FC<INetworksDropdownProps> = ({ className, isCardToken, 
 	const handleSetNetwork = async (networkToSet: string) => {
 		localStorage.setItem('network', networkToSet);
 		setNetwork(networkToSet as any);
+		localStorage.removeItem('active_multisig');
 		toggleVisibility(false);
 	};
 
@@ -81,7 +82,7 @@ const NetworksDropdown: FC<INetworksDropdownProps> = ({ className, isCardToken, 
 					isMouseEnter.current = false;
 				}}
 			>
-				{
+				{/* {
 					Object.values(NETWORK).map((networkEntry) => {
 						return <NetworkCard
 							onClick={() => handleSetNetwork(networkEntry)}
@@ -91,7 +92,14 @@ const NetworksDropdown: FC<INetworksDropdownProps> = ({ className, isCardToken, 
 							isCardToken={isCardToken}
 						/>;
 					})
-				}
+				} */}
+				<NetworkCard
+					onClick={() => handleSetNetwork(NETWORK.ASTAR)}
+					selectedNetwork={network}
+					key={NETWORK.ASTAR}
+					network={NETWORK.ASTAR}
+					isCardToken={isCardToken}
+				/>
 			</div>
 		</div>
 	);

@@ -8,11 +8,11 @@ import React, { useEffect, useState } from 'react';
 import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
 import { chainProperties } from 'src/global/networkConstants';
+import useGetWalletAccounts from 'src/hooks/useGetWalletAccounts';
 import { IAddressBookItem } from 'src/types';
 import { WarningCircleIcon } from 'src/ui-components/CustomIcons';
 import { inputToBn } from 'src/utils/inputToBn';
-
-import NewUserModal from '../Home/ConnectWallet/NewUserModal';
+import shortenAddress from 'src/utils/shortenAddress';
 
 interface ISignature {
 	name: string
@@ -34,9 +34,9 @@ const Signatory = ({ filterAddress, setSignatories, signatories, homepage }: ISi
 	const { address, addressBook } = useGlobalUserDetailsContext();
 	const { network } = useGlobalApiContext();
 
-	const [addWalletAddress, setAddWalletAddress] = useState<boolean>(false);
-
 	const [addresses, setAddresses] = useState<ISignature[]>([]);
+
+	const walletAccounts = useGetWalletAccounts();
 
 	useEffect(() => {
 		setAddresses(addressBook?.filter((item: any, i: any) => i !== 0 && (filterAddress ? (item.address.includes(filterAddress, 0) || item.name.includes(filterAddress, 0)) : true)).map((item: IAddressBookItem, i: number) => ({
@@ -161,15 +161,14 @@ const Signatory = ({ filterAddress, setSignatories, signatories, homepage }: ISi
 
 	return (
 		<div className="flex w-[45vw]">
-			<NewUserModal open={addWalletAddress} onCancel={() => setAddWalletAddress(false)} />
 			<div className="flex w-[100%] items-center justify-center">
-				<div id='div1' className="flex flex-col my-2 w-1/2 mr-1 cursor-grab" onDrop={dropReturn} onDragOver={dragOver}>
+				<div id='div1' className="flex flex-col my-2 w-1/2 mr-1" onDrop={dropReturn} onDragOver={dragOver}>
 					<h1 className='text-primary mt-3 mb-2'>Available Signatory</h1>
 					<div id={`drop1${homepage && '-home'}`} className='flex flex-col bg-bg-secondary p-4 rounded-lg my-1 h-[30vh] overflow-y-auto'>
 						{addresses.length > 0 ? addresses.map((address) => {
 							const lowBalance = address.balance && (Number(address.balance) < Number(inputToBn(`${chainProperties[network].decimals}`, network)[0]) || Number(address.balance) === 0);
 							return (
-								<p onClick={signatories.includes(address.address) ? clickDropReturn : clickDrop} title={address.address || ''} id={`${address.key}-${address.address}`} key={`${address.key}-${address.address}`} className='bg-bg-main p-2 m-1 rounded-md text-white flex items-center gap-x-2' draggable onDragStart={dragStart}>
+								<p onClick={signatories.includes(address.address) ? clickDropReturn : clickDrop} title={address.address || ''} id={`${address.key}-${address.address}`} key={`${address.key}-${address.address}`} className='bg-bg-main p-2 m-1 rounded-md text-white flex items-center gap-x-2 cursor-grab' draggable onDragStart={dragStart}>
 									{address.name}
 									{lowBalance && signatories.includes(address.address) &&
 										<Tooltip title={
@@ -193,8 +192,8 @@ const Signatory = ({ filterAddress, setSignatories, signatories, homepage }: ISi
 							// </Tooltip>
 							<>
 								<div className='text-sm text-text_secondary'>Addresses imported directly from your Polkadot.js wallet</div>
-								{[].filter((item: any) => item.address !== address).map((account: any, i: any) => (
-									<p onClick={signatories.includes(account|| account.address) ? clickDropReturn : clickDrop} title={account.address || ''} id={`${i + 1}-${account.address}`} key={`${i + 1}-${account.address}`} className='bg-bg-main p-2 m-1 rounded-md text-white' draggable onDragStart={dragStart}>{account.name}</p>
+								{walletAccounts.filter((item: string) => item !== address).map((account: string, i: number) => (
+									<p onClick={signatories.includes(account) ? clickDropReturn : clickDrop} title={account || ''} id={`${i + 1}-${account}`} key={`${i + 1}-${account}`} className='bg-bg-main p-2 m-1 rounded-md text-white cursor-grab' draggable onDragStart={dragStart}>{shortenAddress(account)}</p>
 								))}
 							</>
 						}
@@ -203,8 +202,8 @@ const Signatory = ({ filterAddress, setSignatories, signatories, homepage }: ISi
 				<SwapOutlined className='text-primary' />
 				<div id='div2' className="flex flex-col my-2 pd-2 w-1/2 ml-2">
 					<h1 className='text-primary mt-3 mb-2'>Selected Signatory</h1>
-					<div id={`drop2${homepage && '-home'}`} className='flex flex-col bg-bg-secondary p-2 rounded-lg my-1 h-[30vh] overflow-auto cursor-grab' onDrop={drop} onDragOver={dragOver}>
-						<p title={address || ''} id={`0-${signatories[0]}`} key={`0-${signatories[0]}`} className='bg-bg-main p-2 m-1 rounded-md text-white cursor-default flex items-center gap-x-2'>{addressBook[0]?.name} <Tooltip title={<span className='text-sm text-text_secondary'>Your Wallet Address</span>}><Badge status='success' /></Tooltip></p>
+					<div id={`drop2${homepage && '-home'}`} className='flex flex-col bg-bg-secondary p-2 rounded-lg my-1 h-[30vh] overflow-auto' onDrop={drop} onDragOver={dragOver}>
+						<p title={address || ''} id={`0-${signatories[0]}`} key={`0-${signatories[0]}`} className='bg-bg-main p-2 m-1 rounded-md text-white cursor-default flex items-center gap-x-2 cursor-grab'>{addressBook[0]?.name} <Tooltip title={<span className='text-sm text-text_secondary'>Your Wallet Address</span>}><Badge status='success' /></Tooltip></p>
 					</div>
 				</div>
 			</div>

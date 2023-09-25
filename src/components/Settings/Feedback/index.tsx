@@ -43,7 +43,7 @@ const Feedback = () => {
 					setLoading(false);
 					return;
 				}
-				const addFeedbackRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/addFeedback`, {
+				const addFeedbackRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/addFeedbackEth`, {
 					body: JSON.stringify({
 						rating,
 						review

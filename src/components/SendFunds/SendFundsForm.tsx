@@ -2,35 +2,38 @@
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
 
-// import { WarningOutlined } from '@ant-design/icons';
-
-import { EthersAdapter } from '@safe-global/protocol-kit';
-import { AutoComplete, Divider, Form, Input, Modal, Spin } from 'antd';
+import { PlusCircleOutlined } from '@ant-design/icons';
+import { AutoComplete, Button, Divider, Dropdown, Form, Input, Modal, Spin } from 'antd';
 import { DefaultOptionType } from 'antd/es/select';
 import classNames from 'classnames';
 import { ethers } from 'ethers';
-import React, { FC, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import LoadingLottie from 'src/assets/lottie-graphics/Loading';
 import CancelBtn from 'src/components/Settings/CancelBtn';
 import ModalBtn from 'src/components/Settings/ModalBtn';
-import { useGlobalWeb3Context } from 'src/context';
+import { useActiveMultisigContext } from 'src/context/ActiveMultisigContext';
 import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
-import { FIREBASE_FUNCTIONS_URL } from 'src/global/firebaseFunctionsUrl';
-import { returnTxUrl } from 'src/global/gnosisService';
-import { GnosisSafeService } from 'src/services';
-import { NotificationStatus } from 'src/types';
+import { EFieldType, NotificationStatus } from 'src/types';
 import AddressComponent from 'src/ui-components/AddressComponent';
 import Balance from 'src/ui-components/Balance';
 import BalanceInput from 'src/ui-components/BalanceInput';
-import { LineIcon, OutlineCloseIcon, SquareDownArrowIcon } from 'src/ui-components/CustomIcons';
+import { CircleArrowDownIcon, DeleteIcon, LineIcon, OutlineCloseIcon, SquareDownArrowIcon } from 'src/ui-components/CustomIcons';
 import queueNotification from 'src/ui-components/QueueNotification';
+import { addNewTransaction } from 'src/utils/addNewTransaction';
 import { addToAddressBook } from 'src/utils/addToAddressBook';
-import getSubstrateAddress from 'src/utils/getSubstrateAddress';
+import getOtherSignatories from 'src/utils/getOtherSignatories';
+import isValidWeb3Address from 'src/utils/isValidWeb3Address';
+import { notify } from 'src/utils/notify';
 import styled from 'styled-components';
 
 import TransactionFailedScreen from './TransactionFailedScreen';
 import TransactionSuccessScreen from './TransactionSuccessScreen';
+
+export interface IRecipientAndAmount{
+	recipient: string;
+	amount: string
+}
 
 interface ISendFundsFormProps {
 	onCancel?: () => void;
@@ -41,22 +44,19 @@ interface ISendFundsFormProps {
 
 const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn }: ISendFundsFormProps) => {
 
-	const { activeMultisig, addressBook, address, fetchMultisigData } = useGlobalUserDetailsContext();
+	const { activeMultisig, addressBook, address, gnosisSafe, multisigAddresses, transactionFields, activeMultisigData } = useGlobalUserDetailsContext();
 	const { network } = useGlobalApiContext();
-	const { web3AuthUser, ethProvider, web3Provider } = useGlobalWeb3Context();
+	const { records } = useActiveMultisigContext();
 
 	const [note, setNote] = useState<string>('');
 	const [loading, setLoading] = useState(false);
 	const [amount, setAmount] = useState('0');
-	const [recipientAddress, setRecipientAddress] = useState(defaultSelectedAddress ? defaultSelectedAddress || '' : address || '');
-	const [autocompleteAddresses, setAutoCompleteAddresses] = useState<DefaultOptionType[]>(
-		addressBook?.map((account: any) => ({
-			label: <AddressComponent address={account.address} />,
-			value: account.address
-		}))
-	);
+	const [recipientAndAmount, setRecipientAndAmount] = useState<IRecipientAndAmount[]>([{ amount: '0', recipient: defaultSelectedAddress ? defaultSelectedAddress || '' : address || '' }]);
+	const [autocompleteAddresses, setAutoCompleteAddresses] = useState<DefaultOptionType[]>([]);
 	const [success, setSuccess] = useState(false);
 	const [failure, setFailure] = useState(false);
+
+	const [validRecipient, setValidRecipient] = useState<boolean[]>([true]);
 
 	const [form] = Form.useForm();
 
@@ -68,61 +68,139 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 
 	const [showAddressModal, setShowAddressModal] = useState<boolean>(false);
 
+	const [category, setCategory] = useState<string>('none');
+
+	const [transactionFieldsObject, setTransactionFieldsObject] = useState<{category: string, subfields: {[subfield: string]: { name: string, value: string }}}>({ category: 'none', subfields: {} });
+
+	const onRecipientChange = (value: string, i: number) => {
+		setRecipientAndAmount((prevState) => {
+			const copyArray = [...prevState];
+			const copyObject = { ...copyArray[i] };
+			copyObject.recipient = value;
+			copyArray[i] = copyObject;
+			return copyArray;
+		});
+	};
+	const onAmountChange = (amount: string, i: number) => {
+		setRecipientAndAmount((prevState) => {
+			const copyArray = [...prevState];
+			const copyObject = { ...copyArray[i] };
+			copyObject.amount = amount;
+			copyArray[i] = copyObject;
+			return copyArray;
+		});
+	};
+
+	const onAddRecipient = () => {
+		setRecipientAndAmount((prevState) => {
+			const copyOptionsArray = [...prevState];
+			copyOptionsArray.push({ amount: '0', recipient: '' });
+			return copyOptionsArray;
+		});
+	};
+
+	const onRemoveRecipient = (i: number) => {
+		const copyOptionsArray = [...recipientAndAmount];
+		copyOptionsArray.splice(i, 1);
+		setRecipientAndAmount(copyOptionsArray);
+	};
+
+	// Set address options for recipient
+	useEffect(() => {
+		const allAddresses: string[] = [];
+		if(records){
+			Object.keys(records).forEach((address) => {
+				allAddresses.push(address);
+			});
+		}
+		addressBook.forEach(item => {
+			if(!allAddresses.includes(item.address)){
+				allAddresses.push(item.address);
+			}
+		});
+		setAutoCompleteAddresses(allAddresses.map(address => ({
+			label: <AddressComponent withBadge={false} address={address} />,
+			value: address
+		})));
+
+	}, [address, addressBook, network, records]);
+
+	useEffect(() => {
+		setTransactionFieldsObject({ category, subfields: {} });
+	}, [category]);
+
+	useEffect(() => {
+		const total = recipientAndAmount.reduce((sum,item) => sum + Number(item.amount), 0);
+		setAmount(total.toString());
+	}, [activeMultisigData, recipientAndAmount]);
+
+	useEffect(() => {
+		if(!recipientAndAmount) return;
+
+		recipientAndAmount.forEach((item, i) => {
+			if(item.recipient && (!isValidWeb3Address(item.recipient) || recipientAndAmount.indexOf(recipientAndAmount.find(a => (item.recipient) === (a.recipient)) as IRecipientAndAmount) !== i)){
+				setValidRecipient(prev => {
+					const copyArray = [...prev];
+					copyArray[i] = false;
+					return copyArray;
+				});
+			}
+			else {
+				setValidRecipient(prev => {
+					const copyArray = [...prev];
+					copyArray[i] = true;
+					return copyArray;
+				});
+			}
+		});
+	}, [recipientAndAmount]);
+
 	const handleSubmit = async () => {
 		setLoading(true);
 		try {
-			const signer = ethProvider.getSigner();
-			const web3Adapter = new EthersAdapter({
-				ethers: web3Provider as any,
-				signerOrProvider: signer
-			});
-			const txUrl = returnTxUrl(network);
-			const gnosisService = new GnosisSafeService(web3Adapter, signer, txUrl);
-
-			const safeTxHash = await gnosisService.createSafeTx(activeMultisig, web3AuthUser!.accounts[0], ethers.utils.parseUnits(amount, 'ether').toString(), web3AuthUser!.accounts[0]);
+			const recipients = recipientAndAmount.map(r => r.recipient);
+			const amounts = recipientAndAmount.map(a => ethers.utils.parseUnits(a.amount, 'ether').toString());
+			const safeTxHash = await gnosisSafe.createSafeTx(activeMultisig, recipients, amounts, address, note);
 
 			if (safeTxHash) {
-				const txBody = {
-					amount_token: ethers.utils.parseUnits(amount, 'ether').toString(),
-					data: '0x00',
+				addNewTransaction({
+					amount: ethers.utils.parseUnits(amount, 'ether').toString(),
+					callData: safeTxHash,
+					callHash: safeTxHash,
+					executed: false,
+					network,
 					note,
 					safeAddress: activeMultisig,
-					to: web3AuthUser?.accounts[0],
-					txHash: safeTxHash,
+					to: recipients,
+					transactionFields: transactionFieldsObject,
 					type: 'sent'
-				};
-				const { error: multisigError } = await fetch(`${FIREBASE_FUNCTIONS_URL}/addTransactionEth`, {
-					body: JSON.stringify(txBody),
-					headers: {
-						'Accept': 'application/json',
-						'Acess-Control-Allow-Origin': '*',
-						'Content-Type': 'application/json',
-						'x-address': web3AuthUser!.accounts[0],
-						'x-api-key': '47c058d8-2ddc-421e-aeb5-e2aa99001949',
-						'x-network': network,
-						'x-signature': localStorage.getItem('signature')!,
-						'x-source': 'polkasafe'
-					},
-					method: 'POST'
-				}).then(res => res.json()).finally(() => {
-					onCancel?.();
-					setLoading(false);
 				});
-				if (multisigError) {
-					queueNotification({
-						header: 'Error.',
-						message: 'Please try again.',
-						status: NotificationStatus.ERROR
-					});
-				}
 				queueNotification({
 					header: 'Success',
 					message: 'New Transaction Created.',
 					status: NotificationStatus.SUCCESS
 				});
 				setSuccess(true);
-				await fetchMultisigData();
-
+				notify({
+					args: {
+						address: address,
+						addresses: getOtherSignatories(address, activeMultisig, multisigAddresses),
+						callHash: safeTxHash,
+						multisigAddress: activeMultisig,
+						network
+					},
+					network,
+					triggerName: 'initMultisigTransfer'
+				});
+			}
+			else {
+				queueNotification({
+					header: 'Error.',
+					message: 'Please try again.',
+					status: NotificationStatus.ERROR
+				});
+				setFailure(true);
+				setLoading(false);
 			}
 		} catch (err) {
 			console.log(err);
@@ -138,20 +216,20 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 		}
 	};
 
-	const AddAddressModal: FC = () => {
+	const AddAddressModal = ({ defaultAddress }: { defaultAddress: string }) => {
 		const [addAddressName, setAddAddressName] = useState('');
 		const [addAddressLoading, setAddAddressLoading] = useState(false);
 
 		const handleAddAddress = async () => {
 			setAddAddressLoading(true);
 			const newAddresses = await addToAddressBook({
-				address: recipientAddress,
+				address: defaultAddress,
 				addressBook,
 				name: addAddressName,
 				network
 			});
 			setAddAddressLoading(false);
-			if (newAddresses) {
+			if(newAddresses){
 				setAutoCompleteAddresses(newAddresses.map((item) => ({
 					label: <AddressComponent name={item.name} address={item.address} />,
 					value: item.address
@@ -165,74 +243,76 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 			});
 		};
 		return (
-			<Modal
-				centered
-				title={<h3 className='text-white mb-8 text-lg font-semibold'>Add Address</h3>}
-				closeIcon={<button
-					className='outline-none border-none bg-highlight w-6 h-6 rounded-full flex items-center justify-center'
-					onClick={() => setShowAddressModal(false)}
+			<>
+				<Modal
+					centered
+					title={<h3 className='text-white mb-8 text-lg font-semibold'>Add Address</h3>}
+					closeIcon={<button
+						className='outline-none border-none bg-highlight w-6 h-6 rounded-full flex items-center justify-center'
+						onClick={() => setShowAddressModal(false)}
+					>
+						<OutlineCloseIcon className='text-primary w-2 h-2' />
+					</button>}
+					footer={null}
+					open={showAddressModal}
+					className='w-auto min-w-[500px] scale-90 origin-center'
 				>
-					<OutlineCloseIcon className='text-primary w-2 h-2' />
-				</button>}
-				footer={null}
-				open={showAddressModal}
-				className='w-auto min-w-[500px] scale-90 origin-center'
-			>
-				<Form
-					className='my-0 w-[560px]'
-				>
-					<div className="flex flex-col gap-y-3">
-						<label
-							className="text-primary text-xs leading-[13px] font-normal"
-							htmlFor="name"
-						>
+					<Form
+						className='my-0 w-[560px]'
+					>
+						<div className="flex flex-col gap-y-3">
+							<label
+								className="text-primary text-xs leading-[13px] font-normal"
+								htmlFor="name"
+							>
 							Name
-						</label>
-						<Form.Item
-							name="name"
-							rules={[
-								{
-									message: 'Required',
-									required: true
-								}
-							]}
-							className='border-0 outline-0 my-0 p-0'
-						>
-							<Input
-								placeholder="Give the address a name"
-								className="text-sm font-normal m-0 leading-[15px] border-0 outline-0 p-3 placeholder:text-[#505050] bg-bg-secondary rounded-lg text-white"
-								id="name"
-								onChange={(e) => setAddAddressName(e.target.value)}
-								value={addAddressName}
-							/>
-						</Form.Item>
-					</div>
-					<div className="flex flex-col gap-y-3 mt-5">
-						<label
-							className="text-primary text-xs leading-[13px] font-normal"
-							htmlFor="address"
-						>
+							</label>
+							<Form.Item
+								name="name"
+								rules={[
+									{
+										message: 'Required',
+										required: true
+									}
+								]}
+								className='border-0 outline-0 my-0 p-0'
+							>
+								<Input
+									placeholder="Give the address a name"
+									className="text-sm font-normal m-0 leading-[15px] border-0 outline-0 p-3 placeholder:text-[#505050] bg-bg-secondary rounded-lg text-white"
+									id="name"
+									onChange={(e) => setAddAddressName(e.target.value)}
+									value={addAddressName}
+								/>
+							</Form.Item>
+						</div>
+						<div className="flex flex-col gap-y-3 mt-5">
+							<label
+								className="text-primary text-xs leading-[13px] font-normal"
+								htmlFor="address"
+							>
 							Address
-						</label>
-						<Form.Item
-							name="address"
-							rules={[]}
-							className='border-0 outline-0 my-0 p-0'
-						>
-							<Input
-								className="text-sm font-normal leading-[15px] outline-0 p-2.5 placeholder:text-[#505050] border-2 border-dashed border-[#505050] rounded-lg text-white pr-24"
-								id="address"
-								defaultValue={recipientAddress}
-								disabled={true}
-							/>
-						</Form.Item>
-					</div>
-					<div className='flex items-center justify-between gap-x-5 mt-[30px]'>
-						<CancelBtn onClick={() => setShowAddressModal(false)} />
-						<ModalBtn loading={addAddressLoading} disabled={!addAddressName || !recipientAddress} title='Add' onClick={handleAddAddress} />
-					</div>
-				</Form>
-			</Modal>
+							</label>
+							<Form.Item
+								name="address"
+								rules={[]}
+								className='border-0 outline-0 my-0 p-0'
+							>
+								<Input
+									className="text-sm font-normal leading-[15px] outline-0 p-2.5 placeholder:text-[#505050] border-2 border-dashed border-[#505050] rounded-lg text-white pr-24"
+									id="address"
+									defaultValue={defaultAddress}
+									disabled={true}
+								/>
+							</Form.Item>
+						</div>
+						<div className='flex items-center justify-between gap-x-5 mt-[30px]'>
+							<CancelBtn onClick={() => setShowAddressModal(false)}/>
+							<ModalBtn loading={addAddressLoading} disabled={!addAddressName || !defaultAddress} title='Add' onClick={handleAddAddress} />
+						</div>
+					</Form>
+				</Modal>
+			</>
 		);
 	};
 
@@ -246,7 +326,7 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 					txnHash={transactionData?.callHash}
 					created_at={transactionData?.created_at || new Date()}
 					sender={address}
-					recipient={recipientAddress}
+					recipients={recipientAndAmount.map((item) => item.recipient)}
 					onDone={() => {
 						setNewTxn?.(prev => !prev);
 						onCancel?.();
@@ -265,13 +345,6 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 						created_at={new Date()}
 					/> :
 					<Spin wrapperClassName={className} spinning={loading} indicator={<LoadingLottie message={loadingMessages} />}>
-						{/* {initiatorBalance.lte(totalDeposit.add(totalGas)) && !fetchBalancesLoading ? <section className='mb-4 text-[13px] w-full text-waiting bg-waiting bg-opacity-10 p-2.5 rounded-lg font-normal flex items-center gap-x-2'>
-							<WarningCircleIcon />
-							<p>The balance in your logged in account {addressBook.find((item: any) => item.address === address)?.name} is less than the Minimum Deposit({formatBnBalance(totalDeposit.add(totalGas), { numberAfterComma: 3, withUnit: true }, network)}) required to create a Transaction.</p>
-						</section>
-							:
-							<Skeleton className={`${!fetchBalancesLoading && 'opacity-0'}`} active paragraph={{ rows: 0 }} />
-						} */}
 						<Form
 							className={classNames('max-h-[68vh] overflow-y-auto px-2')}
 							form={form}
@@ -279,7 +352,6 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 								{ required: "Please add the '${name}'" }
 							}
 						>
-							<AddAddressModal />
 							<section>
 								<p className='text-primary font-normal text-xs leading-[13px]'>Sending from</p>
 								<div className='flex items-center gap-x-[10px] mt-[14px]'>
@@ -302,69 +374,191 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 							</section>
 
 							<section className=''>
-								<label className='text-primary font-normal text-xs leading-[13px] block mb-[5px]'>Recipient</label>
 								<div className='flex items-start gap-x-[10px]'>
-									<article className='w-[500px]'>
-										<Form.Item
-											name="recipient"
-											rules={[{ required: true }]}
-											className='border-0 outline-0 my-0 p-0'
-										>
-											<div>
-												{recipientAddress && autocompleteAddresses.some((item) => getSubstrateAddress(String(item.value)) === getSubstrateAddress(recipientAddress)) ?
-													<div className='border border-solid border-primary rounded-lg p-2 flex justify-between items-center'>
-														{autocompleteAddresses.find((item) => getSubstrateAddress(String(item.value)) === getSubstrateAddress(recipientAddress))?.label}
-														<button
-															className='outline-none border-none bg-highlight w-6 h-6 rounded-full flex items-center justify-center z-100'
-															onClick={() => {
-																setRecipientAddress('');
-															}}
+									<div>
+										<div className='flex flex-col gap-y-3 mb-2'>
+											{recipientAndAmount.map(({ recipient }, i) => (
+												<article key={recipient} className='w-[500px] flex items-start gap-x-2'>
+													<AddAddressModal defaultAddress={recipient} />
+													<div className='w-[55%]'>
+														<label className='text-primary font-normal text-xs leading-[13px] block mb-[5px]'>Recipient*</label>
+														<Form.Item
+															name="recipient"
+															rules={[{ required: true }]}
+															help={(!recipient && 'Recipient Address is Required') || (!validRecipient[i] && 'Please add a valid Address')}
+															className='border-0 outline-0 my-0 p-0'
+															validateStatus={recipient && validRecipient[i] ? 'success' : 'error'}
 														>
-															<OutlineCloseIcon className='text-primary w-2 h-2' />
-														</button>
+															<div className='h-[50px]'>
+																{recipient && autocompleteAddresses.some((item) => item.value && (String(item.value)) === (recipient)) ?
+																	<div className='border border-solid border-primary rounded-lg px-2 h-full flex justify-between items-center'>
+																		{autocompleteAddresses.find((item) => item.value && (String(item.value)) === (recipient))?.label}
+																		<button
+																			className='outline-none border-none bg-highlight w-6 h-6 rounded-full flex items-center justify-center z-100'
+																			onClick={() => {
+																				onRecipientChange('', i);
+																			}}
+																		>
+																			<OutlineCloseIcon className='text-primary w-2 h-2' />
+																		</button>
+																	</div>
+																	:
+																	<AutoComplete
+																		autoFocus
+																		defaultOpen
+																		filterOption={(inputValue, options) => {
+																			return inputValue && options?.value ? String(options?.value) === inputValue : true;
+																		}}
+																		notFoundContent={validRecipient[i] && <Button icon={<PlusCircleOutlined className='text-primary' />} className='bg-transparent border-none outline-none text-primary text-sm flex items-center' onClick={() => setShowAddressModal(true)} >Add Address to Address Book</Button>}
+																		options={autocompleteAddresses.filter((item) => !recipientAndAmount.some((r) => r.recipient && item.value && (r.recipient) === (String(item.value) || '')))}
+																		id='recipient'
+																		placeholder="Send to Address.."
+																		onChange={(value) => onRecipientChange(value, i)}
+																		value={recipientAndAmount[i].recipient}
+																		defaultValue={defaultSelectedAddress || ''}
+																	/>
+																}
+															</div>
+														</Form.Item>
 													</div>
-													:
-													<AutoComplete
-														autoFocus
-														defaultOpen
-														filterOption={(inputValue, options) => {
-															return inputValue ? getSubstrateAddress(String(options?.value) || '') === getSubstrateAddress(inputValue) : true;
-														}}
-														options={autocompleteAddresses}
-														id='recipient'
-														placeholder="Send to Address.."
-														onChange={(value) => setRecipientAddress(value)}
-														defaultValue={defaultSelectedAddress || ''}
-													/>
-												}
-											</div>
-										</Form.Item>
-									</article>
-									<article className='w-[412px] flex items-center'>
-										<span className='-mr-1.5 z-0'>
-											<LineIcon className='text-5xl' />
-										</span>
-										<p className='p-3 bg-bg-secondary rounded-xl font-normal text-sm text-text_secondary leading-[15.23px]'>The beneficiary will have access to the transferred fees when the transaction is included in a block.</p>
-									</article>
+													<div className='flex items-center gap-x-2 w-[45%]'>
+														<BalanceInput label='Amount*' fromBalance={multisigBalance} onChange={(balance) => onAmountChange(balance, i)} />
+														{i !== 0 && <Button
+															onClick={() => onRemoveRecipient(i)}
+															className='text-failure border-none outline-none bg-failure bg-opacity-10 flex items-center justify-center p-1 sm:p-2 rounded-md sm:rounded-lg text-xs sm:text-sm w-6 h-6 sm:w-8 sm:h-8'>
+															<DeleteIcon />
+														</Button>}
+													</div>
+												</article>
+											))}
+										</div>
+										<Button icon={<PlusCircleOutlined className='text-primary' />} className='bg-transparent p-0 border-none outline-none text-primary text-sm flex items-center' onClick={onAddRecipient} >Add Another Recipient</Button>
+									</div>
+									<div className='flex flex-col gap-y-4'>
+										<article className='w-[412px] flex items-center'>
+											<span className='-mr-1.5 z-0'>
+												<LineIcon className='text-5xl' />
+											</span>
+											<p className='p-3 bg-bg-secondary rounded-xl font-normal text-sm text-text_secondary leading-[15.23px]'>The beneficiary will have access to the transferred fees when the transaction is included in a block.</p>
+										</article>
+										<article className='w-[412px] flex items-center'>
+											<span className='-mr-1.5 z-0'>
+												<LineIcon className='text-5xl' />
+											</span>
+											<p className='p-3 bg-bg-secondary rounded-xl font-normal text-sm text-text_secondary leading-[15.23px] -mb-5'>
+									If the recipient account is new, the balance needs to be more than the existential deposit. Likewise if the sending account balance drops below the same value, the account will be removed from the state.
+											</p>
+										</article>
+									</div>
 								</div>
 							</section>
 
-							<section className='mt-[15px]'>
-								<label className='text-primary font-normal text-xs leading-[13px] block mb-[5px]'>Amount</label>
-								<div className='flex items-start gap-x-[10px]'>
-									<article className='w-[500px]'>
-										<BalanceInput fromBalance={multisigBalance} onChange={(balance) => setAmount(balance)} />
-									</article>
-									<article className='w-[412px] flex items-center'>
-										<span className='-mr-1.5 z-0'>
-											<LineIcon className='text-5xl' />
-										</span>
-										<p className='p-3 bg-bg-secondary rounded-xl font-normal text-sm text-text_secondary leading-[15.23px] -mb-5'>
-											If the recipient account is new, the balance needs to be more than the existential deposit. Likewise if the sending account balance drops below the same value, the account will be removed from the state.
-										</p>
-									</article>
-								</div>
+							<section className='mt-[15px] w-[500px]'>
+								<label className='text-primary font-normal text-xs block mb-[5px]'>Category*</label>
+								<Form.Item
+									name='category'
+									rules={[{ message: 'Required', required: true }]}
+									className='border-0 outline-0 my-0 p-0'
+								>
+									<Dropdown
+										trigger={['click']}
+										className={'border border-primary rounded-lg p-2 bg-bg-secondary cursor-pointer'}
+										menu={{
+											items: [
+												...Object.keys(transactionFields).filter(c => c !== 'none').map((c) => ({
+													key: c,
+													label: <span className='text-white'>{transactionFields[c]?.fieldName}</span>
+												})),
+												{
+													key: 'none',
+													label: <span className='text-white'>Other</span>
+												}
+											],
+											onClick: (e) => setCategory(e.key)
+										}}
+									>
+										<div className="flex justify-between items-center text-white">
+											{transactionFields[category]?.fieldName}
+											<CircleArrowDownIcon className='text-primary' />
+										</div>
+									</Dropdown>
+								</Form.Item>
 							</section>
+
+							{transactionFields[category] && transactionFields[category].subfields && Object.keys(transactionFields[category].subfields).map((subfield) => {
+								const subfieldObject = transactionFields[category].subfields[subfield];
+								return (
+									<section key={subfield} className='mt-[15px]'>
+										<label className='text-primary font-normal text-xs block mb-[5px]'>{subfieldObject.subfieldName}{subfieldObject.required && '*'}</label>
+										<div className=''>
+											<article className='w-[500px]'>
+												{subfieldObject.subfieldType === EFieldType.SINGLE_SELECT && subfieldObject.dropdownOptions ?
+													<Form.Item
+														name={`${subfieldObject.subfieldName}`}
+														rules={[{ message: 'Required', required: subfieldObject.required }]}
+														className='border-0 outline-0 my-0 p-0'
+														// help={(!transactionFieldsObject.subfields[subfield]?.value) && subfieldObject.required && `${subfieldObject.subfieldName} is Required.`}
+														// validateStatus={(!transactionFieldsObject.subfields[subfield]?.value) && subfieldObject.required ? 'error' : 'success'}
+													>
+														<Dropdown
+															trigger={['click']}
+															className={'border border-primary rounded-lg p-2 bg-bg-secondary cursor-pointer'}
+															menu={{
+																items: subfieldObject.dropdownOptions?.filter((item) => !item.archieved).map((item) => ({
+																	key: item.optionName,
+																	label: <span className='text-white'>{item.optionName}</span>
+																})),
+																onClick: (e) => {
+																	setTransactionFieldsObject(prev => ({
+																		category: transactionFields[category].fieldName,
+																		subfields: {
+																			...prev.subfields,
+																			[subfield]: {
+																				name: subfieldObject.subfieldName,
+																				value: e.key
+																			}
+																		}
+																	}));
+																}
+															}}
+														>
+															<div className="flex justify-between items-center text-white">
+																{transactionFieldsObject.subfields[subfield]?.value ? transactionFieldsObject.subfields[subfield]?.value : <span className='text-text_secondary'>Select {subfieldObject.subfieldName}</span>}
+																<CircleArrowDownIcon className='text-primary' />
+															</div>
+														</Dropdown>
+													</Form.Item>
+													:
+													<Form.Item
+														name={subfield}
+														rules={[{ message: 'Required', required: subfieldObject.required }]}
+														className='border-0 outline-0 my-0 p-0'
+													>
+														<div className='flex items-center h-[40px]'>
+															<Input
+																placeholder={`${subfieldObject.subfieldName}`}
+																className="w-full text-sm font-normal leading-[15px] border-0 outline-0 p-3 placeholder:text-[#505050] bg-bg-secondary rounded-lg text-white pr-24 resize-none"
+																id={subfield}
+																value={transactionFieldsObject.subfields[subfield]?.value}
+																onChange={(e) => setTransactionFieldsObject(prev => ({
+																	category: transactionFields[category].fieldName,
+																	subfields: {
+																		...prev.subfields,
+																		[subfield]: {
+																			name: subfieldObject.subfieldName,
+																			value: e.target.value
+																		}
+																	}
+																}))}
+															/>
+														</div>
+													</Form.Item>}
+											</article>
+										</div>
+									</section>
+								);
+							})}
+
 							<section className='mt-[15px]'>
 								<label className='text-primary font-normal text-xs block mb-7'>Note</label>
 								<div className=''>
@@ -389,39 +583,15 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 								</div>
 							</section>
 
-							{/* <section className='mt-[15px]'>
-								<div className='flex items-center gap-x-[10px]'>
-									<article className='w-[500px] flex items-center gap-x-3'>
-										<p className='text-white text-sm font-normal leading-[15px]'>
-											Transfer with account keep-alive checks
-										</p>
-										<Switch disabled size='small' className='text-primary' defaultChecked />
-									</article>
-									<article className='w-[412px] flex items-center'>
-										<span className='-mr-1.5 z-0'>
-											<LineIcon className='text-5xl' />
-										</span>
-										<p className='p-3 bg-bg-secondary rounded-xl font-normal text-sm text-text_secondary leading-[15.23px]'>With the keep-alive option set, the account is protected against removal due to low balances.
-										</p>
-									</article>
-								</div>
-							</section> */}
-
-							{/* <section className='mt-4 max-w-[500px] text-waiting bg-waiting bg-opacity-10 p-3 rounded-lg font-normal text-xs leading-[13px] flex items-center gap-x-[11px]'>
-						<span>
-							<WarningCircleIcon className='text-base' />
-						</span>
-						<p className=''>
-							The transaction, after application of the transfer fees, will drop the available balance below the existential deposit. As such the transfer will fail. The account needs more free funds to cover the transaction fees.
-						</p>
-					</section> */}
-
 						</Form>
 						<section className='flex items-center gap-x-5 justify-center mt-10'>
 							<CancelBtn className='w-[250px]' onClick={onCancel} />
-							<ModalBtn disabled={amount === '0' || !recipientAddress}
-								// !recipientAddress || !validRecipient || amount.isZero() || amount.gte(new BN(multisigBalance)) || initiatorBalance.lt(totalDeposit.add(totalGas))
-								loading={loading} onClick={handleSubmit} className='w-[250px]' title='Make Transaction' />
+							<ModalBtn disabled={
+								recipientAndAmount.some((item) => item.recipient === '' || item.amount === '0' || !item.amount)
+								|| Number(amount) > Number(ethers.utils.formatEther(activeMultisigData?.safeBalance?.toString()))
+								|| Object.keys(transactionFields[category].subfields).some((key) =>  (!transactionFieldsObject.subfields[key]?.value && transactionFields[category].subfields[key].required))
+							}
+							loading={loading} onClick={handleSubmit} className='w-[250px]' title='Make Transaction' />
 						</section>
 					</Spin>
 			}
@@ -430,39 +600,44 @@ const SendFundsForm = ({ className, onCancel, defaultSelectedAddress, setNewTxn 
 };
 
 export default styled(SendFundsForm)`
-	.ant-select input {
-		font-size: 14px !important;
-		font-style: normal !important;
-		line-height: 15px !important;
-		border: 0 !important;
-		outline: 0 !important;
-		background-color: #24272E !important;
-		border-radius: 8px !important;
-		color: white !important;
-		padding: 12px !important;
-		display: block !important;
-		height: auto !important;
-	}
-	.ant-select-selector {
-		border: none !important;
-		height: 40px !important; 
-		box-shadow: none !important;
-	}
+.ant-select input {
+	font-size: 14px !important;
+	font-style: normal !important;
+	line-height: 15px !important;
+	border: 0 !important;
+	outline: 0 !important;
+	background-color: #24272E !important;
+	border-radius: 8px !important;
+	color: white !important;
+	padding: 12px !important;
+	display: block !important;
+	height: 100% !important;
+}
+.ant-select-selector {
+	border: none !important;
+	height: 50px !important; 
+	box-shadow: none !important;
+}
 
-	.ant-select {
-		height: 40px !important;
-	}
-	.ant-select-selection-search {
-		inset: 0 !important;
-	}
-	.ant-select-selection-placeholder{
-		color: #505050 !important;
-		z-index: 100;
-		display: flex !important;
-		align-items: center !important;
-	}
+.ant-select {
+	height: 50px !important;
+}
+.ant-select-selection-search {
+	inset: 0 !important;
+}
+.ant-select-selection-placeholder{
+	color: #505050 !important;
+	z-index: 100;
+	display: flex !important;
+	align-items: center !important;
+}
 
-	.ant-skeleton .ant-skeleton-content .ant-skeleton-title +.ant-skeleton-paragraph{
-		margin-block-start: 8px !important;
-	}
+.ant-skeleton .ant-skeleton-content .ant-skeleton-title +.ant-skeleton-paragraph{
+	margin-block-start: 8px !important;
+}
+
+.ant-dropdown {
+	transform: scale(0.9) !important;
+	transform-origin: center !important;
+}
 `;
