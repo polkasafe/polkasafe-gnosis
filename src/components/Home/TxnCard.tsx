@@ -27,7 +27,7 @@ import TopRightArrow from '../../assets/icons/top-right-arrow.svg';
 const DEFAULT_TXN_CARD_LIMIT = 8;
 
 const TxnCard = () => {
-	const { activeMultisig, address, gnosisSafe } = useGlobalUserDetailsContext();
+	const { activeMultisig, address, gnosisSafe, addressBook } = useGlobalUserDetailsContext();
 	const [queuedTransactions, setQueuedTransactions] = useState<any>([]);
 	const [completedTransactions, setCompletedTransactions] = useState<IHistoryTransactions[]>([]);
 	const { network } = useGlobalApiContext();
@@ -51,6 +51,13 @@ const TxnCard = () => {
 			const convertedData = safeData.results.map((safe: any) =>
 				convertSafePendingData({ ...safe, network })
 			);
+			for(const txn of convertedCompletedData) {
+				const decoded = txn.data && await gnosisSafe.safeService.decodeData(txn.data);
+				if(!txn?.decodedData && decoded) {
+					txn.decodedData = decoded;
+					txn.type = decoded.method;
+				}
+			}
 			setQueuedTransactions(convertedData);
 			setCompletedTransactions(convertedCompletedData);
 			setLoading(false);
@@ -190,8 +197,23 @@ const TxnCard = () => {
 									.filter((_: any, i: number) => i < 10)
 									.map((transaction, i) => {
 										// const from = transaction?.receipt?.options?.from;
-										const sent = transaction.type === 'sent' || transaction.type === 'MULTISIG_TRANSACTION' || transaction.type === 'removeOwner';
+										const sent = transaction.type === 'sent' || transaction.type === 'MULTISIG_TRANSACTION' || transaction.type === 'removeOwner' || transaction.type === 'multiSend';
 
+										let toText = '';
+										if(transaction.to) {
+											toText = addressBook.find((a) => a.address === transaction.to)?.name || shortenAddress(transaction.to || '');
+										}
+										let batchCallRecipients: string[] = [];
+										let totalAmount: string = '';
+										if(transaction.type === 'multiSend') {
+											batchCallRecipients = transaction?.decodedData?.parameters?.[0]?.valueDecoded?.map((item: any) => {
+												const dest = item.to;
+												return addressBook.find((a) => a.address === dest)?.name || shortenAddress(dest || '');
+											});
+											totalAmount = transaction?.decodedData?.parameters?.[0]?.valueDecoded?.reduce((total: string, item: any) => {
+												return Number(total) + Number(item.value);
+											}, '');
+										}
 										return (
 											<Link
 												to={`/transactions?tab=History#${transaction?.txHash || ''}`}
@@ -211,7 +233,7 @@ const TxnCard = () => {
 													</div>
 													<div>
 														<h1 className='text-md text-white'>
-															<span>{transaction.type === 'addOwnerWithThreshold' ? 'Added Owner' : transaction.type === 'removeOwner' ? 'Removed Owner' : `Txn: ${shortenAddress(transaction?.txHash)}`}</span>
+															<span>{transaction.type === 'addOwnerWithThreshold' ? 'Added Owner' : transaction.type === 'removeOwner' ? 'Removed Owner' : transaction.type === 'multiSend' ? <>To: {batchCallRecipients.map((a, i) => `${a}${i !== batchCallRecipients?.length - 1 ? ', ' : ''}`)}</> : transaction.to ? <>To: {toText}</> : `Txn: ${shortenAddress(transaction?.txHash)}`}</span>
 														</h1>
 
 														{/* <p className='text-text_secondary text-xs'>{dayjs(transaction.created_at).format('D-MM-YY [at] HH:mm')}</p> */}
@@ -221,7 +243,7 @@ const TxnCard = () => {
 													{transaction.type === 'addOwnerWithThreshold' || transaction.type === 'removeOwner' ? <span className='text-md text-white' >-?</span> : sent ? (
 														<h1 className='text-md text-failure'>
 															-
-															{ethers?.utils?.formatEther(transaction.amount_token?.toString())?.toString()}
+															{ethers?.utils?.formatEther(totalAmount.toString() || transaction.amount_token?.toString())?.toString()}
 														</h1>
 													) : (
 														<h1 className='text-md text-success'>

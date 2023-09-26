@@ -24,7 +24,7 @@ export const convertSafeHistoryData = (data:any) => {
 		approvals: data?.confirmations?.map((user:any) => user?.owner || '') || [],
 		created_at: data?.executionDate || new Date(),
 		data: data.data,
-		decodedData: data?.dataDecoded || {},
+		decodedData: data?.dataDecoded,
 		executed: data.isExecuted,
 		executor: data?.executor || data?.from,
 		from: data?.from || '',
