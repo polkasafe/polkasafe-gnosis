@@ -11,7 +11,10 @@ import { NETWORK } from 'src/global/networkConstants';
 
 export default function getNetwork(): NETWORK {
 	const defaultNetwork = NETWORK.ASTAR;
-	let network = localStorage.getItem('network') as NETWORK || defaultNetwork;
+
+	const url = global.window.location.href;
+
+	let network = url.split('//')[1].split('.')[0] as NETWORK || defaultNetwork;
 
 	const possibleNetworks = Object.values(network);
 

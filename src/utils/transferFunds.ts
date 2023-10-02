@@ -23,7 +23,7 @@ export async function transferFunds({ api, setTxnHash, network, recepientAddress
 
 	formatBalance.setDefaults({
 		decimals: 18,
-		unit: chainProperties[network].ticker
+		unit: chainProperties[network].tokenSymbol
 	});
 
 	const AMOUNT_TO_SEND = amount;

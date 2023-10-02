@@ -37,7 +37,7 @@ export async function approveProxy({ api, navigate, approvingAddress, callDataHe
 	// 1. Use formatBalance to display amounts
 	formatBalance.setDefaults({
 		decimals: chainProperties[network].decimals,
-		unit: chainProperties[network].ticker
+		unit: chainProperties[network].tokenSymbol
 	});
 
 	// 2. Set relevant vars

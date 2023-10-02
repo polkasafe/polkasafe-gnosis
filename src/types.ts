@@ -140,9 +140,9 @@ export type ChainPropType = {
 		chainNamespace: ChainNamespaceType;
 		decimals: number;
 		displayName: string;
-		rpcTarget: string;
-		ticker: string;
-		tickerName: string;
+		rpcEndpoint: string;
+		tokenSymbol: string;
+		tokenName: string;
 		logo: string
 	};
 };

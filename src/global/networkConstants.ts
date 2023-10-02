@@ -4,6 +4,7 @@
 
 import { CHAIN_NAMESPACES } from '@web3auth/base';
 import astarLogo from 'src/assets/astar-logo.png';
+import moonbeamLogo from 'src/assets/parachains-logos/moonbeam-logo.png';
 // import ethereumLogo from 'src/assets/eth.png';
 // import polygonLogo from 'src/assets/polygon.png';
 import { ChainPropType } from 'src/types';
@@ -11,12 +12,14 @@ import { ChainPropType } from 'src/types';
 export enum NETWORK {
 	GOERLI = 'goerli',
 	POLYGON = 'polygon',
-	ASTAR = 'astar'
+	ASTAR = 'astar',
+	MOONBEAM = 'moonbeam'
 }
 export const tokenSymbol = {
-	ASTAR: 'ASTR',
-	GOERLI: 'GOER',
-	POLYGON: 'MATIC'
+	ASTR: 'ASTR',
+	GLMR: 'GLMR',
+	GOER: 'GOER',
+	MATIC: 'MATIC'
 };
 
 export const chainProperties: ChainPropType = {
@@ -49,8 +52,19 @@ export const chainProperties: ChainPropType = {
 		decimals: 18,
 		displayName: 'Astar',
 		logo: astarLogo,
-		rpcTarget: 'https://evm.astar.network/',
-		ticker: 'ASTR',
-		tickerName: 'Astar'
+		rpcEndpoint: 'https://evm.astar.network/',
+		tokenName: 'Astar',
+		tokenSymbol: 'ASTR'
+	},
+	[NETWORK.MOONBEAM]: {
+		blockExplorer: 'https://moonbeam-explorer.netlify.app/?network=Moonbeam',
+		chainId: '0x504',
+		chainNamespace: CHAIN_NAMESPACES.OTHER,
+		decimals: 18,
+		displayName: 'Moonbeam',
+		logo: moonbeamLogo,
+		rpcEndpoint: 'wss://wss.api.moonbeam.network',
+		tokenName: 'Moonbeam',
+		tokenSymbol: tokenSymbol.GLMR
 	}
 };

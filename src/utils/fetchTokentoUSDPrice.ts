@@ -12,7 +12,7 @@ export default async function fetchTokenToUSDPrice(token: number, network: strin
 		`https://${network}.api.subscan.io/api/open/price_converter`,
 		{
 			body: JSON.stringify({
-				from: chainProperties[network]?.ticker,
+				from: chainProperties[network]?.tokenSymbol,
 				quote: 'USD',
 				value: token
 			}),
