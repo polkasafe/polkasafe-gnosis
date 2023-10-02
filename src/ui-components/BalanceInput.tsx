@@ -33,13 +33,13 @@ const BalanceInput = ({ className, label = '', onChange, placeholder = '', defau
 						<Input
 							id="balance"
 							onChange={(e) => onChange(e.target.value)}
-							placeholder={`${placeholder} ${chainProperties[network]?.ticker}`}
+							placeholder={`${placeholder} ${chainProperties[network]?.tokenSymbol}`}
 							defaultValue={defaultValue}
 							className="w-full h-full text-sm font-normal leading-[15px] border-0 outline-0 p-3 placeholder:text-[#505050] bg-bg-secondary rounded-lg text-white pr-24"
 						/>
 						<div className='absolute right-0 text-white px-3 flex items-center justify-center'>
 							<ParachainIcon src={chainProperties[network].logo} className='mr-2' />
-							<span>{chainProperties[network].ticker}</span>
+							<span>{chainProperties[network].tokenSymbol}</span>
 						</div>
 					</div>
 				</Form.Item>

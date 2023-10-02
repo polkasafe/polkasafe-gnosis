@@ -58,7 +58,7 @@ const SentInfo: FC<ISentInfoProps> = ({ approvals, amount, from, className, date
 											value: String(amount),
 											withUnit: true
 										})
-										: `? ${chainProperties[network].ticker}`}{' '}
+										: `? ${chainProperties[network].tokenSymbol}`}{' '}
 								</span>
 								<span>To:</span>
 							</p>
@@ -79,7 +79,7 @@ const SentInfo: FC<ISentInfoProps> = ({ approvals, amount, from, className, date
 													value: String(amount[i]),
 													withUnit: true
 												})
-												: `? ${chainProperties[network].ticker}`}{' '}
+												: `? ${chainProperties[network].tokenSymbol}`}{' '}
 										</span>
 										<span>To:</span>
 									</p>

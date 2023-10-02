@@ -14,8 +14,8 @@ interface Args {
 export default function parseDecodedValue({ value, network, withUnit = false }: Args): string {
 	formatBalance.setDefaults({
 		decimals: chainProperties[network].decimals,
-		unit: chainProperties[network].ticker
+		unit: chainProperties[network].tokenSymbol
 	});
 
-	return formatBalance(value, { forceUnit: chainProperties[network].ticker, withSiFull: false, withUnit });
+	return formatBalance(value, { forceUnit: chainProperties[network].tokenSymbol, withSiFull: false, withUnit });
 }

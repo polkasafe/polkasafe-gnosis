@@ -40,7 +40,7 @@ export async function approveAddProxy({ api, approvingAddress, callDataHex, call
 	// 1. Use formatBalance to display amounts
 	formatBalance.setDefaults({
 		decimals: chainProperties[network].decimals,
-		unit: chainProperties[network].ticker
+		unit: chainProperties[network].tokenSymbol
 	});
 
 	// 2. Set relevant vars
@@ -82,7 +82,7 @@ export async function approveAddProxy({ api, approvingAddress, callDataHex, call
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const addExistentialDeposit = async (multisigData: IMultisigAddress) => {
 
-		setLoadingMessages(`Please Sign To Add A Small (${chainProperties[network]} ${chainProperties[network].ticker}) Existential Deposit To Make Your Multisig Onchain.`);
+		setLoadingMessages(`Please Sign To Add A Small (${chainProperties[network]} ${chainProperties[network].tokenSymbol}) Existential Deposit To Make Your Multisig Onchain.`);
 		try {
 			await transferFunds({
 				amount: inputToBn(`${chainProperties[network]}`, network, false)[0],

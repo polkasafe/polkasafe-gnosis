@@ -27,7 +27,7 @@ dayjs.extend(LocalizedFormat);
 const Transaction: FC<IHistoryTransactions> = ({ approvals, amount_token, created_at, to, from, txHash, type, executor, decodedData, data: callData }) => {
 	const { network } = useGlobalApiContext();
 	const { gnosisSafe } = useGlobalUserDetailsContext();
-	const token = chainProperties[network].ticker;
+	const token = chainProperties[network].tokenSymbol;
 	const [transactionInfoVisible, toggleTransactionVisible] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const location = useLocation();
