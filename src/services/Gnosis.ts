@@ -365,7 +365,7 @@ export class GnosisSafeService {
         safeAddress: multisigAddress,
       });
       console.log("after safe sdk");
-      const relayKit = new GelatoRelayPack(GELATO_RELAY_API_KEY);
+      const relayKit = new GelatoRelayPack();
       const signer = await this.ethAdapter.getSignerAddress();
       console.log("after signer");
 
@@ -405,7 +405,7 @@ export class GnosisSafeService {
       return response;
     } catch (err) {
       console.log(err);
-      // console.log('error from createSafeTx', err);
+      // console.log('error from relayTransaction', err);
       return null;
     }
   };
