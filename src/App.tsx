@@ -12,54 +12,34 @@
 // import ModalContextProvider from './context/ModalContext';
 // import { UserDetailsProvider } from './context/UserDetailsContext';
 // import { GlobalStyle } from './ui-components/GlobalStyle';
-import { Astar, Goerli,Polygon } from '@thirdweb-dev/chains';
-import { metamaskWallet,ThirdwebProvider, walletConnect } from '@thirdweb-dev/react';
 import { ConfigProvider } from 'antd';
 import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
 
-// import Ath from './auth/Ath';
 import AppLayout from './components/AppLayout';
 import { ActiveMultisigProvider } from './context/ActiveMultisigContext';
-import { ApiContextProvider, useGlobalApiContext } from './context/ApiContext';
+import { ApiContextProvider } from './context/ApiContext';
 import { DAppContextProvider } from './context/DAppContext';
 import ModalContextProvider from './context/ModalContext';
 import { UserDetailsProvider } from './context/UserDetailsContext';
-import { FIREBASE_FUNCTIONS_URL } from './global/firebaseFunctionsUrl';
 import { antdTheme } from './themes/antdTheme';
 import { GlobalStyle } from './ui-components/GlobalStyle';
 
-const chains:any = {
-	astar: Astar,
-	goerli: Goerli,
-	polygon: Polygon
-};
-
 function App() {
-	const { network } = useGlobalApiContext();
 	return (
 		<BrowserRouter>
 			<ConfigProvider theme={antdTheme}>
 				<ApiContextProvider>
-					<ThirdwebProvider
-						activeChain={chains?.[network] || Astar}
-						clientId="b2c09dab179152e7936744fa00899dfa"
-						authConfig={{
-							domain: FIREBASE_FUNCTIONS_URL as string
-						}}
-						supportedWallets={[metamaskWallet(), walletConnect()]}
-					>
-						<UserDetailsProvider>
-							<ActiveMultisigProvider>
-								<DAppContextProvider>
-									<GlobalStyle />
-									<ModalContextProvider>
-										<AppLayout />
-									</ModalContextProvider>
-								</DAppContextProvider>
-							</ActiveMultisigProvider>
-						</UserDetailsProvider>
-					</ThirdwebProvider>
+					<UserDetailsProvider>
+						<ActiveMultisigProvider>
+							<DAppContextProvider>
+								<GlobalStyle />
+								<ModalContextProvider>
+									<AppLayout />
+								</ModalContextProvider>
+							</DAppContextProvider>
+						</ActiveMultisigProvider>
+					</UserDetailsProvider>
 				</ApiContextProvider>
 			</ConfigProvider>
 		</BrowserRouter>

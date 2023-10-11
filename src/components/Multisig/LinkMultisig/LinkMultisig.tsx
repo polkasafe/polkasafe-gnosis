@@ -67,28 +67,6 @@ const LinkMultisig = ({ onCancel }: { onCancel: () => void }) => {
 				const info = await gnosisSafe.getMultisigData(multisigAddress);
 				setMultisigInfo(info);
 
-				// const getMultisigDataRes = await fetch(`${FIREBASE_FUNCTIONS_URL}/getMultisigDataByMultisigAddress`, {
-				// 	body: JSON.stringify({
-				// 		multisigAddress,
-				// 		network
-				// 	}),
-				// 	headers: firebaseFunctionsHeader(network),
-				// 	method: 'POST'
-				// });
-
-				// const { data: multisigDataRes, error: multisigError } = await getMultisigDataRes.json() as { data: IMultisigAddress, error: string };
-
-				// if(multisigError) {
-
-				// 	queueNotification({
-				// 		header: 'Error!',
-				// 		message: multisigError,
-				// 		status: NotificationStatus.ERROR
-				// 	});
-				// 	setLoading(false);
-				// 	return;
-				// }
-
 				if (info) {
 					setLoading(false);
 					setNameAddress(false);

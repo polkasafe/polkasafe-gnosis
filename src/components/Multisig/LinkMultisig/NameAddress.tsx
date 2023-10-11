@@ -1,13 +1,12 @@
 // Copyright 2022-2023 @Polkasafe/polkaSafe-ui authors & contributors
 // This software may be modified and distributed under the terms
 // of the Apache-2.0 license. See the LICENSE file for details.
-import { AutoComplete, Form, Input } from 'antd';
-import { DefaultOptionType } from 'antd/es/select';
+import { Form, Input } from 'antd';
 import React, { useEffect, useState } from 'react';
 import LoadingLottie from 'src/assets/lottie-graphics/Loading';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
-import AddressComponent from 'src/ui-components/AddressComponent';
-import { CheckOutlined, OutlineCloseIcon } from 'src/ui-components/CustomIcons';
+import AddressDropdown from 'src/ui-components/AddressDropdown';
+import { CheckOutlined } from 'src/ui-components/CustomIcons';
 import styled from 'styled-components';
 
 import Loader from '../../UserFlow/Loader';
@@ -24,7 +23,7 @@ const NameAddress = ({ className, multisigAddress, setMultisigAddress, multisigN
 	const { address, gnosisSafe } = useGlobalUserDetailsContext();
 	const { multisigAddresses } = useGlobalUserDetailsContext();
 
-	const [allSafes, setAllSafes] = useState<DefaultOptionType[]>([]);
+	const [allSafes, setAllSafes] = useState<Array<{address:string}>>([]);
 	const [loading, setLoading] = useState<boolean>(false);
 
 	useEffect(() => {
@@ -38,10 +37,7 @@ const NameAddress = ({ className, multisigAddress, setMultisigAddress, multisigN
 			const filteredSafes = safes?.safes.filter((item:any) => !multiSigs.includes(item)) || [];
 			setMultisigAddress(filteredSafes[0]);
 			if(filteredSafes?.length > 0){
-				setAllSafes(filteredSafes.map((address) => ({
-					label: <AddressComponent onlyAddress address={address} />,
-					value: address
-				})));
+				setAllSafes(filteredSafes.map((address) => ({ address })));
 			}
 			setLoading(false);
 		};
@@ -103,9 +99,10 @@ const NameAddress = ({ className, multisigAddress, setMultisigAddress, multisigN
 									className="text-primary text-xs leading-[13px] font-normal"
 									htmlFor="address"
 								>
-				Safe Address*
+									Safe Address*
 								</label>
-								<Form.Item
+								<AddressDropdown accounts={allSafes} onAccountChange={(value:string) => setMultisigAddress(value)} defaultAddress={multisigAddress}/>
+								{/* <Form.Item
 									name="Address"
 									rules={[{ required: true }]}
 									className='border-0 outline-0 my-0 p-0'
@@ -122,7 +119,7 @@ const NameAddress = ({ className, multisigAddress, setMultisigAddress, multisigN
 										id="Address"
 										options={allSafes}
 									/>
-								</Form.Item>
+								</Form.Item> */}
 							</div>
 						</Form>
 					}

@@ -4,7 +4,11 @@
 
 import '@polkadot/api-augment';
 
+import { Arbitrum, Astar, Binance, Ethereum, Gnosis, Goerli, Optimism, Polygon } from '@thirdweb-dev/chains';
+import { metamaskWallet, ThirdwebProvider, walletConnect } from '@thirdweb-dev/react';
 import React, { useContext, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { FIREBASE_FUNCTIONS_URL } from 'src/global/firebaseFunctionsUrl';
 import { NETWORK } from 'src/global/networkConstants';
 import getNetwork from 'src/utils/getNetwork';
 
@@ -21,12 +25,35 @@ export interface ApiContextProviderProps {
 	children?: React.ReactElement;
 }
 
-export function ApiContextProvider({ children }: ApiContextProviderProps): React.ReactElement {
-	const [network, setNetwork] = useState<NETWORK>(getNetwork());
+const chains: any = {
+	arbitrum: Arbitrum,
+	astar: Astar,
+	'bnb smart chain': Binance,
+	etherium: Ethereum,
+	'gnosis chain': Gnosis,
+	goerli: Goerli,
+	optimism: Optimism,
+	polygon: Polygon
+};
 
+export function ApiContextProvider({ children }: ApiContextProviderProps): React.ReactElement {
+	const location = useLocation();
+	const queryNetwork = new URLSearchParams(location.search).get('network');
+	console.log(queryNetwork);
+	const [network, setNetwork] = useState<NETWORK>(getNetwork());
 	return (
 		<ApiContext.Provider value={{ network, setNetwork }}>
-			{children}
+			<ThirdwebProvider
+				activeChain={chains?.[network || 'astar']}
+				clientId="b2c09dab179152e7936744fa00899dfa"
+				authConfig={{
+					domain: FIREBASE_FUNCTIONS_URL as string
+				}}
+				supportedChains={Object.values(chains) as any}
+				supportedWallets={[metamaskWallet(), walletConnect()]}
+			>
+				{children}
+			</ThirdwebProvider>
 		</ApiContext.Provider>
 	);
 }

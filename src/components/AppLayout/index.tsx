@@ -32,7 +32,7 @@ export interface IRouteInfo {
 }
 
 const AppLayout = ({ className }: {className?: string}) => {
-	const { activeMultisig, multisigAddresses } = useGlobalUserDetailsContext();
+	const { activeMultisig, multisigAddresses, isNetworkMismatch } = useGlobalUserDetailsContext();
 	const { setActiveMultisigContextState } = useActiveMultisigContext();
 	const { network } = useGlobalApiContext();
 	const { iframeVisibility, setIframeVisibility } = useGlobalDAppContext();
@@ -171,7 +171,7 @@ const AppLayout = ({ className }: {className?: string}) => {
 					) : (
 						<>
 							<Content className='bg-bg-secondary p-[30px] max-w-[100%] lg:max-w-[calc(100%-180px)] rounded-lg'>
-								{multisigChanged ? (
+								{multisigChanged || isNetworkMismatch ? (
 									<Loader size='large' />
 								) : (
 									<SwitchRoutes />

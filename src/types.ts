@@ -102,7 +102,8 @@ export interface UserDetailsContextType {
 	connectAddress?:any,
 	gnosisSafe: GnosisSafeService,
 	setGnosisSafe:any,
-	transactionFields: ITransactionFields
+	transactionFields: ITransactionFields,
+	isNetworkMismatch:boolean,
 }
 
 export enum Wallet {

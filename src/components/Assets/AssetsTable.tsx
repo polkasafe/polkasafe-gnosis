@@ -4,6 +4,8 @@
 import styled from '@xstyled/styled-components';
 import { Divider, Modal } from 'antd';
 import React, { FC, useState } from 'react';
+import { useGlobalApiContext } from 'src/context/ApiContext';
+import { chainProperties } from 'src/global/networkConstants';
 import { IAsset } from 'src/types';
 import { OutlineCloseIcon } from 'src/ui-components/CustomIcons';
 import PrimaryButton from 'src/ui-components/PrimaryButton';
@@ -17,6 +19,7 @@ interface IAssetsProps {
 }
 
 const AssetsTable: FC<IAssetsProps> = ({ assets, className }) => {
+	const { network } = useGlobalApiContext();
 
 	const [openTransactionModal, setOpenTransactionModal] = useState(false);
 
@@ -52,7 +55,7 @@ const AssetsTable: FC<IAssetsProps> = ({ assets, className }) => {
 					Balance
 				</span>
 				<span className='col-span-1'>
-					Value
+					USD Value
 				</span>
 				<span className='col-span-1'>
 					Action
@@ -76,7 +79,7 @@ const AssetsTable: FC<IAssetsProps> = ({ assets, className }) => {
 									<p title={balance_usd} className='max-w-[100px] sm:w-auto overflow-hidden text-ellipsis col-span-1 flex items-center text-xs sm:text-sm'>
 										{balance_usd ? balance_usd : '-'}
 									</p>
-									<PrimaryButton onClick={() => setOpenTransactionModal(true)} className='bg-primary text-white w-fit'>
+									<PrimaryButton onClick={() => setOpenTransactionModal(true)} className={` text-white w-fit ${chainProperties[network].tokenSymbol !== name ? 'bg-secondary':'bg-primary'}`} disabled={chainProperties[network].tokenSymbol !== name}>
 										<p className='font-normal text-sm'>Send</p>
 									</PrimaryButton>
 								</article>
