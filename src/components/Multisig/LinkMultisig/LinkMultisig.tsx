@@ -31,7 +31,7 @@ const LinkMultisig = ({ onCancel }: { onCancel: () => void }) => {
 	const [nameAddress, setNameAddress] = useState(true);
 	const [viewOwners, setViewOwners] = useState(true);
 	const [viewReviews, setViewReviews] = useState(true);
-	const { address, addressBook, gnosisSafe } = useGlobalUserDetailsContext();
+	const { address, addressBook, gnosisSafe, setUserDetailsContextState } = useGlobalUserDetailsContext();
 	const { network } = useGlobalApiContext();
 	const navigate = useNavigate();
 
@@ -113,7 +113,7 @@ const LinkMultisig = ({ onCancel }: { onCancel: () => void }) => {
 		if (multisigData) {
 			try {
 
-				await fetch(`${FIREBASE_FUNCTIONS_URL}/createMultisigEth`, {
+				const data = await fetch(`${FIREBASE_FUNCTIONS_URL}/createMultisigEth`, {
 					body: JSON.stringify({
 						signatories: signatoriesArray.map(item => item.address),
 						threshold,
@@ -124,11 +124,19 @@ const LinkMultisig = ({ onCancel }: { onCancel: () => void }) => {
 					method: 'POST'
 				});
 
+				const linkedMultisigData = await data.json();
+
+				setUserDetailsContextState(prev => ({
+					...prev,
+					multisigAddresses:[...prev.multisigAddresses, linkedMultisigData]
+				}));
+
 				queueNotification({
 					header: 'Success!',
 					message: 'Multisig Linked Successfully.',
 					status: NotificationStatus.SUCCESS
 				});
+
 				navigate('/', { replace: true });
 			} catch (err) {
 				console.log(err);
