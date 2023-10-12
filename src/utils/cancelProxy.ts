@@ -24,7 +24,7 @@ export async function cancelProxy({ api, approvingAddress, callHash, multisig, n
 	// 1. Use formatBalance to display amounts
 	formatBalance.setDefaults({
 		decimals: chainProperties[network].decimals,
-		unit: chainProperties[network].ticker
+		unit: chainProperties[network].tokenSymbol
 	});
 
 	// remove approving address address from signatories

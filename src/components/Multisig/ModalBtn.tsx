@@ -23,9 +23,9 @@ const ModalBtn: FC<IModalBtnProps> = ({ className, disabled=false, title, loadin
 			className={`${className} w-[30%] flex items-center justify-center gap-x-[10.83px] border-none outline-none text-sm ${disabled ? 'bg-highlight text-text_secondary' : 'bg-primary text-white'} rounded-lg min-w-[120px]`}
 		>
 			<span
-				className={`flex items-center justify-center p-2 border ${disabled ? 'border-text_secondary' : 'border-white'} rounded-full w-[14.33px] h-[14.33px]`}
+				className={`flex items-center justify-center p-2 border ${disabled ? 'border-text_secondary' : 'border-white'} rounded-full w-3 h-3`}
 			>
-				<OutlineCheckIcon className='w-[8px] h-[8px]' />
+				<OutlineCheckIcon className='w-2 h-2' />
 			</span>
 			<span>
 				{title}

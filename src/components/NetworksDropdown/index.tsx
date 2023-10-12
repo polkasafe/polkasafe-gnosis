@@ -28,6 +28,7 @@ const NetworksDropdown: FC<INetworksDropdownProps> = ({ className, isCardToken, 
 
 	const handleSetNetwork = async (networkToSet: string) => {
 		localStorage.setItem('network', networkToSet);
+		console.log(networkToSet);
 		setNetwork(networkToSet as any);
 		localStorage.removeItem('active_multisig');
 		toggleVisibility(false);
@@ -62,7 +63,7 @@ const NetworksDropdown: FC<INetworksDropdownProps> = ({ className, isCardToken, 
 						'ml-[10px] hidden md:inline-flex capitalize',
 						titleClassName
 					)}>
-						{isCardToken ? chainProperties[network].ticker : network}
+						{isCardToken ? chainProperties[network].tokenSymbol : network}
 					</span>
 				</p>
 				<CircleArrowDownIcon className='hidden md:inline-flex text-sm text-primary' />
@@ -82,7 +83,7 @@ const NetworksDropdown: FC<INetworksDropdownProps> = ({ className, isCardToken, 
 					isMouseEnter.current = false;
 				}}
 			>
-				{/* {
+				{
 					Object.values(NETWORK).map((networkEntry) => {
 						return <NetworkCard
 							onClick={() => handleSetNetwork(networkEntry)}
@@ -92,14 +93,14 @@ const NetworksDropdown: FC<INetworksDropdownProps> = ({ className, isCardToken, 
 							isCardToken={isCardToken}
 						/>;
 					})
-				} */}
-				<NetworkCard
+				}
+				{/* <NetworkCard
 					onClick={() => handleSetNetwork(NETWORK.ASTAR)}
 					selectedNetwork={network}
 					key={NETWORK.ASTAR}
 					network={NETWORK.ASTAR}
 					isCardToken={isCardToken}
-				/>
+				/> */}
 			</div>
 		</div>
 	);

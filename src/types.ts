@@ -102,7 +102,8 @@ export interface UserDetailsContextType {
 	connectAddress?:any,
 	gnosisSafe: GnosisSafeService,
 	setGnosisSafe:any,
-	transactionFields: ITransactionFields
+	transactionFields: ITransactionFields,
+	isNetworkMismatch:boolean,
 }
 
 export enum Wallet {
@@ -136,13 +137,13 @@ export interface ChainProps {
 export type ChainPropType = {
 	[network: string]: {
 		blockExplorer: string;
-		chainId: string;
+		chainId: number;
 		chainNamespace: ChainNamespaceType;
 		decimals: number;
 		displayName: string;
-		rpcTarget: string;
-		ticker: string;
-		tickerName: string;
+		rpcEndpoint: string;
+		tokenSymbol: string;
+		tokenName: string;
 		logo: string
 	};
 };

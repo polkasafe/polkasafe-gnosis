@@ -4,7 +4,12 @@
 /* eslint-disable sort-keys */
 
 import { EthersAdapter } from '@safe-global/protocol-kit';
-import { useAddress, useMetamask, useNetworkMismatch, useSigner } from '@thirdweb-dev/react';
+import {
+	useAddress,
+	useMetamask,
+	useNetworkMismatch,
+	useSigner
+} from '@thirdweb-dev/react';
 import { ethers } from 'ethers';
 import React, {
 	createContext,
@@ -18,12 +23,14 @@ import { DEFAULT_ADDRESS_NAME } from 'src/global/default';
 import { firebaseFunctionsHeader } from 'src/global/firebaseFunctionsHeader';
 import { FIREBASE_FUNCTIONS_URL } from 'src/global/firebaseFunctionsUrl';
 import { returnTxUrl } from 'src/global/gnosisService';
+import { chainProperties, NETWORK } from 'src/global/networkConstants';
 import { GnosisSafeService } from 'src/services';
 import { EFieldType, IUser, UserDetailsContextType } from 'src/types';
 import InvalidNetwork from 'src/ui-components/InvalidNetwork';
 import { convertSafeMultisig } from 'src/utils/convertSafeData/convertSafeMultisig';
 
 import { useGlobalApiContext } from './ApiContext';
+
 const initialUserDetailsContext: UserDetailsContextType = {
 	activeMultisig: localStorage.getItem('active_multisig') || '',
 	address: localStorage.getItem('address') || '',
@@ -34,15 +41,22 @@ const initialUserDetailsContext: UserDetailsContextType = {
 	multisigAddresses: [],
 	multisigSettings: {},
 	notification_preferences: {},
+	isNetworkMismatch:false,
 	setActiveMultisigData: (): void => {
-		throw new Error('setUserDetailsContextState function must be overridden');
+		throw new Error(
+			'setUserDetailsContextState function must be overridden'
+		);
 	},
 	setGnosisSafe: (): void => {},
 	setUserDetailsContextState: (): void => {
-		throw new Error('setUserDetailsContextState function must be overridden');
+		throw new Error(
+			'setUserDetailsContextState function must be overridden'
+		);
 	},
 	updateCurrentMultisigData: (): void => {
-		throw new Error('updateCurrentMultisigData function must be overridden');
+		throw new Error(
+			'updateCurrentMultisigData function must be overridden'
+		);
 	},
 	transactionFields: {
 		['expense_reimbursement']: {
@@ -281,7 +295,7 @@ const initialUserDetailsContext: UserDetailsContextType = {
 };
 
 export const UserDetailsContext: React.Context<UserDetailsContextType> =
-  createContext(initialUserDetailsContext);
+	createContext(initialUserDetailsContext);
 
 export function useGlobalUserDetailsContext() {
 	return useContext(UserDetailsContext);
@@ -302,69 +316,102 @@ export const UserDetailsProvider = ({
 	const signer = useSigner();
 
 	const [loading, setLoading] = useState(false);
-	const connect  = useMetamask();
+	const connect = useMetamask();
 
-	const connectAddress = useCallback(async (passedNetwork:string = network, address?:string, signature?:string) => {
-		if(isNetworkMismatch){
-			return;
-		}
-		if(!address && !localStorage.getItem('address')){
-			return;
-		}
-		setLoading(true);
-		const user = await fetch(`${FIREBASE_FUNCTIONS_URL}/connectAddressEth`, {
-			headers: firebaseFunctionsHeader(passedNetwork, address, signature),
-			method: 'POST'
-		});
-		const { data: userData, error: connectAddressErr } = await user.json() as { data: IUser, error: string };
-		if (!connectAddressErr && userData) {
-			setUserDetailsContextState((prevState) => {
-				return {
-					...prevState,
-					activeMultisig: localStorage.getItem('active_multisig') || userData?.multisigAddresses?.filter((address:any) => address.network === network)?.[0]?.address || '',
-					address: userData?.address,
-					addressBook: userData?.addressBook || [],
-					createdAt: userData?.created_at,
-					multisigAddresses: userData?.multisigAddresses?.filter((address:any) => address.network === network),
-					multisigSettings: userData?.multisigSettings || {},
-					notification_preferences: userData?.notification_preferences || initialUserDetailsContext.notification_preferences,
-					transactionFields: userData?.transactionFields || initialUserDetailsContext.transactionFields
-				};
-			});
-			if(!signer){
-				await connect({ chainId:592 });
+	const connectAddress = useCallback(
+		async (
+			passedNetwork: string = network,
+			address?: string,
+			signature?: string
+		) => {
+			if (isNetworkMismatch) {
+				return;
 			}
-			if(signer){
-				const txUrl = returnTxUrl(network);
-				const web3Adapter = new EthersAdapter({
-					ethers,
-					signerOrProvider: signer
+			if (!address && !localStorage.getItem('address')) {
+				return;
+			}
+			setLoading(true);
+			const user = await fetch(
+				`${FIREBASE_FUNCTIONS_URL}/connectAddressEth`,
+				{
+					headers: firebaseFunctionsHeader(
+						passedNetwork,
+						address,
+						signature
+					),
+					method: 'POST'
+				}
+			);
+			const { data: userData, error: connectAddressErr } =
+				(await user.json()) as {data: IUser; error: string};
+			if (!connectAddressErr && userData) {
+				setUserDetailsContextState((prevState) => {
+					return {
+						...prevState,
+						activeMultisig:
+							localStorage.getItem('active_multisig') ||
+							userData?.multisigAddresses?.filter(
+								(address: any) => address.network === network
+							)?.[0]?.address ||
+							'',
+						address: userData?.address,
+						addressBook: userData?.addressBook || [],
+						createdAt: userData?.created_at,
+						multisigAddresses: userData?.multisigAddresses?.filter(
+							(address: any) => address.network === network
+						),
+						multisigSettings: userData?.multisigSettings || {},
+						notification_preferences:
+							userData?.notification_preferences ||
+							initialUserDetailsContext.notification_preferences,
+						transactionFields:
+							userData?.transactionFields ||
+							initialUserDetailsContext.transactionFields
+					};
 				});
-				const gnosisService = new GnosisSafeService(web3Adapter, signer, txUrl);
-				setGnosisSafe(gnosisService);
+				if (!signer) {
+					await connect({
+						chainId: chainProperties?.[network].chainId || 592
+					});
+				}
+				if (signer) {
+					const txUrl = returnTxUrl(network);
+					const web3Adapter = new EthersAdapter({
+						ethers,
+						signerOrProvider: signer
+					});
+					const gnosisService = new GnosisSafeService(
+						web3Adapter,
+						signer,
+						txUrl
+					);
+					setGnosisSafe(gnosisService);
+				}
+			} else {
+				localStorage.clear();
+				setUserDetailsContextState(initialUserDetailsContext);
+				navigate('/');
 			}
-		} else {
-			localStorage.clear();
-			setUserDetailsContextState(initialUserDetailsContext);
-			navigate('/');
-		}
-		setLoading(false);
+			setLoading(false);
+		},
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [network, signer]);
+		[network, signer]
+	);
 
 	const updateCurrentMultisigData = useCallback(async () => {
 		if (
-			!userDetailsContextState.activeMultisig
-			|| Boolean(!Object.keys(gnosisSafe).length)
-			|| !userDetailsContextState.multisigAddresses
-			|| !userDetailsContextState.address
+			!userDetailsContextState.activeMultisig ||
+			Boolean(!Object.keys(gnosisSafe).length) ||
+			!userDetailsContextState.multisigAddresses ||
+			!userDetailsContextState.address
 		) {
 			return;
 		}
 		try {
 			let activeData: any = {};
 			const multisig = userDetailsContextState.multisigAddresses.find(
-				(multi) => multi.address === userDetailsContextState.activeMultisig
+				(multi) =>
+					multi.address === userDetailsContextState.activeMultisig
 			);
 			if (!multisig) {
 				return;
@@ -389,17 +436,24 @@ export const UserDetailsProvider = ({
 		} catch (err) {
 			console.log('err from update current multisig data', err);
 		}
-	}, [network, gnosisSafe, signer?.provider, userDetailsContextState.activeMultisig, userDetailsContextState.address, userDetailsContextState.multisigAddresses]);
+	}, [
+		network,
+		gnosisSafe,
+		signer?.provider,
+		userDetailsContextState.activeMultisig,
+		userDetailsContextState.address,
+		userDetailsContextState.multisigAddresses
+	]);
 
 	useEffect(() => {
-		if(!address){
+		if (!address) {
 			return;
 		}
-		if(localStorage.getItem('address') !== address){
+		if (localStorage.getItem('address') !== address) {
 			localStorage.removeItem('signature');
 			localStorage.removeItem('address');
 			setUserDetailsContextState(initialUserDetailsContext);
-			navigate('/',{ replace: true });
+			navigate('/', { replace: true });
 			setLoading(false);
 			return;
 		}
@@ -414,27 +468,27 @@ export const UserDetailsProvider = ({
 	}, [address, network]);
 
 	useEffect(() => {
-		if(!userDetailsContextState.activeMultisig){
+		if (!userDetailsContextState.activeMultisig) {
 			return;
 		}
 		updateCurrentMultisigData();
 	}, [updateCurrentMultisigData, userDetailsContextState.activeMultisig]);
 
 	useEffect(() => {
-		if(!gnosisSafe) return;
+		if (!gnosisSafe) return;
 	}, [gnosisSafe]);
 
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	const handleNetworkMisMatch = async () => {
-		await connect({ chainId:592 });
+		await connect({ chainId: chainProperties?.[network].chainId || 592 });
 	};
 
 	useEffect(() => {
-		if(isNetworkMismatch){
+		if (isNetworkMismatch) {
 			handleNetworkMisMatch();
 		}
-	// eslint-disable-next-line react-hooks/exhaustive-deps
-	},[isNetworkMismatch]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isNetworkMismatch]);
 
 	return (
 		<UserDetailsContext.Provider
@@ -444,6 +498,7 @@ export const UserDetailsProvider = ({
 				loading,
 				...userDetailsContextState,
 				gnosisSafe,
+				isNetworkMismatch,
 				setActiveMultisigData,
 				setGnosisSafe,
 				setLoading,
@@ -451,10 +506,13 @@ export const UserDetailsProvider = ({
 				updateCurrentMultisigData
 			}}
 		>
-			{isNetworkMismatch && localStorage.getItem('signature')?
-				<InvalidNetwork/>:
-				<>{children}</>
-			}
+			{isNetworkMismatch &&
+			localStorage.getItem('signature') &&
+			!Object.values(NETWORK).includes(network) ? (
+					<InvalidNetwork />
+				) : (
+					<>{children}</>
+				)}
 		</UserDetailsContext.Provider>
 	);
 };

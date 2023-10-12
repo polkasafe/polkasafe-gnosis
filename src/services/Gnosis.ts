@@ -16,7 +16,9 @@ import {
 	// SafeTransactionDataPartial,
 	TransactionResult
 } from '@safe-global/safe-core-sdk-types';
+import { NETWORK } from 'src/global/networkConstants';
 import { createTokenTransferParams } from 'src/utils/createTokenTransaferParams';
+import { getAllAssets } from 'src/utils/getAllAssets';
 
 (BigInt.prototype as any).toJSON = function () {
 	return this.toString();
@@ -132,7 +134,7 @@ export class GnosisSafeService {
 			const safeTransactionData: MetaTransactionData[] = createTokenTransferParams(to, value);
 
 			console.log('safe tx', safeTransactionData);
-			if(note) console.log(note);
+			if (note) console.log(note);
 
 			const safeTransaction = await safeSdk.createTransaction({
 				safeTransactionData
@@ -260,11 +262,19 @@ export class GnosisSafeService {
 		return data;
 	};
 
+	getMultisigAllAssets = async (
+		network: NETWORK,
+		multisigAddress: string
+	): Promise<any> => {
+		const data = await getAllAssets(network, multisigAddress);
+		return data;
+	};
+
 	getAllTx = async (
 		multisigAddress: string,
-		options:any = {}
+		options: any = {}
 	): Promise<AllTransactionsListResponse> => {
-		const data = await this.safeService.getAllTransactions(multisigAddress,options);
+		const data = await this.safeService.getAllTransactions(multisigAddress, options);
 		return data;
 	};
 
@@ -295,7 +305,7 @@ export class GnosisSafeService {
 	executeTx = async (
 		txHash: string,
 		multisig: string
-	): Promise<{data: TransactionResult | null; error: string | null}> => {
+	): Promise<{ data: TransactionResult | null; error: string | null }> => {
 		try {
 			console.log({
 				ethAdapter: this.ethAdapter,
@@ -323,6 +333,18 @@ export class GnosisSafeService {
 	): Promise<SafeInfoResponse | null> => {
 		try {
 			const info = await this.safeService.getSafeInfo(multisigAddress);
+			return info;
+		} catch (err) {
+			console.log('error from getMultisigData', err);
+			return null;
+		}
+	};
+
+	getAllSafeByOwner = async (
+		owner: string
+	): Promise<OwnerResponse | null> => {
+		try {
+			const info = await this.safeService.getSafesByOwner(owner);
 			return info;
 		} catch (err) {
 			console.log('error from getMultisigData', err);

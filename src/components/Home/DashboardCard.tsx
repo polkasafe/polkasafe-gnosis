@@ -8,9 +8,10 @@ import { Spin } from 'antd';
 import { ethers } from 'ethers';
 import React, { FC, useState } from 'react';
 import { MetaMaskAvatar } from 'react-metamask-avatar';
-import astarLogo from 'src/assets/astar-logo.png';
+import { useGlobalApiContext } from 'src/context/ApiContext';
 import { useModalContext } from 'src/context/ModalContext';
 import { useGlobalUserDetailsContext } from 'src/context/UserDetailsContext';
+import { chainProperties } from 'src/global/networkConstants';
 import AddressQr from 'src/ui-components/AddressQr';
 import { CopyIcon, OutlineCloseIcon, QRIcon, WalletIcon } from 'src/ui-components/CustomIcons';
 import PrimaryButton from 'src/ui-components/PrimaryButton';
@@ -34,6 +35,7 @@ interface IDashboardCard {
 const DashboardCard = ({ className, setNewTxn, transactionLoading, openTransactionModal, setOpenTransactionModal }: IDashboardCard) => {
 	const { activeMultisig, multisigAddresses, activeMultisigData } = useGlobalUserDetailsContext();
 	const { openModal } = useModalContext();
+	const { network } = useGlobalApiContext();
 
 	const [openFundMultisigModal, setOpenFundMultisigModal] = useState(false);
 	const currentMultisig = multisigAddresses?.find((item) => item.address === activeMultisig);
@@ -99,7 +101,7 @@ const DashboardCard = ({ className, setNewTxn, transactionLoading, openTransacti
 				<div className='absolute right-5 top-5'>
 					<div className="flex gap-x-4 items-center">
 						<div className='w-5' rel="noreferrer">
-							<img className='w-5' src={astarLogo} alt="icon" />
+							<img className='w-5' src={chainProperties[network].logo} alt="icon" />
 						</div>
 					</div>
 				</div>
@@ -121,9 +123,9 @@ const DashboardCard = ({ className, setNewTxn, transactionLoading, openTransacti
 								<div title={activeMultisig && activeMultisig || ''} className=' font-normal text-text_secondary'>{activeMultisig && shortenAddress(activeMultisig || '')}</div>
 								<button className='ml-2 mr-1' onClick={() => copyText(activeMultisig)}><CopyIcon className='text-primary' /></button>
 								{currentMultisig?.address &&
-								<button onClick={() => openModal('Address QR', <AddressQr address={currentMultisig.address} />)}>
-									<QRIcon className='text-primary' />
-								</button>
+									<button onClick={() => openModal('Address QR', <AddressQr address={currentMultisig.address} />)}>
+										<QRIcon className='text-primary' />
+									</button>
 								}
 							</div>
 						</div>
@@ -137,7 +139,7 @@ const DashboardCard = ({ className, setNewTxn, transactionLoading, openTransacti
 						</div>
 					</div>
 					<div>
-						<div className='text-white'>ASTR</div>
+						<div className='text-white'>{chainProperties[network].tokenSymbol}</div>
 						<div className='font-bold text-lg text-primary'>{!activeMultisigData?.safeBalance ? <Spin size='default' /> : ethers.utils.formatEther(activeMultisigData.safeBalance.toString()).split('').slice(0, 5).join('')}</div>
 					</div>
 					{/* <div>
