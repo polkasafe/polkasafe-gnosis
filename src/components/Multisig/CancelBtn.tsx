@@ -17,9 +17,9 @@ const CancelBtn: FC<ICancelBtnProps> = ({ onClick, className, title }) => {
 			className={classNames('flex items-center w-[30%] gap-x-[10.83px] text-failure text-sm font-normal leading-[15px] bg-failure bg-opacity-10 p-3 rounded-lg min-w-[120px] justify-center', className)}
 		>
 			<span
-				className='flex items-center justify-center p-2 border border-failure rounded-full w-[14.33px] h-[14.33px]'
+				className='flex items-center justify-center p-2 border border-failure rounded-full w-3 h-3'
 			>
-				<OutlineCloseIcon className='w-[5px] h-[5px]' />
+				<OutlineCloseIcon className='w-1 h-1' />
 			</span>
 			<span>
 				{title ? title : 'Cancel'}

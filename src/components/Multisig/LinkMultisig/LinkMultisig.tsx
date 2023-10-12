@@ -128,7 +128,7 @@ const LinkMultisig = ({ onCancel }: { onCancel: () => void }) => {
 
 				setUserDetailsContextState(prev => ({
 					...prev,
-					multisigAddresses:[...prev.multisigAddresses, linkedMultisigData]
+					multisigAddresses:[...prev.multisigAddresses, linkedMultisigData.data]
 				}));
 
 				queueNotification({
